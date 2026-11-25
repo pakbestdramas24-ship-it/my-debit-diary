@@ -241,6 +241,14 @@
   .from-acct-btn{width:100%;background:none;border:0;color:var(--text);text-align:left;padding:4px 0 0;min-height:0}
   .from-acct-name{font-size:23px;font-weight:700}
   .from-type{font-size:16.5px;color:#c9d4cb;margin:3px 0 6px}
+  .date-acct-row{display:flex;gap:18px;align-items:flex-start;margin-top:14px;margin-bottom:16px}
+  .date-acct-row .field{flex:1;min-width:0;margin-bottom:0}
+  .date-acct-row .acct-col{flex:1;min-width:0}
+  .date-acct-row .from-label{margin:0 0 6px;font-size:14px;font-weight:500}
+  .date-acct-row .from-acct-btn{padding:2px 0 0;border-bottom:1.5px solid #93a698;padding-bottom:7px;min-height:44px}
+  .date-acct-row .from-acct-name{font-size:20px;line-height:1.2}
+  .date-acct-row .from-type{font-size:15px;margin:2px 0 0}
+  .date-acct-row .field input{letter-spacing:.2px}
   .desc-row{display:flex;gap:12px;align-items:flex-start}
   .desc-row .desc-ic{font-size:22px;margin-top:10px;color:#c9d4cb}
   .desc-row .field{flex:1}
@@ -334,16 +342,19 @@
     </div>
     <p style="margin:4px 0 0 64px;font-size:13.5px;color:#c9d4cb">Category: <strong id="catNameLabel">Misc</strong> — tap the icon to change</p>
 
-    <div class="field" style="margin-top:14px">
-      <label for="fDate">Date</label>
-      <input type="date" id="fDate" />
+    <div class="date-acct-row">
+      <div class="field">
+        <label for="fDate">Date</label>
+        <input type="text" id="fDate" placeholder="DD/MM/YYYY" inputmode="numeric" autocomplete="off" aria-label="Date, day month year" />
+      </div>
+      <div class="acct-col">
+        <p class="from-label" id="fromLabel">Debit From</p>
+        <button type="button" class="from-acct-btn" id="fromAcctBtn" aria-label="Choose account">
+          <span class="from-acct-name" id="fromAcctName">Cash</span>
+          <span class="from-type" id="fromType" style="display:block">Debit</span>
+        </button>
+      </div>
     </div>
-
-    <p class="from-label" id="fromLabel">Debit From</p>
-    <button type="button" class="from-acct-btn" id="fromAcctBtn" aria-label="Choose account">
-      <span class="from-acct-name" id="fromAcctName">Cash</span>
-      <span class="from-type" id="fromType" style="display:block">Debit</span>
-    </button>
 
     <div class="field">
       <label for="fLedger">Ledger</label>
@@ -1280,6 +1291,30 @@
   function showError(msg){ formError.textContent = msg; formError.classList.add("show"); }
   function hideError(){ formError.classList.remove("show"); formError.textContent = ""; }
 
+  function keyToDisplay(key){
+    if(!key) return "";
+    var p = String(key).split("-");
+    if(p.length !== 3) return key;
+    return pad(+p[2]) + "/" + pad(+p[1]) + "/" + p[0];
+  }
+  function displayToKey(str){
+    var s = (str || "").trim();
+    var m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if(!m) return null;
+    var d = +m[1], mo = +m[2], y = +m[3];
+    if(y < 1900 || y > 2100 || mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+    var dt = new Date(y, mo - 1, d);
+    if(dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
+    return y + "-" + pad(mo) + "-" + pad(d);
+  }
+  fDate.addEventListener("input", function(){
+    var digits = fDate.value.replace(/\D/g, "").slice(0, 8);
+    var out = digits;
+    if(digits.length > 4) out = digits.slice(0,2) + "/" + digits.slice(2,4) + "/" + digits.slice(4);
+    else if(digits.length > 2) out = digits.slice(0,2) + "/" + digits.slice(2);
+    if(fDate.value !== out) fDate.value = out;
+  });
+
   function openSheet(id){
     hideError();
     editingId = id || null;
@@ -1287,7 +1322,7 @@
       var e = null;
       for(var i=0;i<entries.length;i++) if(entries[i].id===id) e = entries[i];
       if(!e) return;
-      fDate.value = e.date; fText.value = e.text; fAmount.value = e.amount;
+      fDate.value = keyToDisplay(e.date); fText.value = e.text; fAmount.value = e.amount;
       formAccount = e.account || "Cash"; fRemarks.value = e.remarks || "";
       if(e.ledger) ensureLedger(e.ledger);
       populateLedgerOptions(e.ledger || "");
@@ -1295,7 +1330,7 @@
       setFormType(e.type);
       deleteBtn.style.display = "";
     } else {
-      fDate.value = state.tab==="daily" ? state.date : todayKey();
+      fDate.value = keyToDisplay(state.tab==="daily" ? state.date : todayKey());
       fText.value = ""; fAmount.value = ""; formAccount = "Cash"; fRemarks.value = "";
       populateLedgerOptions(state.ledgerNameFilter || "");
       formCategory = "Misc";
@@ -1311,9 +1346,10 @@
   function saveEntry(){
     var text = fText.value.trim();
     var amount = parseFloat(fAmount.value);
-    var date = fDate.value || todayKey();
+    var date = displayToKey(fDate.value);
     if(!text){ showError("Please enter the entry name (Enter Text) first."); fText.focus(); return; }
     if(isNaN(amount) || amount <= 0){ showError("Enter a valid Amount — it must be greater than 0."); fAmount.focus(); return; }
+    if(!date){ showError("Enter a valid date as DD/MM/YYYY — for example 25/11/2026."); fDate.focus(); return; }
     var ledgerName = currentLedgerValue();
     if(fLedger.value === ADD_NEW_LEDGER && !ledgerName){ showError("Enter the new ledger name, or choose a ledger from the list."); fLedgerNew.focus(); return; }
     ensureLedger(ledgerName);
