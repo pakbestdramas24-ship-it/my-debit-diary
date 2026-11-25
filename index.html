@@ -46,25 +46,26 @@
 
   main{flex:1;padding:14px 14px 110px}
 
-  /* Date / period card */
-  .date-card{background:var(--card);border-radius:8px;padding:16px 8px;display:flex;align-items:center;gap:4px}
+  /* Date / period card — Daily view, compact */
+  .date-card{background:var(--card);border-radius:8px;padding:9px 6px;display:flex;align-items:center;gap:2px}
   .nav-arrow{background:none;border:0;color:var(--text);font-size:30px;line-height:1;width:44px;height:52px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
-  .date-main{flex:1;display:flex;align-items:center;gap:14px;min-width:0}
-  .day-num{font-size:44px;font-weight:400;line-height:1;padding-left:2px}
+  .date-card .nav-arrow{width:36px;height:40px;font-size:25px}
+  .date-main{flex:1;display:flex;align-items:center;gap:10px;min-width:0}
+  .day-num{font-size:32px;font-weight:400;line-height:1;padding-left:2px}
   .date-texts{min-width:0}
-  .date-line1{font-size:19px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .date-line2{font-size:17px;color:#d7e0d8;margin-top:2px}
-  .balance-box{text-align:right;padding-right:4px;flex:0 0 auto}
-  .balance-label{font-size:17px;color:#d7e0d8}
-  .balance-amt{font-size:18px;margin-top:3px;white-space:nowrap}
+  .date-line1{font-size:16.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .date-line2{font-size:14.5px;color:#d7e0d8;margin-top:1px}
+  .balance-box{text-align:right;padding-right:2px;flex:0 0 auto}
+  .balance-label{font-size:14.5px;color:#d7e0d8}
+  .balance-amt{font-size:15.5px;margin-top:2px;white-space:nowrap}
 
   .cf-row{display:flex;justify-content:space-between;align-items:center;padding:16px 2px 12px;font-size:21px}
   .cf-row .amt{font-weight:500}
 
-  .section-head{background:var(--card-2);display:flex;justify-content:space-between;align-items:center;padding:14px 14px;margin:8px -2px 0}
-  .section-head h2{margin:0;font-size:21px;font-weight:700}
-  .section-head .total{font-size:20px;font-weight:700;white-space:nowrap}
-  .hint{color:var(--muted);font-size:17px;line-height:1.45;padding:18px 22px 8px;margin:0}
+  .section-head{background:var(--card-2);display:flex;justify-content:space-between;align-items:center;padding:9px 12px;margin:6px -2px 0}
+  .section-head h2{margin:0;font-size:18px;font-weight:700}
+  .section-head .total{font-size:17.5px;font-weight:700;white-space:nowrap}
+  .hint{color:var(--muted);font-size:14.5px;line-height:1.35;padding:10px 16px 4px;margin:0}
 
   .entry-list{list-style:none;margin:6px 0 4px;padding:0}
   .entry-item{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:13px 8px;min-height:52px;color:var(--text);user-select:none;-webkit-user-select:none}
@@ -347,14 +348,19 @@
     .icon-btn{width:36px}
     .icon-btn svg{width:21px;height:21px}
     .tab{font-size:15px;padding-left:2px;padding-right:2px;letter-spacing:-.2px}
-    .date-card{padding:13px 2px;gap:0}
+    .date-card{padding:8px 2px;gap:0}
     .nav-arrow{width:32px;font-size:24px}
-    .date-main{gap:8px}
-    .day-num{font-size:34px}
-    .date-line1{font-size:16.5px}
-    .date-line2{font-size:15px}
-    .balance-label{font-size:15px}
-    .balance-amt{font-size:15.5px}
+    .date-card .nav-arrow{width:30px;height:36px;font-size:22px}
+    .date-main{gap:7px}
+    .day-num{font-size:28px}
+    .date-line1{font-size:15px}
+    .date-line2{font-size:13.5px}
+    .balance-label{font-size:13.5px}
+    .balance-amt{font-size:14px}
+    .section-head{padding:8px 10px}
+    .section-head h2{font-size:16.5px}
+    .section-head .total{font-size:16px}
+    .hint{font-size:13.5px;padding:8px 12px 2px}
     .ledger-head{display:none}
     .ledger-row{grid-template-columns:1fr auto;grid-template-areas:"main amt" "main bal"}
     .ledger-row .d{display:none}
