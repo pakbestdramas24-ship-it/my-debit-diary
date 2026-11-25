@@ -520,9 +520,6 @@
       <button class="tab" data-tab="yearly">Yearly</button>
       <button class="tab" data-tab="ledger">Ledger</button>
     </nav>
-    <button class="icon-btn" id="backupBtn" aria-label="Backup and restore" title="Backup &amp; Restore">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
-    </button>
     <div class="menu-wrap">
       <button class="icon-btn" id="menuBtn" aria-label="Menu" title="Menu" aria-haspopup="true" aria-expanded="false"><span class="menu-dots" aria-hidden="true">⋮</span></button>
       <div class="top-menu" id="topMenu" role="menu">
@@ -530,6 +527,7 @@
         <button class="top-menu-item" id="menuBalanceItem" role="menuitem">View Balance</button>
         <button class="top-menu-item" id="menuHelpItem" role="menuitem">Help and Feedback</button>
         <button class="top-menu-item" id="menuSettingsItem" role="menuitem">Settings</button>
+        <button class="top-menu-item" id="menuBackupItem" role="menuitem">Backup</button>
       </div>
     </div>
   </div>
@@ -2404,6 +2402,7 @@
   document.getElementById("menuBalanceItem").addEventListener("click", function(){ closeTopMenu(); openBalanceSheet(); });
   document.getElementById("menuHelpItem").addEventListener("click", function(){ closeTopMenu(); openHelp("menu"); });
   document.getElementById("menuSettingsItem").addEventListener("click", function(){ closeTopMenu(); openSettings(); });
+  document.getElementById("menuBackupItem").addEventListener("click", function(){ closeTopMenu(); openBackupExport(); });
 
   /* ---------- View Balance sheet ---------- */
   var balanceOverlay = document.getElementById("balanceOverlay");
@@ -2505,7 +2504,6 @@
   }
   function openBackup(){ pendingRestore = null; showBackupMain(); backupOverlay.classList.add("open"); }
   function closeBackup(){ backupOverlay.classList.remove("open"); }
-  document.getElementById("backupBtn").addEventListener("click", openBackup);
   document.getElementById("closeBackupBtn").addEventListener("click", closeBackup);
   backupOverlay.addEventListener("click", function(ev){ if(ev.target===backupOverlay) closeBackup(); });
   function doBackup(){
@@ -2671,6 +2669,12 @@
     if(state.tab !== "settings" && state.tab !== "help") state.prevTab = state.tab;
     state.tab = "settings";
     state.settingsScreen = "main";
+    render(); window.scrollTo(0,0);
+  }
+  function openBackupExport(){
+    if(state.tab !== "settings" && state.tab !== "help") state.prevTab = state.tab;
+    state.tab = "settings";
+    state.settingsScreen = "backup";
     render(); window.scrollTo(0,0);
   }
   function openHelp(from){
@@ -2921,7 +2925,7 @@
     html += '<h3 class="help-h">Charts and PDF report</h3>' +
       '<p class="help-p">Tap the pie-chart icon in the top bar to see Charts. On the Monthly, Yearly and Charts views, the PDF button opens the Report, which you can download as a PDF for any period.</p>';
     html += '<h3 class="help-h">Backup and restore</h3>' +
-      '<p class="help-p">Your data is saved in this browser on this device. Tap the cloud icon in the top bar (or Settings → Backup and export) to download a backup file. Keep it safe — Restore brings all your data back from that file on any device. Export as Excel downloads all entries as a CSV file.</p>';
+      '<p class="help-p">Your data is saved in this browser on this device. Open Backup from the ⋮ menu (or Settings → Backup and export) to download a backup file. Keep it safe — Restore brings all your data back from that file on any device. Export as Excel downloads all entries as a CSV file.</p>';
     html += '<h3 class="help-h">App lock</h3>' +
       '<p class="help-p">In Settings, turn on App lock and set a 4-digit PIN. The app will ask for the PIN every time it opens. If you forget the PIN, tap "Forgot PIN" on the lock screen to remove the lock — your data stays.</p>';
     html += '<h3 class="help-h">Feedback</h3>' +
