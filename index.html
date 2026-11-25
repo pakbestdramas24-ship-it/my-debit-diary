@@ -312,6 +312,15 @@
   .tag-input-row input{flex:1;background:transparent;border:0;border-bottom:1.5px solid #93a698;padding:9px 2px;font-size:17px;color:var(--text);outline:none}
   .tag-add-btn{flex:0 0 auto;background:var(--teal);color:#eafff6;border:0;border-radius:999px;padding:10px 18px;font-size:15.5px;font-weight:600;min-height:44px}
 
+  /* Notes */
+  .field textarea#noteText{min-height:100px}
+  .note-item{display:flex;gap:8px;align-items:flex-start;border-bottom:1px solid #4a574e;padding:6px 0}
+  .note-main{flex:1;min-width:0;background:none;border:0;color:var(--text);text-align:left;padding:8px 4px;min-height:44px}
+  .note-main:active{background:#2c352f}
+  .note-text{display:block;font-size:16.5px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+  .note-date{display:block;font-size:12.5px;color:var(--muted);margin-top:4px}
+  .note-del{flex:0 0 auto;width:38px;height:38px;min-height:38px;border-radius:50%;border:1.5px solid #5b3a34;background:transparent;color:var(--danger);font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0;margin-top:5px}
+
   .toast{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:96px;z-index:60;background:#e8f5ec;color:#12241a;padding:11px 18px;border-radius:999px;font-size:15px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;box-shadow:0 6px 18px rgba(0,0,0,.4);max-width:92vw;text-align:center}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
@@ -347,7 +356,7 @@
 <body>
 <div class="app">
   <div class="topbar" id="topbar">
-    <button class="icon-btn" id="editProfileBtn" aria-label="Edit name and opening balance" title="Name &amp; opening balance">
+    <button class="icon-btn" id="notesBtn" aria-label="Notes" title="Notes">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
     </button>
     <nav class="tabs" aria-label="Views">
@@ -358,6 +367,9 @@
     </nav>
     <button class="icon-btn" id="chartsBtn" aria-label="Charts" title="Charts">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2.03 1.98C17.48 4.99 21 8.95 21 13.99h-8.97V3.98zM13 15h8c-.62 3.24-3.12 5.83-6.36 6.74L13 15z"/></svg>
+    </button>
+    <button class="icon-btn" id="settingsBtn" aria-label="Settings" title="Settings">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
     </button>
   </div>
   <main id="mainView" aria-live="polite"></main>
@@ -500,23 +512,39 @@
   </div>
 </div>
 
-<!-- Name / opening balance sheet (pencil) -->
-<div class="overlay" id="profileOverlay" role="dialog" aria-modal="true" aria-label="Name and opening balance">
+<!-- Notes sheet (pencil) -->
+<div class="overlay" id="notesOverlay" role="dialog" aria-modal="true" aria-label="Notes">
   <div class="sheet">
-    <button class="sheet-close" id="closeProfileBtn" aria-label="Close"><span>⌄</span></button>
-    <h2 class="sheet-title">Name &amp; Opening Balance</h2>
+    <button class="sheet-close" id="closeNotesBtn" aria-label="Close"><span>⌄</span></button>
+    <h2 class="sheet-title">Notes</h2>
     <div class="field">
-      <label for="profileNameInput">Your Name (shown on the report)</label>
-      <input type="text" id="profileNameInput" placeholder="Enter your name" autocomplete="off" />
+      <textarea id="noteText" placeholder="Type your note here…" rows="4" aria-label="Note text"></textarea>
+    </div>
+    <div class="sheet-actions" style="margin-top:0">
+      <button class="btn btn-ghost" id="cancelNoteEditBtn" style="display:none">Cancel</button>
+      <button class="btn btn-primary" id="saveNoteBtn">Add Note</button>
+    </div>
+    <div id="notesList" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- Settings sheet (gear) -->
+<div class="overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Settings">
+  <div class="sheet">
+    <button class="sheet-close" id="closeSettingsBtn" aria-label="Close"><span>⌄</span></button>
+    <h2 class="sheet-title">Settings</h2>
+    <div class="field">
+      <label for="settingsNameInput">Your Name (shown on the report)</label>
+      <input type="text" id="settingsNameInput" placeholder="Enter your name" autocomplete="off" />
     </div>
     <div class="field">
-      <label for="openingInput">Opening Balance — C/F (Rs)</label>
-      <input type="number" id="openingInput" inputmode="decimal" step="0.01" placeholder="0.00" />
+      <label for="settingsOpeningInput">Opening Balance — C/F (Rs)</label>
+      <input type="number" id="settingsOpeningInput" inputmode="decimal" step="0.01" placeholder="0.00" />
     </div>
     <p style="color:#c9d4cb;font-size:14.5px;line-height:1.5;margin:0 0 14px">The opening balance is the amount you had before starting this diary. Each day's C/F is calculated from it.</p>
     <div class="sheet-actions">
-      <button class="btn btn-ghost" id="cancelProfileBtn">Cancel</button>
-      <button class="btn btn-primary" id="saveProfileBtn">Save</button>
+      <button class="btn btn-ghost" id="cancelSettingsBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveSettingsBtn">Save</button>
     </div>
   </div>
 </div>
@@ -534,6 +562,7 @@
   var LS_NAME = "mdd-web-profilename-v1";
   var LS_OPENING1 = "mdd-web-opening-single-v1";
   var LS_CUSTOMCATS = "mdd-web-customcats-v1";
+  var LS_NOTES = "mdd-web-notes-v1";
   var ADD_NEW_LEDGER = "__add_new_ledger__";
   var ACCOUNTS = ["Cash","Bank","JazzCash","Easypaisa","Other"];
   var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -1696,29 +1725,109 @@
     toast("Category added ✓");
   });
 
-  /* ---------- pencil: name + opening balance ---------- */
-  var profileOverlay = document.getElementById("profileOverlay");
-  var profileNameInput = document.getElementById("profileNameInput");
-  var openingInput = document.getElementById("openingInput");
-  document.getElementById("editProfileBtn").addEventListener("click", function(){
-    profileNameInput.value = profileName;
-    openingInput.value = opening ? opening : "";
-    profileOverlay.classList.add("open");
-    setTimeout(function(){ profileNameInput.focus(); }, 60);
+  /* ---------- pencil: simple notes ---------- */
+  var notesOverlay = document.getElementById("notesOverlay");
+  var noteText = document.getElementById("noteText");
+  var saveNoteBtn = document.getElementById("saveNoteBtn");
+  var cancelNoteEditBtn = document.getElementById("cancelNoteEditBtn");
+  var notesListEl = document.getElementById("notesList");
+  var editingNoteId = null;
+  function loadNotes(){
+    var a = parseJSON(lsGet(LS_NOTES), []);
+    if(!Array.isArray(a)) return [];
+    return a.filter(function(n){ return n && typeof n.text === "string" && n.id; });
+  }
+  var notes = loadNotes();
+  function persistNotes(){ lsSet(LS_NOTES, JSON.stringify(notes)); }
+  function fmtNoteDate(ts){
+    var d = new Date(ts || Date.now());
+    var hh = d.getHours(), ap = hh >= 12 ? "PM" : "AM";
+    hh = hh % 12; if(hh === 0) hh = 12;
+    return d.getDate() + " " + MONTHS_S[d.getMonth()] + " " + d.getFullYear() + ", " + hh + ":" + pad(d.getMinutes()) + " " + ap;
+  }
+  function resetNoteForm(){
+    editingNoteId = null; noteText.value = "";
+    saveNoteBtn.textContent = "Add Note";
+    cancelNoteEditBtn.style.display = "none";
+  }
+  function renderNotes(){
+    if(!notes.length){
+      notesListEl.innerHTML = '<p class="empty-note" style="padding:8px 2px">No notes yet. Type a note above and tap Add Note.</p>';
+      return;
+    }
+    var sorted = notes.slice().sort(function(a,b){ return (b.createdAt||0) - (a.createdAt||0); });
+    notesListEl.innerHTML = sorted.map(function(n){
+      return '<div class="note-item"><button type="button" class="note-main" data-note-edit="'+n.id+'">' +
+        '<span class="note-text">'+esc(n.text)+'</span>' +
+        '<span class="note-date">'+esc(fmtNoteDate(n.createdAt))+'</span></button>' +
+        '<button type="button" class="note-del" data-note-del="'+n.id+'" aria-label="Delete note" title="Delete note">✕</button></div>';
+    }).join("");
+    notesListEl.querySelectorAll("[data-note-edit]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var id = b.getAttribute("data-note-edit");
+        for(var i=0;i<notes.length;i++) if(notes[i].id===id){
+          editingNoteId = id; noteText.value = notes[i].text;
+          saveNoteBtn.textContent = "Save Note";
+          cancelNoteEditBtn.style.display = "";
+          noteText.focus();
+        }
+      });
+    });
+    notesListEl.querySelectorAll("[data-note-del]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var id = b.getAttribute("data-note-del");
+        notes = notes.filter(function(n){ return n.id !== id; });
+        if(editingNoteId === id) resetNoteForm();
+        persistNotes(); renderNotes(); toast("Note deleted");
+      });
+    });
+  }
+  function openNotes(){
+    resetNoteForm(); renderNotes();
+    notesOverlay.classList.add("open");
+    setTimeout(function(){ noteText.focus(); }, 60);
+  }
+  function closeNotes(){ notesOverlay.classList.remove("open"); }
+  document.getElementById("notesBtn").addEventListener("click", openNotes);
+  document.getElementById("closeNotesBtn").addEventListener("click", closeNotes);
+  notesOverlay.addEventListener("click", function(ev){ if(ev.target===notesOverlay) closeNotes(); });
+  cancelNoteEditBtn.addEventListener("click", resetNoteForm);
+  saveNoteBtn.addEventListener("click", function(){
+    var t = noteText.value.trim();
+    if(!t){ noteText.focus(); return; }
+    if(editingNoteId){
+      for(var i=0;i<notes.length;i++) if(notes[i].id===editingNoteId) notes[i].text = t;
+      toast("Note updated ✓");
+    } else {
+      notes.push({id: uid(), text: t, createdAt: Date.now()});
+      toast("Note added ✓");
+    }
+    persistNotes(); resetNoteForm(); renderNotes();
   });
-  function closeProfile(){ profileOverlay.classList.remove("open"); }
-  document.getElementById("closeProfileBtn").addEventListener("click", closeProfile);
-  document.getElementById("cancelProfileBtn").addEventListener("click", closeProfile);
-  profileOverlay.addEventListener("click", function(ev){ if(ev.target===profileOverlay) closeProfile(); });
-  document.getElementById("saveProfileBtn").addEventListener("click", function(){
-    profileName = profileNameInput.value.trim();
-    var v = parseFloat(openingInput.value);
+
+  /* ---------- gear: settings (name + opening balance) ---------- */
+  var settingsOverlay = document.getElementById("settingsOverlay");
+  var settingsNameInput = document.getElementById("settingsNameInput");
+  var settingsOpeningInput = document.getElementById("settingsOpeningInput");
+  document.getElementById("settingsBtn").addEventListener("click", function(){
+    settingsNameInput.value = profileName;
+    settingsOpeningInput.value = opening ? opening : "";
+    settingsOverlay.classList.add("open");
+    setTimeout(function(){ settingsNameInput.focus(); }, 60);
+  });
+  function closeSettings(){ settingsOverlay.classList.remove("open"); }
+  document.getElementById("closeSettingsBtn").addEventListener("click", closeSettings);
+  document.getElementById("cancelSettingsBtn").addEventListener("click", closeSettings);
+  settingsOverlay.addEventListener("click", function(ev){ if(ev.target===settingsOverlay) closeSettings(); });
+  document.getElementById("saveSettingsBtn").addEventListener("click", function(){
+    profileName = settingsNameInput.value.trim();
+    var v = parseFloat(settingsOpeningInput.value);
     opening = isNaN(v) ? 0 : Math.round(v*100)/100;
-    persist(); closeProfile(); render(); toast("Saved ✓");
+    persist(); closeSettings(); render(); toast("Saved ✓");
   });
 
   document.addEventListener("keydown", function(ev){
-    if(ev.key==="Escape"){ closeCalendar(); closeRangeCalendar(); closeSheet(); closeProfile(); accountOverlay.classList.remove("open"); categoryOverlay.classList.remove("open"); }
+    if(ev.key==="Escape"){ closeCalendar(); closeRangeCalendar(); closeSheet(); closeNotes(); closeSettings(); accountOverlay.classList.remove("open"); categoryOverlay.classList.remove("open"); }
   });
 
   /* ---------- init ---------- */
