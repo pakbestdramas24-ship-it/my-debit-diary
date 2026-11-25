@@ -85,10 +85,31 @@
   .acct-select{background:#141815;color:var(--text);border:1.5px solid #39423c;border-radius:10px;padding:8px 10px;font-size:17px;font-weight:600;min-height:52px;max-width:46%}
   .acct-select option{background:#222b26;color:var(--text)}
 
+  /* Monthly — compact top row */
+  .period-row.monthly-compact{gap:8px;margin-bottom:8px}
+  .period-row.monthly-compact .period-nav{min-height:40px;padding:2px 4px;border-radius:8px}
+  .period-row.monthly-compact .period-nav .nav-arrow{width:32px;height:34px;min-height:34px;font-size:22px}
+  .period-row.monthly-compact .period-nav .period-label{font-size:16.5px}
+  .period-row.monthly-compact .acct-select{min-height:40px;font-size:15px;padding:4px 8px;border-radius:8px}
+  .month-range-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+  .range-btn{flex:1;display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(255,255,255,.04);border:1.5px solid #39423c;border-radius:8px;padding:6px 10px;min-height:38px;color:var(--text);text-align:left;font-size:14.5px}
+  .range-btn:active{background:#1a211c}
+  .range-btn .rb-label{color:var(--muted);font-weight:600;white-space:nowrap}
+  .range-btn .rb-value{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .range-btn svg{width:18px;height:18px;fill:var(--mint);flex:0 0 auto}
+  .range-btn.active{border-color:var(--mint);background:#22352b}
+  .range-clear-btn{flex:0 0 auto;width:38px;height:38px;min-height:38px;border-radius:8px;border:1.5px solid #5b3a34;background:transparent;color:var(--danger);font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0}
+  .range-fields{display:flex;gap:10px;margin-bottom:10px}
+  .range-fields .rf-col{flex:1;min-width:0}
+  .range-fields .rf-col label{display:block;font-size:12.5px;color:#c9d4cb;font-weight:600;margin-bottom:5px}
+  .range-fields .rf-box{width:100%;display:flex;align-items:center;justify-content:space-between;gap:6px;background:rgba(255,255,255,.05);border:1.5px solid #5b6f61;border-radius:8px;padding:6px 8px;min-height:40px;color:var(--text);font-size:14.5px;text-align:left}
+  .range-fields .rf-box.sel{border-color:var(--mint);background:#22352b}
+  .range-fields .rf-box svg{width:17px;height:17px;fill:var(--mint);flex:0 0 auto}
+
   /* Monthly */
-  .summary-card{background:var(--card);border-radius:8px;padding:16px 16px 14px;display:grid;grid-template-columns:1fr 1fr;gap:14px 10px;margin-bottom:16px}
-  .summary-card .sc-label{font-size:16.5px;color:#d7e0d8}
-  .summary-card .sc-amt{font-size:19px;font-weight:700;margin-top:4px}
+  .summary-card{background:var(--card);border-radius:8px;padding:10px 12px 9px;display:grid;grid-template-columns:1fr 1fr;gap:7px 10px;margin-bottom:12px}
+  .summary-card .sc-label{font-size:13.5px;line-height:1.25;color:#d7e0d8}
+  .summary-card .sc-amt{font-size:16.5px;font-weight:700;margin-top:2px;line-height:1.2}
   .summary-card .right{text-align:right}
   .day-card{border:1.5px solid #39423c;border-radius:12px;padding:16px 16px 14px;margin-bottom:14px}
   .day-card-date{text-align:center;font-size:21px;font-weight:600;margin-bottom:14px}
@@ -426,6 +447,34 @@
   </div>
 </div>
 
+<!-- Date range popup (Monthly) -->
+<div class="cal-overlay" id="rangeCalOverlay" role="dialog" aria-modal="true" aria-label="Choose date range">
+  <div class="cal-card">
+    <div class="range-fields">
+      <div class="rf-col">
+        <label>From</label>
+        <button type="button" class="rf-box sel" id="rangeFromBox"><span id="rangeFromText"></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/></svg></button>
+      </div>
+      <div class="rf-col">
+        <label>To</label>
+        <button type="button" class="rf-box" id="rangeToBox"><span id="rangeToText"></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/></svg></button>
+      </div>
+    </div>
+    <div class="cal-head">
+      <button type="button" class="cal-nav" id="rangeCalPrev" aria-label="Previous month">‹</button>
+      <span class="cal-title" id="rangeCalTitle"></span>
+      <button type="button" class="cal-nav" id="rangeCalNext" aria-label="Next month">›</button>
+    </div>
+    <div class="cal-week"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+    <div class="cal-grid" id="rangeCalGrid"></div>
+    <div class="cal-foot">
+      <button type="button" class="cal-today-btn" id="rangeClearBtn">Clear</button>
+      <button type="button" class="cal-today-btn" id="rangeCancelBtn">Cancel</button>
+      <button type="button" class="cal-close-btn" id="rangeApplyBtn">Apply</button>
+    </div>
+  </div>
+</div>
+
 <!-- Account picker -->
 <div class="overlay" id="accountOverlay" role="dialog" aria-modal="true" aria-label="Choose account">
   <div class="sheet">
@@ -616,6 +665,9 @@
     monthCursor: todayKey().slice(0,7),
     yearCursor: new Date().getFullYear(),
     monthAccount: "All",
+    monthRangeFrom: "",
+    monthRangeTo: "",
+    monthRangeActive: false,
     yearAccount: "All",
     ledgerAccount: "All",
     ledgerNameFilter: "",
@@ -740,18 +792,26 @@
     var parts = state.monthCursor.split("-");
     var y = +parts[0], m = +parts[1]-1;
     var acct = state.monthAccount;
-    var firstKey = state.monthCursor + "-01";
+    var rangeOn = state.monthRangeActive && state.monthRangeFrom && state.monthRangeTo;
+    var firstKey = rangeOn ? state.monthRangeFrom : (state.monthCursor + "-01");
     var cf = balanceBefore(firstKey, acct);
     var monthEntries = entries.filter(function(e){
-      return e.date.slice(0,7)===state.monthCursor && (acct==="All" || e.account===acct);
+      if(acct!=="All" && e.account!==acct) return false;
+      if(rangeOn) return e.date >= state.monthRangeFrom && e.date <= state.monthRangeTo;
+      return e.date.slice(0,7)===state.monthCursor;
     });
     var incTotal = sumType(monthEntries,"income"), expTotal = sumType(monthEntries,"expense");
     var balance = cf + incTotal - expTotal;
-    var html = '<div class="period-row">' +
+    var rangeLabel = rangeOn ? (keyToDisplay(state.monthRangeFrom) + " – " + keyToDisplay(state.monthRangeTo)) : "Full month";
+    var calSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/></svg>';
+    var html = '<div class="period-row monthly-compact">' +
       '<div class="period-nav"><button class="nav-arrow" data-mnav="-1" aria-label="Previous month">‹</button>' +
       '<span class="period-label">'+MONTHS[m]+' '+y+'</span>' +
       '<button class="nav-arrow" data-mnav="1" aria-label="Next month">›</button></div>' +
       '<select class="acct-select" id="monthAcctSel" aria-label="Account filter">'+accountOptionsHTML(acct)+'</select></div>';
+    html += '<div class="month-range-row"><button type="button" class="range-btn'+(rangeOn?" active":"")+'" id="monthRangeBtn" aria-label="Pick a date range">' +
+      '<span class="rb-label">Date range</span><span class="rb-value">'+esc(rangeLabel)+'</span>' + calSvg + '</button>' +
+      (rangeOn ? '<button type="button" class="range-clear-btn" id="monthRangeClear" aria-label="Clear date range" title="Clear date range">✕</button>' : '') + '</div>';
     html += '<div class="summary-card">' +
       '<div><div class="sc-label">Total Income (Credit)</div><div class="sc-amt">'+esc(fmt(incTotal))+'</div></div>' +
       '<div class="right"><div class="sc-label">Total Expense (Debit)</div><div class="sc-amt">'+esc(fmt(expTotal))+'</div></div>' +
@@ -761,7 +821,7 @@
     var byDay = {};
     monthEntries.forEach(function(e){ (byDay[e.date] = byDay[e.date] || []).push(e); });
     var days = Object.keys(byDay).sort().reverse();
-    if(!days.length) html += '<p class="empty-note">No entries this month.</p>';
+    if(!days.length) html += '<p class="empty-note">'+(rangeOn ? "No entries in this date range." : "No entries this month.")+'</p>';
     days.forEach(function(key){
       var list = byDay[key];
       var dd = parseKey(key);
@@ -772,7 +832,7 @@
       // balanceBefore(key) is balance at start of that day; end of day:
       endBal = balanceBefore(key, acct) + dIncT - dExpT;
       // note: balanceBefore already excludes that day's entries, so add them:
-      html += '<div class="day-card"><div class="day-card-date">'+DAYS_S[dd.getDay()]+', '+dd.getDate()+' '+MONTHS_S[m]+'</div>';
+      html += '<div class="day-card"><div class="day-card-date">'+DAYS_S[dd.getDay()]+', '+dd.getDate()+' '+MONTHS_S[dd.getMonth()]+' '+dd.getFullYear()+'</div>';
       html += '<div class="day-cols"><div class="day-col-head">Income (Credit)</div><div class="day-col-head right">Expense (Debit)</div>';
       html += '<div>' + dInc.map(function(e){
         return '<button class="day-entry" data-edit="'+e.id+'"><span class="nm">'+esc(e.text)+'</span><span class="am">'+esc(fmtPlain(+e.amount))+'</span></button>';
@@ -786,10 +846,17 @@
     main.querySelectorAll("[data-mnav]").forEach(function(b){
       b.addEventListener("click", function(){
         var nd = new Date(y, m + (+b.getAttribute("data-mnav")), 1);
-        state.monthCursor = nd.getFullYear()+"-"+pad(nd.getMonth()+1); render();
+        state.monthCursor = nd.getFullYear()+"-"+pad(nd.getMonth()+1);
+        state.monthRangeActive = false; state.monthRangeFrom = ""; state.monthRangeTo = "";
+        render();
       });
     });
     document.getElementById("monthAcctSel").addEventListener("change", function(ev){ state.monthAccount = ev.target.value; render(); });
+    document.getElementById("monthRangeBtn").addEventListener("click", function(){ openRangeCalendar(); });
+    var clearBtn = document.getElementById("monthRangeClear");
+    if(clearBtn) clearBtn.addEventListener("click", function(){
+      state.monthRangeActive = false; state.monthRangeFrom = ""; state.monthRangeTo = ""; render();
+    });
     bindEditButtons();
   }
 
@@ -1403,6 +1470,110 @@
   });
   calOverlay.addEventListener("click", function(ev){ if(ev.target === calOverlay) closeCalendar(); });
 
+  /* ---------- Monthly date-range calendar ---------- */
+  var rangeOverlay = document.getElementById("rangeCalOverlay");
+  var rangeCalTitle = document.getElementById("rangeCalTitle");
+  var rangeCalGrid = document.getElementById("rangeCalGrid");
+  var rangeFromText = document.getElementById("rangeFromText");
+  var rangeToText = document.getElementById("rangeToText");
+  var rangeFromBox = document.getElementById("rangeFromBox");
+  var rangeToBox = document.getElementById("rangeToBox");
+  var rangeFromKey = "", rangeToKey = "", rangeTarget = "from", rangeCalView = null;
+  function syncRangeBoxes(){
+    rangeFromText.textContent = keyToDisplay(rangeFromKey);
+    rangeToText.textContent = keyToDisplay(rangeToKey);
+    rangeFromBox.classList.toggle("sel", rangeTarget === "from");
+    rangeToBox.classList.toggle("sel", rangeTarget === "to");
+  }
+  function renderRangeCalendar(){
+    if(!rangeCalView){
+      var base = parseKey(rangeTarget === "to" && rangeToKey ? rangeToKey : (rangeFromKey || todayKey()));
+      rangeCalView = {y: base.getFullYear(), m: base.getMonth()};
+    }
+    rangeCalTitle.textContent = MONTHS[rangeCalView.m] + " " + rangeCalView.y;
+    var startOffset = (new Date(rangeCalView.y, rangeCalView.m, 1).getDay() + 6) % 7;
+    var daysInMonth = new Date(rangeCalView.y, rangeCalView.m + 1, 0).getDate();
+    var daysInPrev = new Date(rangeCalView.y, rangeCalView.m, 0).getDate();
+    var totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+    var tk = todayKey();
+    var html = "";
+    for(var i = 0; i < totalCells; i++){
+      var dayNum, cellKey, other = false;
+      if(i < startOffset){
+        dayNum = daysInPrev - startOffset + 1 + i;
+        cellKey = toKey(new Date(rangeCalView.y, rangeCalView.m - 1, dayNum)); other = true;
+      } else if(i >= startOffset + daysInMonth){
+        dayNum = i - startOffset - daysInMonth + 1;
+        cellKey = toKey(new Date(rangeCalView.y, rangeCalView.m + 1, dayNum)); other = true;
+      } else {
+        dayNum = i - startOffset + 1;
+        cellKey = rangeCalView.y + "-" + pad(rangeCalView.m + 1) + "-" + pad(dayNum);
+      }
+      var isSel = cellKey === rangeFromKey || cellKey === rangeToKey;
+      var inRange = rangeFromKey && rangeToKey && cellKey > rangeFromKey && cellKey < rangeToKey;
+      var cls = "cal-day" + (other ? " other" : "") + (cellKey === tk ? " today" : "") + (isSel ? " sel" : "");
+      var style = inRange && !isSel ? ' style="background:rgba(11,110,87,.35);border-radius:8px"' : '';
+      html += '<button type="button" class="' + cls + '"' + style + ' data-range-day="' + cellKey + '">' + dayNum + '</button>';
+    }
+    rangeCalGrid.innerHTML = html;
+    rangeCalGrid.querySelectorAll("[data-range-day]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var k = b.getAttribute("data-range-day");
+        if(rangeTarget === "from"){
+          rangeFromKey = k;
+          if(rangeToKey && rangeToKey < k) rangeToKey = k;
+          rangeTarget = "to";
+          var nd = parseKey(k); rangeCalView = {y: nd.getFullYear(), m: nd.getMonth()};
+        } else {
+          rangeToKey = k;
+          if(rangeFromKey && k < rangeFromKey){ rangeToKey = rangeFromKey; rangeFromKey = k; }
+        }
+        syncRangeBoxes(); renderRangeCalendar();
+      });
+    });
+  }
+  function openRangeCalendar(){
+    var mp = state.monthCursor.split("-");
+    var monthStart = state.monthCursor + "-01";
+    var monthEnd = toKey(new Date(+mp[0], +mp[1], 0));
+    rangeFromKey = state.monthRangeFrom || monthStart;
+    rangeToKey = state.monthRangeTo || monthEnd;
+    rangeTarget = "from";
+    var sd = parseKey(rangeFromKey);
+    rangeCalView = {y: sd.getFullYear(), m: sd.getMonth()};
+    syncRangeBoxes(); renderRangeCalendar();
+    rangeOverlay.classList.add("open");
+  }
+  function closeRangeCalendar(){ rangeOverlay.classList.remove("open"); }
+  rangeFromBox.addEventListener("click", function(){
+    rangeTarget = "from";
+    if(rangeFromKey){ var d = parseKey(rangeFromKey); rangeCalView = {y: d.getFullYear(), m: d.getMonth()}; }
+    syncRangeBoxes(); renderRangeCalendar();
+  });
+  rangeToBox.addEventListener("click", function(){
+    rangeTarget = "to";
+    if(rangeToKey){ var d = parseKey(rangeToKey); rangeCalView = {y: d.getFullYear(), m: d.getMonth()}; }
+    syncRangeBoxes(); renderRangeCalendar();
+  });
+  document.getElementById("rangeCalPrev").addEventListener("click", function(){
+    rangeCalView.m--; if(rangeCalView.m < 0){ rangeCalView.m = 11; rangeCalView.y--; } renderRangeCalendar();
+  });
+  document.getElementById("rangeCalNext").addEventListener("click", function(){
+    rangeCalView.m++; if(rangeCalView.m > 11){ rangeCalView.m = 0; rangeCalView.y++; } renderRangeCalendar();
+  });
+  document.getElementById("rangeCancelBtn").addEventListener("click", closeRangeCalendar);
+  document.getElementById("rangeClearBtn").addEventListener("click", function(){
+    state.monthRangeActive = false; state.monthRangeFrom = ""; state.monthRangeTo = "";
+    closeRangeCalendar(); render();
+  });
+  document.getElementById("rangeApplyBtn").addEventListener("click", function(){
+    if(!rangeFromKey || !rangeToKey){ closeRangeCalendar(); return; }
+    if(rangeToKey < rangeFromKey){ var tmp = rangeFromKey; rangeFromKey = rangeToKey; rangeToKey = tmp; }
+    state.monthRangeFrom = rangeFromKey; state.monthRangeTo = rangeToKey; state.monthRangeActive = true;
+    closeRangeCalendar(); render();
+  });
+  rangeOverlay.addEventListener("click", function(ev){ if(ev.target === rangeOverlay) closeRangeCalendar(); });
+
   function openSheet(id){
     hideError();
     editingId = id || null;
@@ -1547,7 +1718,7 @@
   });
 
   document.addEventListener("keydown", function(ev){
-    if(ev.key==="Escape"){ closeCalendar(); closeSheet(); closeProfile(); accountOverlay.classList.remove("open"); categoryOverlay.classList.remove("open"); }
+    if(ev.key==="Escape"){ closeCalendar(); closeRangeCalendar(); closeSheet(); closeProfile(); accountOverlay.classList.remove("open"); categoryOverlay.classList.remove("open"); }
   });
 
   /* ---------- init ---------- */
