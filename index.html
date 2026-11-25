@@ -313,13 +313,32 @@
   .tag-add-btn{flex:0 0 auto;background:var(--teal);color:#eafff6;border:0;border-radius:999px;padding:10px 18px;font-size:15.5px;font-weight:600;min-height:44px}
 
   /* Notes */
-  .field textarea#noteText{min-height:100px}
   .note-item{display:flex;gap:8px;align-items:flex-start;border-bottom:1px solid #4a574e;padding:6px 0}
   .note-main{flex:1;min-width:0;background:none;border:0;color:var(--text);text-align:left;padding:8px 4px;min-height:44px}
   .note-main:active{background:#2c352f}
   .note-text{display:block;font-size:16.5px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
   .note-date{display:block;font-size:12.5px;color:var(--muted);margin-top:4px}
   .note-del{flex:0 0 auto;width:38px;height:38px;min-height:38px;border-radius:50%;border:1.5px solid #5b3a34;background:transparent;color:var(--danger);font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0;margin-top:5px}
+
+  /* Notes tab */
+  .tab-icon{flex:0 0 52px;display:flex;align-items:center;justify-content:center}
+  .tab-icon svg{width:23px;height:23px;fill:#dfe7e0}
+  .tab-icon.active svg{fill:var(--text)}
+  .notes-month-row{display:flex;align-items:center;justify-content:space-between;padding:2px 6px 12px}
+  .notes-month-row .nm-label{font-size:21px;font-weight:600}
+  .notes-month-row .nav-arrow{width:44px;height:48px}
+  .notes-empty{text-align:center;font-size:19px;color:var(--text);margin-top:30vh}
+  .note-card{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:13px 6px;color:var(--text);min-height:52px}
+  .note-card:active{background:#141a15}
+  .note-card .nc-date{font-size:13px;color:var(--mint);font-weight:600}
+  .note-card .nc-text{display:block;font-size:16.5px;line-height:1.45;margin-top:3px;white-space:pre-wrap;overflow-wrap:anywhere}
+  .note-date-card{background:var(--card);border-radius:8px;padding:12px 6px;display:flex;align-items:center;gap:10px}
+  .note-date-card .date-texts{flex:1;min-width:0}
+  .ndc-box{border:2px solid #dfe7e0;border-radius:8px;font-size:29px;line-height:1;padding:9px 8px;min-width:56px;text-align:center;flex:0 0 auto}
+  .note-editor-tools{display:flex;justify-content:flex-end;margin-top:6px}
+  .note-trash-btn{background:none;border:0;color:var(--danger);width:44px;height:44px;min-height:44px;display:flex;align-items:center;justify-content:center;padding:0}
+  .note-trash-btn svg{width:22px;height:22px;fill:var(--danger)}
+  .note-editor-area{width:100%;min-height:320px;background:transparent;border:0;color:var(--text);font-size:18px;line-height:1.55;padding:14px 4px;outline:none;resize:vertical;font:inherit}
 
   .toast{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:96px;z-index:60;background:#e8f5ec;color:#12241a;padding:11px 18px;border-radius:999px;font-size:15px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;box-shadow:0 6px 18px rgba(0,0,0,.4);max-width:92vw;text-align:center}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -356,10 +375,8 @@
 <body>
 <div class="app">
   <div class="topbar" id="topbar">
-    <button class="icon-btn" id="notesBtn" aria-label="Notes" title="Notes">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-    </button>
     <nav class="tabs" aria-label="Views">
+      <button class="tab tab-icon" data-tab="notes" aria-label="Notes" title="Notes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
       <button class="tab active" data-tab="daily">Daily</button>
       <button class="tab" data-tab="monthly">Monthly</button>
       <button class="tab" data-tab="yearly">Yearly</button>
@@ -509,22 +526,6 @@
         <button type="button" class="tag-add-btn" id="addCustomCatBtn">Add</button>
       </div>
     </div>
-  </div>
-</div>
-
-<!-- Notes sheet (pencil) -->
-<div class="overlay" id="notesOverlay" role="dialog" aria-modal="true" aria-label="Notes">
-  <div class="sheet">
-    <button class="sheet-close" id="closeNotesBtn" aria-label="Close"><span>⌄</span></button>
-    <h2 class="sheet-title">Notes</h2>
-    <div class="field">
-      <textarea id="noteText" placeholder="Type your note here…" rows="4" aria-label="Note text"></textarea>
-    </div>
-    <div class="sheet-actions" style="margin-top:0">
-      <button class="btn btn-ghost" id="cancelNoteEditBtn" style="display:none">Cancel</button>
-      <button class="btn btn-primary" id="saveNoteBtn">Add Note</button>
-    </div>
-    <div id="notesList" style="margin-top:16px"></div>
   </div>
 </div>
 
@@ -700,6 +701,11 @@
     yearAccount: "All",
     ledgerAccount: "All",
     ledgerNameFilter: "",
+    notesMonth: todayKey().slice(0,7),
+    noteMode: "list",
+    noteEditId: null,
+    noteEditDate: todayKey(),
+    noteDraft: "",
     chartType: "expense",
     chartPeriod: "month",
     chartMonth: todayKey().slice(0,7),
@@ -1334,8 +1340,12 @@
   /* ---------- render / tabs / FAB ---------- */
   function updateFab(){
     if(state.tab === "report"){ fab.classList.add("hidden"); return; }
+    if(state.tab === "notes" && state.noteMode === "edit"){ fab.classList.add("hidden"); return; }
     fab.classList.remove("hidden");
-    if(state.tab === "monthly" || state.tab === "yearly" || state.tab === "charts"){
+    if(state.tab === "notes"){
+      fab.innerHTML = '<svg viewBox="0 0 24 24" style="width:27px;height:27px;fill:#eafff6" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
+      fab.setAttribute("aria-label", "New note");
+    } else if(state.tab === "monthly" || state.tab === "yearly" || state.tab === "charts"){
       fab.innerHTML = '<span class="pdf-txt">PDF</span>';
       fab.setAttribute("aria-label", "Open PDF report");
     } else {
@@ -1348,7 +1358,8 @@
     document.querySelectorAll(".tab").forEach(function(t){
       t.classList.toggle("active", t.getAttribute("data-tab") === state.tab);
     });
-    if(state.tab === "daily") renderDaily();
+    if(state.tab === "notes"){ if(state.noteMode === "edit") renderNoteEditor(); else renderNotesList(); }
+    else if(state.tab === "daily") renderDaily();
     else if(state.tab === "monthly") renderMonthly();
     else if(state.tab === "yearly") renderYearly();
     else if(state.tab === "ledger") renderLedger();
@@ -1356,12 +1367,13 @@
     else if(state.tab === "report") renderReport();
     updateFab();
   }
-  function setTab(tab){ state.tab = tab; render(); window.scrollTo(0,0); }
+  function setTab(tab){ state.tab = tab; state.noteMode = "list"; state.noteEditId = null; state.noteDraft = ""; render(); window.scrollTo(0,0); }
   document.querySelectorAll(".tab").forEach(function(t){
     t.addEventListener("click", function(){ setTab(t.getAttribute("data-tab")); });
   });
   document.getElementById("chartsBtn").addEventListener("click", function(){ setTab("charts"); });
   fab.addEventListener("click", function(){
+    if(state.tab === "notes"){ openNoteEditor(null); return; }
     if(state.tab === "monthly" || state.tab === "yearly" || state.tab === "charts") setTab("report");
     else openSheet(null);
   });
@@ -1725,85 +1737,122 @@
     toast("Category added ✓");
   });
 
-  /* ---------- pencil: simple notes ---------- */
-  var notesOverlay = document.getElementById("notesOverlay");
-  var noteText = document.getElementById("noteText");
-  var saveNoteBtn = document.getElementById("saveNoteBtn");
-  var cancelNoteEditBtn = document.getElementById("cancelNoteEditBtn");
-  var notesListEl = document.getElementById("notesList");
-  var editingNoteId = null;
+  /* ---------- notes tab ---------- */
   function loadNotes(){
     var a = parseJSON(lsGet(LS_NOTES), []);
     if(!Array.isArray(a)) return [];
-    return a.filter(function(n){ return n && typeof n.text === "string" && n.id; });
+    return a.filter(function(n){ return n && typeof n.text === "string" && n.id; }).map(function(n){
+      if(!n.date) n.date = toKey(new Date(n.createdAt || Date.now()));
+      return n;
+    });
   }
   var notes = loadNotes();
   function persistNotes(){ lsSet(LS_NOTES, JSON.stringify(notes)); }
-  function fmtNoteDate(ts){
-    var d = new Date(ts || Date.now());
-    var hh = d.getHours(), ap = hh >= 12 ? "PM" : "AM";
-    hh = hh % 12; if(hh === 0) hh = 12;
-    return d.getDate() + " " + MONTHS_S[d.getMonth()] + " " + d.getFullYear() + ", " + hh + ":" + pad(d.getMinutes()) + " " + ap;
-  }
-  function resetNoteForm(){
-    editingNoteId = null; noteText.value = "";
-    saveNoteBtn.textContent = "Add Note";
-    cancelNoteEditBtn.style.display = "none";
-  }
-  function renderNotes(){
-    if(!notes.length){
-      notesListEl.innerHTML = '<p class="empty-note" style="padding:8px 2px">No notes yet. Type a note above and tap Add Note.</p>';
-      return;
-    }
-    var sorted = notes.slice().sort(function(a,b){ return (b.createdAt||0) - (a.createdAt||0); });
-    notesListEl.innerHTML = sorted.map(function(n){
-      return '<div class="note-item"><button type="button" class="note-main" data-note-edit="'+n.id+'">' +
-        '<span class="note-text">'+esc(n.text)+'</span>' +
-        '<span class="note-date">'+esc(fmtNoteDate(n.createdAt))+'</span></button>' +
-        '<button type="button" class="note-del" data-note-del="'+n.id+'" aria-label="Delete note" title="Delete note">✕</button></div>';
-    }).join("");
-    notesListEl.querySelectorAll("[data-note-edit]").forEach(function(b){
-      b.addEventListener("click", function(){
-        var id = b.getAttribute("data-note-edit");
-        for(var i=0;i<notes.length;i++) if(notes[i].id===id){
-          editingNoteId = id; noteText.value = notes[i].text;
-          saveNoteBtn.textContent = "Save Note";
-          cancelNoteEditBtn.style.display = "";
-          noteText.focus();
-        }
+
+  function renderNotesList(){
+    var parts = state.notesMonth.split("-");
+    var y = +parts[0], m = +parts[1]-1;
+    var monthNotes = notes.filter(function(n){ return (n.date || "").slice(0,7) === state.notesMonth; })
+      .sort(function(a,b){
+        if(a.date !== b.date) return a.date < b.date ? 1 : -1;
+        return (b.createdAt||0) - (a.createdAt||0);
       });
-    });
-    notesListEl.querySelectorAll("[data-note-del]").forEach(function(b){
-      b.addEventListener("click", function(){
-        var id = b.getAttribute("data-note-del");
-        notes = notes.filter(function(n){ return n.id !== id; });
-        if(editingNoteId === id) resetNoteForm();
-        persistNotes(); renderNotes(); toast("Note deleted");
-      });
-    });
-  }
-  function openNotes(){
-    resetNoteForm(); renderNotes();
-    notesOverlay.classList.add("open");
-    setTimeout(function(){ noteText.focus(); }, 60);
-  }
-  function closeNotes(){ notesOverlay.classList.remove("open"); }
-  document.getElementById("notesBtn").addEventListener("click", openNotes);
-  document.getElementById("closeNotesBtn").addEventListener("click", closeNotes);
-  notesOverlay.addEventListener("click", function(ev){ if(ev.target===notesOverlay) closeNotes(); });
-  cancelNoteEditBtn.addEventListener("click", resetNoteForm);
-  saveNoteBtn.addEventListener("click", function(){
-    var t = noteText.value.trim();
-    if(!t){ noteText.focus(); return; }
-    if(editingNoteId){
-      for(var i=0;i<notes.length;i++) if(notes[i].id===editingNoteId) notes[i].text = t;
-      toast("Note updated ✓");
+    var html = '<div class="notes-month-row"><button class="nav-arrow" data-nmnav="-1" aria-label="Previous month">‹</button>' +
+      '<span class="nm-label">'+MONTHS[m]+' '+y+'</span>' +
+      '<button class="nav-arrow" data-nmnav="1" aria-label="Next month">›</button></div>';
+    if(!monthNotes.length){
+      html += '<p class="notes-empty">No notes found.</p>';
     } else {
-      notes.push({id: uid(), text: t, createdAt: Date.now()});
-      toast("Note added ✓");
+      html += monthNotes.map(function(n){
+        var d = parseKey(n.date);
+        return '<button class="note-card" data-note-open="'+n.id+'"><span class="nc-date">'+d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear()+' • '+DAYS[d.getDay()]+'</span>' +
+          '<span class="nc-text">'+esc(n.text)+'</span></button>';
+      }).join("");
     }
-    persistNotes(); resetNoteForm(); renderNotes();
-  });
+    main.innerHTML = html;
+    main.querySelectorAll("[data-nmnav]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var nd = new Date(y, m + (+b.getAttribute("data-nmnav")), 1);
+        state.notesMonth = nd.getFullYear()+"-"+pad(nd.getMonth()+1);
+        render();
+      });
+    });
+    main.querySelectorAll("[data-note-open]").forEach(function(b){
+      b.addEventListener("click", function(){ openNoteEditor(b.getAttribute("data-note-open")); });
+    });
+  }
+
+  function openNoteEditor(id){
+    if(id){
+      var n = null;
+      for(var i=0;i<notes.length;i++) if(notes[i].id===id) n = notes[i];
+      if(!n) return;
+      state.noteEditId = id;
+      state.noteEditDate = n.date || todayKey();
+      state.noteDraft = n.text;
+    } else {
+      state.noteEditId = null;
+      state.noteEditDate = (state.notesMonth === todayKey().slice(0,7)) ? todayKey() : (state.notesMonth + "-01");
+      state.noteDraft = "";
+    }
+    state.noteMode = "edit";
+    render();
+    window.scrollTo(0,0);
+  }
+
+  function renderNoteEditor(){
+    var d = parseKey(state.noteEditDate);
+    var html = '<div class="note-date-card">' +
+      '<button class="nav-arrow" data-nday="-1" aria-label="Previous day">‹</button>' +
+      '<div class="ndc-box">'+d.getDate()+'</div>' +
+      '<div class="date-texts"><div class="date-line1">'+MONTHS[d.getMonth()]+', '+d.getFullYear()+'</div>' +
+      '<div class="date-line2">'+DAYS[d.getDay()]+'</div></div>' +
+      '<button class="nav-arrow" data-nday="1" aria-label="Next day">›</button></div>';
+    if(state.noteEditId){
+      html += '<div class="note-editor-tools"><button type="button" class="note-trash-btn" id="noteDeleteBtn" aria-label="Delete note" title="Delete note">' +
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button></div>';
+    }
+    html += '<textarea class="note-editor-area" id="noteEditorText" placeholder="Type your note here…" aria-label="Note text">'+esc(state.noteDraft)+'</textarea>';
+    html += '<button class="fab" id="noteSaveFab" aria-label="Save note"><svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:#eafff6" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></button>';
+    main.innerHTML = html;
+    var ta = document.getElementById("noteEditorText");
+    ta.addEventListener("input", function(){ state.noteDraft = ta.value; });
+    main.querySelectorAll("[data-nday]").forEach(function(b){
+      b.addEventListener("click", function(){
+        state.noteDraft = ta.value;
+        var nd = parseKey(state.noteEditDate);
+        nd.setDate(nd.getDate() + (+b.getAttribute("data-nday")));
+        state.noteEditDate = toKey(nd);
+        render();
+        var t2 = document.getElementById("noteEditorText");
+        if(t2) t2.focus();
+      });
+    });
+    var delBtn = document.getElementById("noteDeleteBtn");
+    if(delBtn) delBtn.addEventListener("click", function(){
+      notes = notes.filter(function(n){ return n.id !== state.noteEditId; });
+      persistNotes();
+      state.noteMode = "list"; state.noteEditId = null; state.noteDraft = "";
+      render(); toast("Note deleted");
+    });
+    document.getElementById("noteSaveFab").addEventListener("click", function(){
+      var t = ta.value.trim();
+      if(t){
+        if(state.noteEditId){
+          for(var i=0;i<notes.length;i++) if(notes[i].id===state.noteEditId){ notes[i].text = t; notes[i].date = state.noteEditDate; }
+          toast("Note updated ✓");
+        } else {
+          notes.push({id: uid(), text: t, date: state.noteEditDate, createdAt: Date.now()});
+          toast("Note added ✓");
+        }
+        persistNotes();
+        state.notesMonth = state.noteEditDate.slice(0,7);
+      }
+      state.noteMode = "list"; state.noteEditId = null; state.noteDraft = "";
+      render();
+    });
+    setTimeout(function(){ ta.focus(); }, 60);
+  }
 
   /* ---------- gear: settings (name + opening balance) ---------- */
   var settingsOverlay = document.getElementById("settingsOverlay");
@@ -1827,7 +1876,7 @@
   });
 
   document.addEventListener("keydown", function(ev){
-    if(ev.key==="Escape"){ closeCalendar(); closeRangeCalendar(); closeSheet(); closeNotes(); closeSettings(); accountOverlay.classList.remove("open"); categoryOverlay.classList.remove("open"); }
+    if(ev.key==="Escape"){ closeCalendar(); closeRangeCalendar(); closeSheet(); closeSettings(); accountOverlay.classList.remove("open"); categoryOverlay.classList.remove("open"); }
   });
 
   /* ---------- init ---------- */
