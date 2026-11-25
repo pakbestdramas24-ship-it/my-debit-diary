@@ -249,6 +249,30 @@
   .date-acct-row .from-acct-name{font-size:20px;line-height:1.2}
   .date-acct-row .from-type{font-size:15px;margin:2px 0 0}
   .date-acct-row .field input{letter-spacing:.2px}
+  .date-box{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(255,255,255,.05);border:1.5px solid #93a698;border-radius:10px;padding:8px 10px;min-height:46px;color:var(--text);text-align:left}
+  .date-box:active{background:#2c352f}
+  .date-box .db-text{font-size:17px;letter-spacing:.2px;white-space:nowrap}
+  .date-box svg{width:21px;height:21px;fill:var(--mint);flex:0 0 auto}
+
+  /* Calendar popup */
+  .cal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:none;align-items:center;justify-content:center;padding:18px}
+  .cal-overlay.open{display:flex}
+  .cal-card{background:var(--sheet);color:var(--text);width:100%;max-width:340px;border-radius:16px;padding:14px 14px 12px;box-shadow:0 12px 32px rgba(0,0,0,.5)}
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .cal-title{font-size:18px;font-weight:700}
+  .cal-nav{width:40px;height:40px;min-height:40px;border:0;border-radius:50%;background:rgba(255,255,255,.08);color:var(--text);font-size:24px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
+  .cal-nav:active{background:#2c352f}
+  .cal-week{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12.5px;color:#c9d4cb;font-weight:600;padding:4px 0 6px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+  .cal-day{border:0;background:none;color:var(--text);font-size:15.5px;height:42px;min-height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0}
+  .cal-day:active{background:#2c352f}
+  .cal-day.other{color:#6d7a6f}
+  .cal-day.today{border:1.5px solid var(--mint);color:var(--mint);font-weight:700}
+  .cal-day.sel{background:var(--teal);color:#eafff6;font-weight:700;border-color:transparent}
+  .cal-foot{display:flex;gap:10px;margin-top:10px}
+  .cal-foot button{flex:1;border-radius:999px;padding:10px;font-size:15.5px;font-weight:600;min-height:44px}
+  .cal-today-btn{background:transparent;border:1.5px solid #93a698;color:var(--text)}
+  .cal-close-btn{background:var(--teal);border:0;color:#eafff6}
   .desc-row{display:flex;gap:12px;align-items:flex-start}
   .desc-row .desc-ic{font-size:22px;margin-top:10px;color:#c9d4cb}
   .desc-row .field{flex:1}
@@ -344,8 +368,11 @@
 
     <div class="date-acct-row">
       <div class="field">
-        <label for="fDate">Date</label>
-        <input type="text" id="fDate" placeholder="DD/MM/YYYY" inputmode="numeric" autocomplete="off" aria-label="Date, day month year" />
+        <label id="fDateLabel">Date</label>
+        <button type="button" class="date-box" id="dateBox" aria-label="Date — tap to open the calendar">
+          <span class="db-text" id="dateBoxText"></span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/></svg>
+        </button>
       </div>
       <div class="acct-col">
         <p class="from-label" id="fromLabel">Debit From</p>
@@ -378,6 +405,23 @@
       <button class="btn-danger" id="deleteBtn" style="display:none">Delete</button>
       <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
       <button class="btn btn-primary" id="saveBtn">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- Calendar popup -->
+<div class="cal-overlay" id="calOverlay" role="dialog" aria-modal="true" aria-label="Choose date">
+  <div class="cal-card">
+    <div class="cal-head">
+      <button type="button" class="cal-nav" id="calPrev" aria-label="Previous month">‹</button>
+      <span class="cal-title" id="calTitle"></span>
+      <button type="button" class="cal-nav" id="calNext" aria-label="Next month">›</button>
+    </div>
+    <div class="cal-week"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-foot">
+      <button type="button" class="cal-today-btn" id="calTodayBtn">Today</button>
+      <button type="button" class="cal-close-btn" id="calCloseBtn">Close</button>
     </div>
   </div>
 </div>
@@ -1236,7 +1280,7 @@
 
   /* ---------- entry sheet ---------- */
   var overlay = document.getElementById("entryOverlay");
-  var fDate = document.getElementById("fDate"), fText = document.getElementById("fText"),
+  var fText = document.getElementById("fText"),
       fAmount = document.getElementById("fAmount"),
       fLedger = document.getElementById("fLedger"), fRemarks = document.getElementById("fRemarks"),
       fLedgerNew = document.getElementById("fLedgerNew"), newLedgerField = document.getElementById("newLedgerField"),
@@ -1297,23 +1341,67 @@
     if(p.length !== 3) return key;
     return pad(+p[2]) + "/" + pad(+p[1]) + "/" + p[0];
   }
-  function displayToKey(str){
-    var s = (str || "").trim();
-    var m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if(!m) return null;
-    var d = +m[1], mo = +m[2], y = +m[3];
-    if(y < 1900 || y > 2100 || mo < 1 || mo > 12 || d < 1 || d > 31) return null;
-    var dt = new Date(y, mo - 1, d);
-    if(dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
-    return y + "-" + pad(mo) + "-" + pad(d);
+  /* ---------- date box + calendar popup ---------- */
+  var formDateKey = todayKey();
+  var dateBoxText = document.getElementById("dateBoxText");
+  function syncDateBox(){ dateBoxText.textContent = keyToDisplay(formDateKey); }
+
+  var calOverlay = document.getElementById("calOverlay");
+  var calTitle = document.getElementById("calTitle");
+  var calGrid = document.getElementById("calGrid");
+  var calView = null;
+  function renderCalendar(){
+    if(!calView){ var sd0 = parseKey(formDateKey); calView = {y: sd0.getFullYear(), m: sd0.getMonth()}; }
+    calTitle.textContent = MONTHS[calView.m] + " " + calView.y;
+    var startOffset = (new Date(calView.y, calView.m, 1).getDay() + 6) % 7; /* Monday-first */
+    var daysInMonth = new Date(calView.y, calView.m + 1, 0).getDate();
+    var daysInPrev = new Date(calView.y, calView.m, 0).getDate();
+    var totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+    var tk = todayKey();
+    var html = "";
+    for(var i = 0; i < totalCells; i++){
+      var dayNum, cellKey, other = false;
+      if(i < startOffset){
+        dayNum = daysInPrev - startOffset + 1 + i;
+        cellKey = toKey(new Date(calView.y, calView.m - 1, dayNum)); other = true;
+      } else if(i >= startOffset + daysInMonth){
+        dayNum = i - startOffset - daysInMonth + 1;
+        cellKey = toKey(new Date(calView.y, calView.m + 1, dayNum)); other = true;
+      } else {
+        dayNum = i - startOffset + 1;
+        cellKey = calView.y + "-" + pad(calView.m + 1) + "-" + pad(dayNum);
+      }
+      var cls = "cal-day" + (other ? " other" : "") + (cellKey === tk ? " today" : "") + (cellKey === formDateKey ? " sel" : "");
+      html += '<button type="button" class="' + cls + '" data-cal-day="' + cellKey + '">' + dayNum + '</button>';
+    }
+    calGrid.innerHTML = html;
+    calGrid.querySelectorAll("[data-cal-day]").forEach(function(b){
+      b.addEventListener("click", function(){
+        formDateKey = b.getAttribute("data-cal-day");
+        syncDateBox();
+        closeCalendar();
+      });
+    });
   }
-  fDate.addEventListener("input", function(){
-    var digits = fDate.value.replace(/\D/g, "").slice(0, 8);
-    var out = digits;
-    if(digits.length > 4) out = digits.slice(0,2) + "/" + digits.slice(2,4) + "/" + digits.slice(4);
-    else if(digits.length > 2) out = digits.slice(0,2) + "/" + digits.slice(2);
-    if(fDate.value !== out) fDate.value = out;
+  function openCalendar(){
+    var sd = parseKey(formDateKey);
+    calView = {y: sd.getFullYear(), m: sd.getMonth()};
+    renderCalendar();
+    calOverlay.classList.add("open");
+  }
+  function closeCalendar(){ calOverlay.classList.remove("open"); }
+  document.getElementById("dateBox").addEventListener("click", openCalendar);
+  document.getElementById("calPrev").addEventListener("click", function(){
+    calView.m--; if(calView.m < 0){ calView.m = 11; calView.y--; } renderCalendar();
   });
+  document.getElementById("calNext").addEventListener("click", function(){
+    calView.m++; if(calView.m > 11){ calView.m = 0; calView.y++; } renderCalendar();
+  });
+  document.getElementById("calCloseBtn").addEventListener("click", closeCalendar);
+  document.getElementById("calTodayBtn").addEventListener("click", function(){
+    formDateKey = todayKey(); syncDateBox(); closeCalendar();
+  });
+  calOverlay.addEventListener("click", function(ev){ if(ev.target === calOverlay) closeCalendar(); });
 
   function openSheet(id){
     hideError();
@@ -1322,7 +1410,7 @@
       var e = null;
       for(var i=0;i<entries.length;i++) if(entries[i].id===id) e = entries[i];
       if(!e) return;
-      fDate.value = keyToDisplay(e.date); fText.value = e.text; fAmount.value = e.amount;
+      formDateKey = e.date; syncDateBox(); fText.value = e.text; fAmount.value = e.amount;
       formAccount = e.account || "Cash"; fRemarks.value = e.remarks || "";
       if(e.ledger) ensureLedger(e.ledger);
       populateLedgerOptions(e.ledger || "");
@@ -1330,7 +1418,7 @@
       setFormType(e.type);
       deleteBtn.style.display = "";
     } else {
-      fDate.value = keyToDisplay(state.tab==="daily" ? state.date : todayKey());
+      formDateKey = todayKey(); syncDateBox();
       fText.value = ""; fAmount.value = ""; formAccount = "Cash"; fRemarks.value = "";
       populateLedgerOptions(state.ledgerNameFilter || "");
       formCategory = "Misc";
@@ -1341,15 +1429,14 @@
     overlay.classList.add("open");
     setTimeout(function(){ fText.focus(); }, 60);
   }
-  function closeSheet(){ overlay.classList.remove("open"); editingId = null; }
+  function closeSheet(){ closeCalendar(); overlay.classList.remove("open"); editingId = null; }
 
   function saveEntry(){
     var text = fText.value.trim();
     var amount = parseFloat(fAmount.value);
-    var date = displayToKey(fDate.value);
+    var date = formDateKey;
     if(!text){ showError("Please enter the entry name (Enter Text) first."); fText.focus(); return; }
     if(isNaN(amount) || amount <= 0){ showError("Enter a valid Amount — it must be greater than 0."); fAmount.focus(); return; }
-    if(!date){ showError("Enter a valid date as DD/MM/YYYY — for example 25/11/2026."); fDate.focus(); return; }
     var ledgerName = currentLedgerValue();
     if(fLedger.value === ADD_NEW_LEDGER && !ledgerName){ showError("Enter the new ledger name, or choose a ledger from the list."); fLedgerNew.focus(); return; }
     ensureLedger(ledgerName);
@@ -1460,7 +1547,7 @@
   });
 
   document.addEventListener("keydown", function(ev){
-    if(ev.key==="Escape"){ closeSheet(); closeProfile(); accountOverlay.classList.remove("open"); categoryOverlay.classList.remove("open"); }
+    if(ev.key==="Escape"){ closeCalendar(); closeSheet(); closeProfile(); accountOverlay.classList.remove("open"); categoryOverlay.classList.remove("open"); }
   });
 
   /* ---------- init ---------- */
