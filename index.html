@@ -456,11 +456,7 @@
 
     <div class="field">
       <label for="fLedger">Ledger</label>
-      <select id="fLedger"></select>
-    </div>
-    <div class="field" id="newLedgerField" style="display:none">
-      <label for="fLedgerNew">New Ledger Name</label>
-      <input type="text" id="fLedgerNew" placeholder="New person's name (e.g. Ahmed)" autocomplete="off" />
+      <select id="fLedger" aria-label="Ledger — select a person"></select>
     </div>
 
 
@@ -608,7 +604,6 @@
   var LS_CUSTOMCATS = "mdd-web-customcats-v1";
   var LS_NOTES = "mdd-web-notes-v1";
   var LS_PERSON_NOTES = "mdd-web-person-notes-v1";
-  var ADD_NEW_LEDGER = "__add_new_ledger__";
   var ACCOUNTS = ["Cash","Bank","JazzCash","Easypaisa","Other"];
   var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   var MONTHS_S = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -1508,7 +1503,6 @@
   var fText = document.getElementById("fText"),
       fAmount = document.getElementById("fAmount"),
       fLedger = document.getElementById("fLedger"), fRemarks = document.getElementById("fRemarks"),
-      fLedgerNew = document.getElementById("fLedgerNew"), newLedgerField = document.getElementById("newLedgerField"),
       formError = document.getElementById("formError"),
       typeIncome = document.getElementById("typeIncome"), typeExpense = document.getElementById("typeExpense"),
       fromLabel = document.getElementById("fromLabel"), fromType = document.getElementById("fromType"),
@@ -1518,24 +1512,19 @@
   var formType = "expense", editingId = null, formAccount = "Cash", formCategory = "Misc";
 
   function populateLedgerOptions(selected){
-    var html = '<option value="">— No ledger —</option>';
-    ledgerNames.forEach(function(name){
-      html += '<option value="'+esc(name)+'"'+(name===selected ? " selected" : "")+'>'+esc(name)+'</option>';
-    });
-    html += '<option value="'+ADD_NEW_LEDGER+'">+ Add new ledger…</option>';
+    var hasSelected = !!(selected && ledgerNames.indexOf(selected) !== -1);
+    var html = '<option value="" disabled hidden' + (hasSelected ? '' : ' selected') + '>Select a person</option>';
+    if(!ledgerNames.length){
+      html += '<option value="" disabled>No people yet — add one from the Ledger tab</option>';
+    } else {
+      ledgerNames.forEach(function(name){
+        html += '<option value="'+esc(name)+'"'+(name===selected ? " selected" : "")+'>'+esc(name)+'</option>';
+      });
+    }
     fLedger.innerHTML = html;
-    fLedger.value = selected || "";
-    newLedgerField.style.display = "none";
-    fLedgerNew.value = "";
+    fLedger.value = hasSelected ? selected : "";
   }
-  fLedger.addEventListener("change", function(){
-    if(fLedger.value === ADD_NEW_LEDGER){
-      newLedgerField.style.display = "";
-      setTimeout(function(){ fLedgerNew.focus(); }, 40);
-    } else newLedgerField.style.display = "none";
-  });
   function currentLedgerValue(){
-    if(fLedger.value === ADD_NEW_LEDGER) return fLedgerNew.value.trim();
     return fLedger.value || "";
   }
   function syncCategoryUI(){
@@ -1775,7 +1764,6 @@
     if(!text){ showError("Please enter the entry name (Enter Text) first."); fText.focus(); return; }
     if(isNaN(amount) || amount <= 0){ showError("Enter a valid Amount — it must be greater than 0."); fAmount.focus(); return; }
     var ledgerName = currentLedgerValue();
-    if(fLedger.value === ADD_NEW_LEDGER && !ledgerName){ showError("Enter the new ledger name, or choose a ledger from the list."); fLedgerNew.focus(); return; }
     ensureLedger(ledgerName);
     var data = {
       date: date, type: formType, text: text, amount: Math.round(amount*100)/100,
