@@ -182,6 +182,27 @@
   .person-bal{font-size:16.5px;font-weight:700;white-space:nowrap}
   .person-bal.pos{color:var(--mint)}
   .person-bal.neg{color:var(--danger)}
+  /* Person photos (avatars) */
+  .person-avatar{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;overflow:hidden;flex:0 0 auto;background:#3c5a4a;color:#eafff6;font-size:19px;font-weight:700;line-height:1}
+  .person-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+  .person-avatar svg{width:24px;height:24px;fill:#dfe7e0}
+  .person-avatar.large{width:60px;height:60px;font-size:25px}
+  .person-avatar.large svg{width:32px;height:32px}
+  .person-avatar.xl{width:96px;height:96px;font-size:38px}
+  .person-avatar.xl svg{width:48px;height:48px}
+  [data-avatar-edit]{cursor:pointer;border-radius:50%;flex:0 0 auto}
+  [data-avatar-edit]:active{opacity:.75}
+  .person-detail{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:10px;padding:12px 14px;margin:0 0 12px}
+  .person-detail .person-name{font-size:19px}
+  .person-photo-row{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+  .avatar-picker{width:76px;height:76px;min-height:76px;border-radius:50%;border:2px dashed #93a698;background:rgba(255,255,255,.05);color:#c9d4cb;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0;flex:0 0 auto}
+  .avatar-picker.has-photo{border:2px solid var(--mint)}
+  .avatar-picker svg{width:30px;height:30px;fill:#c9d4cb}
+  .avatar-picker img{width:100%;height:100%;object-fit:cover;display:block}
+  .photo-remove-link{background:none;border:0;color:var(--danger);font-size:14px;font-weight:600;padding:4px 0;min-height:0;text-align:left}
+  .photo-preview{display:flex;justify-content:center;margin:6px 0 18px}
+  .stack-actions{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+  .stack-actions .btn,.stack-actions .btn-danger{width:100%;flex:none}
   .ledger-names-head{font-size:16px;font-weight:700;margin:14px 2px 8px}
   .ledger-name-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
   .ledger-name-chip{background:var(--card-2);border:2px solid transparent;color:var(--text);border-radius:999px;padding:9px 15px;font-size:15px;font-weight:600;min-height:44px}
@@ -366,6 +387,94 @@
   .toast{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:96px;z-index:60;background:#e8f5ec;color:#12241a;padding:11px 18px;border-radius:999px;font-size:15px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;box-shadow:0 6px 18px rgba(0,0,0,.4);max-width:92vw;text-align:center}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+  /* Settings pages */
+  .set-row{display:flex;align-items:center;gap:14px;width:100%;background:none;border:0;border-bottom:1px solid var(--line);color:var(--text);text-align:left;padding:14px 4px;min-height:64px}
+  button.set-row:active{background:#141a15}
+  .set-ic{width:30px;display:flex;justify-content:center;flex:0 0 auto}
+  .set-ic svg{width:24px;height:24px;fill:var(--muted)}
+  .set-texts{flex:1;min-width:0}
+  .set-title{display:block;font-size:17.5px;font-weight:600}
+  .set-sub{display:block;font-size:14.5px;color:var(--muted);margin-top:2px;line-height:1.35}
+  .set-chev{color:var(--muted);font-size:24px;line-height:1;flex:0 0 auto}
+  .set-check{color:var(--mint);font-weight:800;font-size:19px;flex:0 0 auto}
+  .set-section-head{font-size:15.5px;font-weight:700;color:var(--mint);margin:22px 2px 8px}
+  .data-row{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--line);font-size:16.5px;min-height:48px}
+  .data-row .dr-main{flex:1;min-width:0;overflow-wrap:anywhere}
+  .data-row .dr-tag{color:var(--muted);font-size:13px;flex:0 0 auto}
+  .row-del{flex:0 0 auto;width:36px;height:36px;min-height:36px;border-radius:50%;border:1.5px solid #5b3a34;background:transparent;color:var(--danger);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0}
+  .switch{width:52px;height:30px;min-height:30px;border-radius:999px;border:0;background:#5b6f61;position:relative;padding:0;flex:0 0 auto;transition:background .15s}
+  .switch .knob{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#e8f5ec;transition:left .15s}
+  .switch.on{background:var(--teal)}
+  .switch.on .knob{left:25px;background:#eafff6}
+  .help-h{font-size:17px;font-weight:700;margin:20px 0 5px}
+  .help-p{font-size:15.5px;line-height:1.55;color:var(--muted);margin:0}
+
+  /* App lock screen */
+  .lock-screen{position:fixed;inset:0;background:var(--bg);z-index:100;display:none;align-items:center;justify-content:center;padding:22px}
+  .lock-screen.open{display:flex}
+  .lock-box{width:100%;max-width:340px;text-align:center}
+  .lock-box h2{margin:10px 0 6px;font-size:24px}
+  .lock-ic{display:flex;justify-content:center}
+  .lock-ic svg{width:44px;height:44px;fill:var(--mint)}
+  .lock-sub{color:var(--muted);font-size:15px;margin:0 0 18px;line-height:1.45}
+  .lock-box input{width:100%;background:rgba(255,255,255,.05);border:1.5px solid #93a698;border-radius:10px;color:var(--text);font-size:26px;text-align:center;letter-spacing:14px;padding:10px 4px 10px 18px;margin-bottom:14px;outline:none}
+  .lock-box input:focus{border-color:var(--mint)}
+
+  /* Light theme */
+  body.light{
+    --bg:#f4f6f4; --card:#dce8df; --card-2:#e9eee9; --sheet:#ffffff; --sheet-2:#eef2ee;
+    --line:#d3dcd4; --text:#16211a; --muted:#5c6c60; --mint:#0b6e57; --mint-btn:#0b6e57;
+    --danger:#c0392b; --exp-red:#c0392b; --inc-green:#1e7d32; --chip-border:#9db3a4;
+  }
+  body.light [style*="color:#c9d4cb"]{color:#43534a !important}
+  body.light .topbar{border-bottom-color:#d3dcd4}
+  body.light .tab{color:#3c4a40}
+  body.light .tab.active{color:var(--text)}
+  body.light .tab-icon svg{fill:#3c4a40}
+  body.light .tab-icon.active svg{fill:var(--text)}
+  body.light .top-menu{background:#ffffff;border-color:#d3dcd4}
+  body.light .top-menu-item:active{background:#eef2ee}
+  body.light .date-line2,body.light .balance-label,body.light .summary-card .sc-label,body.light .day-balance .db-label{color:#43534a}
+  body.light .day-col-head,body.light .info-note,body.light .donut-label,body.light .collapse-hint{color:#223028}
+  body.light .collapse-head .car{color:#43534a}
+  body.light .ledger-head{color:#223028}
+  body.light .period-nav{border-color:#b9c8bc}
+  body.light .acct-select{background:#ffffff;border-color:#b9c8bc}
+  body.light .acct-select option,body.light .field select option{background:#ffffff;color:#16211a}
+  body.light .range-btn{background:#ffffff;border-color:#b9c8bc}
+  body.light .range-btn.active{background:#dce8df}
+  body.light .range-fields .rf-box{background:#ffffff;border-color:#9db3a4}
+  body.light .range-fields .rf-box.sel{background:#dce8df}
+  body.light .range-fields .rf-col label{color:#43534a}
+  body.light .chart-card{border-color:#c4d2c6}
+  body.light .cat-row{border-bottom-color:#d3dcd4}
+  body.light .entry-item:active,body.light .ledger-row:active{background:#e4eae5}
+  body.light .person-row:active{background:#e4eae5}
+  body.light .person-row.selected,body.light .acct-card.selected,body.light .ledger-name-chip.selected{background:#dce8df}
+  body.light .field label,body.light .from-label,body.light .from-type{color:#43534a}
+  body.light .field textarea{background:rgba(0,0,0,.03)}
+  body.light .toggle button.sel{background:#dce8df}
+  body.light .picker-item{border-bottom-color:#d3dcd4}
+  body.light .picker-item:active{background:#eef2ee}
+  body.light .cal-nav{background:rgba(0,0,0,.06)}
+  body.light .cal-day:active{background:#e4eae5}
+  body.light .cal-week{color:#43534a}
+  body.light .date-box{background:#ffffff}
+  body.light .date-box:active{background:#eef2ee}
+  body.light .ndc-box{border-color:#43534a}
+  body.light .note-item{border-bottom-color:#d3dcd4}
+  body.light .rep-chip{border-color:#b9c8bc}
+  body.light .range-inputs input{background:#ffffff;border-color:#b9c8bc}
+  body.light .alltime-btn{border-color:#b9c8bc}
+  body.light .seg-bar{background:#dfe5df}
+  body.light .chart-card svg text{fill:#43534a}
+  body.light .save-fab{color:#ffffff}
+  body.light .avatar-picker{background:rgba(0,0,0,.04)}
+  body.light .avatar-picker svg{fill:#5c6c60}
+  body.light button.set-row:active{background:#e4eae5}
+  body.light .lock-box input{background:#ffffff}
+  body.light .add-person-btn:active{background:#dce8df}
+
   @media (max-width:520px){
     .icon-btn{width:36px}
     .icon-btn svg{width:21px;height:21px}
@@ -411,16 +520,19 @@
       <button class="tab" data-tab="yearly">Yearly</button>
       <button class="tab" data-tab="ledger">Ledger</button>
     </nav>
+    <button class="icon-btn" id="backupBtn" aria-label="Backup and restore" title="Backup &amp; Restore">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+    </button>
     <button class="icon-btn" id="chartsBtn" aria-label="Charts" title="Charts">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2.03 1.98C17.48 4.99 21 8.95 21 13.99h-8.97V3.98zM13 15h8c-.62 3.24-3.12 5.83-6.36 6.74L13 15z"/></svg>
     </button>
     <div class="menu-wrap">
       <button class="icon-btn" id="menuBtn" aria-label="Menu" title="Menu" aria-haspopup="true" aria-expanded="false"><span class="menu-dots" aria-hidden="true">⋮</span></button>
       <div class="top-menu" id="topMenu" role="menu">
-        <button class="top-menu-item" id="menuSettingsItem" role="menuitem">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-          Settings
-        </button>
+        <button class="top-menu-item" id="menuChartsItem" role="menuitem">Charts</button>
+        <button class="top-menu-item" id="menuBalanceItem" role="menuitem">View Balance</button>
+        <button class="top-menu-item" id="menuHelpItem" role="menuitem">Help and Feedback</button>
+        <button class="top-menu-item" id="menuSettingsItem" role="menuitem">Settings</button>
       </div>
     </div>
   </div>
@@ -551,6 +663,16 @@
     <button class="sheet-close" id="closePersonBtn" aria-label="Close"><span>⌄</span></button>
     <h2 class="sheet-title">Add a Person</h2>
     <div class="error-msg" id="personError"></div>
+    <div class="person-photo-row">
+      <button type="button" class="avatar-picker" id="personAvatarBtn" aria-label="Add a photo for this person">
+        <span id="personAvatarPreview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zM9 2L7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3.17L15 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg></span>
+      </button>
+      <div>
+        <div style="font-weight:600;font-size:16px">Photo (optional)</div>
+        <div style="color:#c9d4cb;font-size:13.5px;margin-top:2px">Tap the circle to choose a photo from the gallery or camera.</div>
+        <button type="button" class="photo-remove-link" id="personPhotoRemove" style="display:none">Remove photo</button>
+      </div>
+    </div>
     <div class="field">
       <label for="personNameInput">Person's Name</label>
       <input type="text" id="personNameInput" placeholder="e.g. Ahmed" autocomplete="off" />
@@ -583,26 +705,99 @@
   </div>
 </div>
 
-<!-- Settings sheet (opened from the ⋮ menu) -->
-<div class="overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-label="Settings">
+<!-- View Balance sheet -->
+<div class="overlay" id="balanceOverlay" role="dialog" aria-modal="true" aria-label="View Balance">
   <div class="sheet">
-    <button class="sheet-close" id="closeSettingsBtn" aria-label="Close"><span>⌄</span></button>
-    <h2 class="sheet-title">Settings</h2>
-    <div class="field">
-      <label for="settingsNameInput">Your Name (shown on the report)</label>
-      <input type="text" id="settingsNameInput" placeholder="Enter your name" autocomplete="off" />
-    </div>
-    <div class="field">
-      <label for="settingsOpeningInput">Opening Balance — C/F (Rs)</label>
-      <input type="number" id="settingsOpeningInput" inputmode="decimal" step="0.01" placeholder="0.00" />
-    </div>
-    <p style="color:#c9d4cb;font-size:14.5px;line-height:1.5;margin:0 0 14px">The opening balance is the amount you had before starting this diary. Each day's C/F is calculated from it.</p>
+    <button class="sheet-close" id="closeBalanceBtn" aria-label="Close"><span>⌄</span></button>
+    <h2 class="sheet-title">View Balance</h2>
+    <div class="summary-box" id="balanceBox" style="margin-top:0"></div>
     <div class="sheet-actions">
-      <button class="btn btn-ghost" id="cancelSettingsBtn">Cancel</button>
-      <button class="btn btn-primary" id="saveSettingsBtn">Save</button>
+      <button class="btn btn-primary" id="balanceOkBtn">OK</button>
     </div>
   </div>
 </div>
+
+<!-- App lock PIN setup sheet -->
+<div class="overlay" id="pinOverlay" role="dialog" aria-modal="true" aria-label="Set app lock PIN">
+  <div class="sheet">
+    <button class="sheet-close" id="closePinBtn" aria-label="Close"><span>⌄</span></button>
+    <h2 class="sheet-title">Set App Lock PIN</h2>
+    <div class="error-msg" id="pinError"></div>
+    <div class="field">
+      <label for="pinInput1">New 4-digit PIN</label>
+      <input type="password" id="pinInput1" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="••••" />
+    </div>
+    <div class="field">
+      <label for="pinInput2">Enter the PIN again</label>
+      <input type="password" id="pinInput2" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="••••" />
+    </div>
+    <p style="color:#c9d4cb;font-size:14.5px;line-height:1.5;margin:0 0 14px">The app will ask for this PIN every time it opens. If you forget it, use "Forgot PIN" on the lock screen to remove the lock — your data stays safe.</p>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" id="cancelPinBtn">Cancel</button>
+      <button class="btn btn-primary" id="savePinBtn">Turn On Lock</button>
+    </div>
+  </div>
+</div>
+
+<!-- App lock screen -->
+<div class="lock-screen" id="lockScreen" role="dialog" aria-modal="true" aria-label="App locked">
+  <div class="lock-box">
+    <div class="lock-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg></div>
+    <h2>App Locked</h2>
+    <p class="lock-sub">Enter your 4-digit PIN to open My Debit Diary.</p>
+    <input type="password" id="lockPinInput" inputmode="numeric" autocomplete="off" maxlength="4" aria-label="PIN" />
+    <div class="error-msg" id="lockError" style="text-align:left"></div>
+    <button class="btn btn-primary" id="lockUnlockBtn" style="width:100%">Unlock</button>
+    <button type="button" class="photo-remove-link" id="lockForgotBtn" style="color:var(--mint);margin-top:12px">Forgot PIN?</button>
+    <div id="lockForgotBox" style="display:none;text-align:left;margin-top:8px">
+      <p style="color:#c9d4cb;font-size:14.5px;line-height:1.5;margin:0 0 12px">Remove the app lock? Your entries and all your data will stay exactly as they are — only the PIN lock is removed.</p>
+      <div class="sheet-actions">
+        <button class="btn btn-ghost" id="lockForgotCancel">Cancel</button>
+        <button class="btn btn-primary" id="lockForgotRemove">Remove Lock</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Person photo sheet -->
+<div class="overlay" id="photoOverlay" role="dialog" aria-modal="true" aria-label="Person photo">
+  <div class="sheet">
+    <button class="sheet-close" id="closePhotoBtn" aria-label="Close"><span>⌄</span></button>
+    <h2 class="sheet-title" id="photoSheetTitle">Photo</h2>
+    <div class="photo-preview" id="photoPreview"></div>
+    <div class="stack-actions">
+      <button class="btn btn-primary" id="choosePhotoBtn">Choose Photo</button>
+      <button class="btn-danger" id="removePhotoBtn">Remove Photo</button>
+      <button class="btn btn-ghost" id="cancelPhotoBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Backup & Restore sheet -->
+<div class="overlay" id="backupOverlay" role="dialog" aria-modal="true" aria-label="Backup and restore">
+  <div class="sheet">
+    <button class="sheet-close" id="closeBackupBtn" aria-label="Close"><span>⌄</span></button>
+    <h2 class="sheet-title">Backup &amp; Restore</h2>
+    <div class="error-msg" id="backupError"></div>
+    <div id="backupMain">
+      <p style="color:#c9d4cb;font-size:14.5px;line-height:1.5;margin:0 0 14px">Backup saves everything — entries, people and their photos, notes and settings (your name and opening balance) — into one file you can keep safe. Restore brings all of it back from a backup file.</p>
+      <div class="stack-actions">
+        <button class="btn btn-primary" id="doBackupBtn">Backup — Download File</button>
+        <button class="btn btn-ghost" id="doRestoreBtn">Restore — Choose Backup File</button>
+      </div>
+    </div>
+    <div id="backupConfirm" style="display:none">
+      <p style="color:#e6ede7;font-size:15.5px;line-height:1.55;margin:0 0 14px">Restore from <strong id="backupFileName"></strong>?<br>This will <strong>replace all current data</strong> — entries, people, photos, notes and settings — with the data in this file.</p>
+      <div class="sheet-actions">
+        <button class="btn btn-ghost" id="backupConfirmCancel">Cancel</button>
+        <button class="btn btn-primary" id="backupConfirmBtn">Restore</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="photoFileInput" accept="image/*" hidden />
+<input type="file" id="restoreFileInput" accept=".json,application/json" hidden />
 
 <div class="toast" id="toast" role="status"></div>
 
@@ -619,6 +814,13 @@
   var LS_CUSTOMCATS = "mdd-web-customcats-v1";
   var LS_NOTES = "mdd-web-notes-v1";
   var LS_PERSON_NOTES = "mdd-web-person-notes-v1";
+  var LS_PERSON_PHOTOS = "mdd-web-person-photos-v1";
+  var LS_CURRENCY = "mdd-web-currency-v1";
+  var LS_FISCAL = "mdd-web-fiscal-v1";
+  var LS_PIN = "mdd-web-pin-v1";
+  var LS_CUSTOM_ACCOUNTS = "mdd-web-customaccounts-v1";
+  var LS_THEME = "mdd-web-theme-v1";
+  var LS_DATEFMT = "mdd-web-datefmt-v1";
   var ACCOUNTS = ["Cash","Bank","JazzCash","Easypaisa","Other"];
   var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   var MONTHS_S = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -688,6 +890,13 @@
     if(!o || typeof o !== "object" || Array.isArray(o)) return {};
     return o;
   }
+  function loadPersonPhotos(){
+    var o = parseJSON(lsGet(LS_PERSON_PHOTOS), {});
+    if(!o || typeof o !== "object" || Array.isArray(o)) return {};
+    var out = {};
+    Object.keys(o).forEach(function(k){ if(typeof o[k] === "string" && o[k].indexOf("data:image/") === 0) out[k] = o[k]; });
+    return out;
+  }
   function loadCustomCats(){
     var o = parseJSON(lsGet(LS_CUSTOMCATS), {expense:[], income:[]});
     if(!Array.isArray(o.expense)) o.expense = [];
@@ -699,6 +908,49 @@
   var opening = loadOpening();
   var ledgerNames = loadLedgers();
   var personNotes = loadPersonNotes();
+  var personPhotos = loadPersonPhotos();
+
+  /* ---------- app settings (currency, fiscal year, lock, accounts, theme, date format) ---------- */
+  var CURRENCIES = [
+    {code:"PKR", name:"Pakistani Rupee", sym:"Rs"},
+    {code:"USD", name:"US Dollar", sym:"$"},
+    {code:"EUR", name:"Euro", sym:"€"},
+    {code:"GBP", name:"British Pound", sym:"£"},
+    {code:"INR", name:"Indian Rupee", sym:"₹"},
+    {code:"AED", name:"UAE Dirham", sym:"AED "},
+    {code:"SAR", name:"Saudi Riyal", sym:"SAR "},
+    {code:"BDT", name:"Bangladeshi Taka", sym:"Tk "}
+  ];
+  var currency = lsGet(LS_CURRENCY) || "PKR";
+  if(!CURRENCIES.some(function(c){ return c.code === currency; })) currency = "PKR";
+  function curInfo(){ for(var ci=0; ci<CURRENCIES.length; ci++) if(CURRENCIES[ci].code === currency) return CURRENCIES[ci]; return CURRENCIES[0]; }
+  function curSym(){ return curInfo().sym; }
+  var fiscalMonth = parseInt(lsGet(LS_FISCAL), 10);
+  if(isNaN(fiscalMonth) || fiscalMonth < 0 || fiscalMonth > 11) fiscalMonth = 6; /* July */
+  var appPin = lsGet(LS_PIN) || "";
+  var customAccounts = (function(){
+    var a = parseJSON(lsGet(LS_CUSTOM_ACCOUNTS), []);
+    if(!Array.isArray(a)) return [];
+    return a.filter(function(x){ return typeof x === "string" && !!x.trim(); });
+  })();
+  function allAccounts(){
+    var out = ACCOUNTS.slice();
+    customAccounts.forEach(function(a){ if(out.indexOf(a) === -1) out.push(a); });
+    return out;
+  }
+  var theme = lsGet(LS_THEME) === "light" ? "light" : "dark";
+  var dateFmt = lsGet(LS_DATEFMT) || "DMY";
+  if(["DMY","MDY","YMD"].indexOf(dateFmt) === -1) dateFmt = "DMY";
+  function applyTheme(){ document.body.classList.toggle("light", theme === "light"); }
+  function fmtDateWith(f, key){
+    if(!key) return "";
+    var p = String(key).split("-");
+    if(p.length !== 3) return String(key);
+    if(f === "MDY") return pad(+p[1]) + "/" + pad(+p[2]) + "/" + p[0];
+    if(f === "YMD") return p[0] + "-" + pad(+p[1]) + "-" + pad(+p[2]);
+    return pad(+p[2]) + "/" + pad(+p[1]) + "/" + p[0];
+  }
+  function fmtDateKey(key){ return fmtDateWith(dateFmt, key); }
   var profileName = lsGet(LS_NAME) || "";
   var customCats = loadCustomCats();
   entries.forEach(function(e){ if(e.ledger && ledgerNames.indexOf(e.ledger)===-1) ledgerNames.push(e.ledger); });
@@ -708,8 +960,15 @@
     lsSet(LS_OPENING1, String(opening));
     lsSet(LS_LEDGERS, JSON.stringify(ledgerNames));
     lsSet(LS_PERSON_NOTES, JSON.stringify(personNotes));
+    lsSet(LS_PERSON_PHOTOS, JSON.stringify(personPhotos));
     lsSet(LS_NAME, profileName);
     lsSet(LS_CUSTOMCATS, JSON.stringify(customCats));
+    lsSet(LS_CURRENCY, currency);
+    lsSet(LS_FISCAL, String(fiscalMonth));
+    lsSet(LS_PIN, appPin);
+    lsSet(LS_CUSTOM_ACCOUNTS, JSON.stringify(customAccounts));
+    lsSet(LS_THEME, theme);
+    lsSet(LS_DATEFMT, dateFmt);
   }
   function catsFor(kind){
     var base = kind === "income" ? INCOME_CATS : EXPENSE_CATS;
@@ -738,7 +997,7 @@
   function fmt(n){
     var neg = n < 0; var v = Math.abs(n);
     var s = v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return (neg?"-":"") + "Rs" + s;
+    return (neg?"-":"") + curSym() + s;
   }
   function fmtPlain(n){
     var v = Math.abs(n);
@@ -786,7 +1045,10 @@
     reportTo: "",
     reportShowExpense: true,
     reportShowIncome: true,
-    reportShowNotes: true
+    reportShowNotes: true,
+    prevTab: "daily",
+    settingsScreen: "main",
+    helpFrom: "menu"
   };
 
   /* ---------- calculations ---------- */
@@ -824,7 +1086,7 @@
   }
   function accountOptionsHTML(sel){
     var h = '<option value="All"'+(sel==="All"?" selected":"")+'>All Accounts</option>';
-    ACCOUNTS.forEach(function(a){ h += '<option value="'+a+'"'+(sel===a?" selected":"")+'>'+a+'</option>'; });
+    allAccounts().forEach(function(a){ h += '<option value="'+esc(a)+'"'+(sel===a?" selected":"")+'>'+esc(a)+'</option>'; });
     return h;
   }
   function entryItemHTML(e, showDate){
@@ -1031,6 +1293,20 @@
   }
 
   /* ---------- LEDGER (people) ---------- */
+  var AVATAR_COLORS = ["#0b6e57","#5b8dd9","#c95d7b","#b08968","#7a68c9","#3f9e6e","#d97c4a","#26b6c9"];
+  function avatarColor(name){
+    var h = 0;
+    var s = String(name || "");
+    for(var i=0;i<s.length;i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return AVATAR_COLORS[h % AVATAR_COLORS.length];
+  }
+  function avatarHTML(name, extraCls){
+    var photo = personPhotos[name];
+    if(photo) return '<span class="person-avatar '+(extraCls||"")+'"><img src="'+photo+'" alt="" /></span>';
+    var initial = (String(name || "?").trim().charAt(0) || "?").toUpperCase();
+    return '<span class="person-avatar '+(extraCls||"")+'" style="background:'+avatarColor(name)+'">'+esc(initial)+'</span>';
+  }
+  var GROUP_AVATAR_HTML = '<span class="person-avatar" style="background:#3c5a4a"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></span>';
   function personBalance(name){
     var bal = 0;
     entries.forEach(function(e){
@@ -1053,6 +1329,7 @@
       allBal = Math.round(allBal*100)/100;
       html += '<div class="person-list">';
       html += '<button type="button" class="person-row'+(sel===""?" selected":"")+'" data-person="">' +
+        GROUP_AVATAR_HTML +
         '<span class="person-main"><span class="person-name">All</span>' +
         '<span class="person-sub">'+ledgerNames.length+(ledgerNames.length===1 ? " person" : " people")+'</span></span>' +
         '<span class="person-bal'+(allBal>0?" pos":(allBal<0?" neg":""))+'">'+esc(fmt(allBal))+'</span></button>';
@@ -1060,11 +1337,22 @@
         var bal = personBalance(name);
         var rem = personNotes[name] || "";
         html += '<button type="button" class="person-row'+(sel===name?" selected":"")+'" data-person="'+esc(name)+'">' +
+          '<span data-avatar-edit="'+esc(name)+'" role="button" aria-label="Photo for '+esc(name)+'" title="Photo">'+avatarHTML(name)+'</span>' +
           '<span class="person-main"><span class="person-name">'+esc(name)+'</span>' +
           (rem ? '<span class="person-sub">'+esc(rem)+'</span>' : '') + '</span>' +
           '<span class="person-bal'+(bal>0?" pos":(bal<0?" neg":""))+'">'+esc(fmt(bal))+'</span></button>';
       });
       html += '</div>';
+    }
+    /* Selected person's detail header — photo, name, remarks, balance */
+    if(sel){
+      var selBal = personBalance(sel);
+      var selRem = personNotes[sel] || "";
+      html += '<div class="person-detail">' +
+        '<span data-avatar-edit="'+esc(sel)+'" role="button" aria-label="Change photo for '+esc(sel)+'" title="Change photo">'+avatarHTML(sel, "large")+'</span>' +
+        '<span class="person-main"><span class="person-name">'+esc(sel)+'</span>' +
+        (selRem ? '<span class="person-sub">'+esc(selRem)+'</span>' : '<span class="person-sub">Tap the photo to change it</span>') + '</span>' +
+        '<span class="person-bal'+(selBal>0?" pos":(selBal<0?" neg":""))+'">'+esc(fmt(selBal))+'</span></div>';
     }
     /* Entries table — all entries, or only the selected person's */
     var list = entries.slice().sort(function(a,b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
@@ -1087,7 +1375,7 @@
       var debitCell = e.type==="expense" ? '<span class="num debit col-num">'+esc(fmt(+e.amount))+'</span>' : '<span class="num col-num">—</span>';
       var creditCell = e.type==="income" ? '<span class="num credit col-num">'+esc(fmt(+e.amount))+'</span>' : '<span class="num col-num">—</span>';
       rows += '<button class="ledger-row" data-edit="'+e.id+'">' +
-        '<span class="d">'+pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear()+'</span>' +
+        '<span class="d">'+esc(fmtDateKey(e.date))+'</span>' +
         '<span class="cell-main"><span class="t">'+esc(e.text)+'</span><span class="s">'+esc(sub.join(" • "))+'</span></span>' +
         mobileAmt + debitCell + creditCell +
         '<span class="num cell-bal">'+esc(fmt(running))+'</span></button>';
@@ -1111,6 +1399,12 @@
         var name = b.getAttribute("data-person");
         state.ledgerNameFilter = (name === state.ledgerNameFilter) ? "" : name;
         render();
+      });
+    });
+    main.querySelectorAll("[data-avatar-edit]").forEach(function(el){
+      el.addEventListener("click", function(ev){
+        ev.stopPropagation();
+        openPhotoSheet(el.getAttribute("data-avatar-edit"));
       });
     });
     bindEditButtons();
@@ -1368,7 +1662,7 @@
     if(!list.length) rows = '<tr><td colspan="5" style="text-align:center;color:#777;padding:18px 4px">No entries in this period.</td></tr>';
     html += '<div class="preview-page"><h3>My Debit Diary</h3>' +
       '<div class="pp-name">'+esc(profileName)+'</div>' +
-      '<div class="pp-meta">'+esc(rangeLabel)+' • Amounts in Rs</div>' +
+      '<div class="pp-meta">'+esc(rangeLabel)+' • Amounts in '+esc(currency)+'</div>' +
       '<table><thead><tr><th>Date</th><th>Entry</th><th class="num">Debit</th><th class="num">Credit</th><th class="num">Balance</th></tr></thead><tbody>' + rows + '</tbody></table>' +
       '<div class="pp-totals">Total Income (Credit): <strong>'+esc(fmt(totIn))+'</strong><br>' +
       'Total Expense (Debit): <strong>'+esc(fmt(totOut))+'</strong><br>' +
@@ -1498,7 +1792,7 @@
 
   /* ---------- render / tabs / FAB ---------- */
   function updateFab(){
-    if(state.tab === "report"){ fab.classList.add("hidden"); return; }
+    if(state.tab === "report" || state.tab === "settings" || state.tab === "help"){ fab.classList.add("hidden"); return; }
     if(state.tab === "notes" && state.noteMode === "edit"){ fab.classList.add("hidden"); return; }
     fab.classList.remove("hidden");
     if(state.tab === "notes"){
@@ -1516,7 +1810,7 @@
     }
   }
   function render(){
-    topbar.classList.toggle("hidden", state.tab === "charts" || state.tab === "report");
+    topbar.classList.toggle("hidden", state.tab === "charts" || state.tab === "report" || state.tab === "settings" || state.tab === "help");
     document.querySelectorAll(".tab").forEach(function(t){
       t.classList.toggle("active", t.getAttribute("data-tab") === state.tab);
     });
@@ -1527,6 +1821,8 @@
     else if(state.tab === "ledger") renderLedger();
     else if(state.tab === "charts") renderCharts();
     else if(state.tab === "report") renderReport();
+    else if(state.tab === "settings") renderSettings();
+    else if(state.tab === "help") renderHelp();
     updateFab();
   }
   function setTab(tab){ state.tab = tab; state.noteMode = "list"; state.noteEditId = null; state.noteDraft = ""; render(); window.scrollTo(0,0); }
@@ -1605,12 +1901,7 @@
   function showError(msg){ formError.textContent = msg; formError.classList.add("show"); }
   function hideError(){ formError.classList.remove("show"); formError.textContent = ""; }
 
-  function keyToDisplay(key){
-    if(!key) return "";
-    var p = String(key).split("-");
-    if(p.length !== 3) return key;
-    return pad(+p[2]) + "/" + pad(+p[1]) + "/" + p[0];
-  }
+  function keyToDisplay(key){ return fmtDateKey(key); }
   /* ---------- date box + calendar popup ---------- */
   var formDateKey = todayKey();
   var dateBoxText = document.getElementById("dateBoxText");
@@ -1872,9 +2163,28 @@
   var personNameInput = document.getElementById("personNameInput");
   var personRemarksInput = document.getElementById("personRemarksInput");
   var personError = document.getElementById("personError");
+  var personAvatarBtn = document.getElementById("personAvatarBtn");
+  var personAvatarPreview = document.getElementById("personAvatarPreview");
+  var personPhotoRemove = document.getElementById("personPhotoRemove");
+  var CAMERA_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zM9 2L7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3.17L15 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>';
+  var pendingPhoto = "";
+  function syncPersonAvatarPicker(){
+    if(pendingPhoto){
+      personAvatarPreview.innerHTML = '<img src="'+pendingPhoto+'" alt="" />';
+      personAvatarBtn.classList.add("has-photo");
+      personPhotoRemove.style.display = "";
+    } else {
+      personAvatarPreview.innerHTML = CAMERA_SVG;
+      personAvatarBtn.classList.remove("has-photo");
+      personPhotoRemove.style.display = "none";
+    }
+  }
+  personAvatarBtn.addEventListener("click", function(){ openPhotoPicker("__new__"); });
+  personPhotoRemove.addEventListener("click", function(){ pendingPhoto = ""; syncPersonAvatarPicker(); });
   function openPersonSheet(){
     personError.classList.remove("show"); personError.textContent = "";
     personNameInput.value = ""; personRemarksInput.value = "";
+    pendingPhoto = ""; syncPersonAvatarPicker();
     personOverlay.classList.add("open");
     setTimeout(function(){ personNameInput.focus(); }, 60);
   }
@@ -1893,6 +2203,7 @@
     var existing = null;
     ledgerNames.forEach(function(n){ if(n.toLowerCase() === name.toLowerCase()) existing = n; });
     if(existing){
+      if(pendingPhoto){ personPhotos[existing] = pendingPhoto; persist(); }
       state.ledgerNameFilter = existing;
       closePersonSheet(); render();
       toast(existing + " is already in the list");
@@ -1901,6 +2212,7 @@
     ensureLedger(name);
     var rem = personRemarksInput.value.trim();
     if(rem) personNotes[name] = rem;
+    if(pendingPhoto) personPhotos[name] = pendingPhoto;
     persist();
     state.ledgerNameFilter = name;
     closePersonSheet(); render();
@@ -1911,8 +2223,8 @@
   var accountOverlay = document.getElementById("accountOverlay");
   function openAccountPicker(){
     document.getElementById("accountPickerTitle").textContent = formType === "income" ? "Credit To" : "Debit From";
-    document.getElementById("accountList").innerHTML = ACCOUNTS.map(function(a){
-      return '<li><button class="picker-item" data-acct-pick="'+a+'"><span style="flex:1">'+a+'</span>' +
+    document.getElementById("accountList").innerHTML = allAccounts().map(function(a){
+      return '<li><button class="picker-item" data-acct-pick="'+esc(a)+'"><span style="flex:1">'+esc(a)+'</span>' +
         (a===formAccount ? '<span class="pi-check">✓</span>' : '') + '</button></li>';
     }).join("");
     accountOverlay.querySelectorAll("[data-acct-pick]").forEach(function(b){
@@ -2080,10 +2392,7 @@
     setTimeout(function(){ ta.focus(); }, 60);
   }
 
-  /* ---------- menu: settings (name + opening balance) ---------- */
-  var settingsOverlay = document.getElementById("settingsOverlay");
-  var settingsNameInput = document.getElementById("settingsNameInput");
-  var settingsOpeningInput = document.getElementById("settingsOpeningInput");
+  /* ---------- top ⋮ menu ---------- */
   var topMenu = document.getElementById("topMenu");
   var menuBtn = document.getElementById("menuBtn");
   function closeTopMenu(){ topMenu.classList.remove("open"); menuBtn.setAttribute("aria-expanded","false"); }
@@ -2095,31 +2404,581 @@
   document.addEventListener("click", function(ev){
     if(topMenu.classList.contains("open") && !topMenu.contains(ev.target)) closeTopMenu();
   });
-  document.getElementById("menuSettingsItem").addEventListener("click", function(){
-    closeTopMenu();
-    settingsNameInput.value = profileName;
-    settingsOpeningInput.value = opening ? opening : "";
-    settingsOverlay.classList.add("open");
-    setTimeout(function(){ settingsNameInput.focus(); }, 60);
+  document.getElementById("menuChartsItem").addEventListener("click", function(){ closeTopMenu(); setTab("charts"); });
+  document.getElementById("menuBalanceItem").addEventListener("click", function(){ closeTopMenu(); openBalanceSheet(); });
+  document.getElementById("menuHelpItem").addEventListener("click", function(){ closeTopMenu(); openHelp("menu"); });
+  document.getElementById("menuSettingsItem").addEventListener("click", function(){ closeTopMenu(); openSettings(); });
+
+  /* ---------- View Balance sheet ---------- */
+  var balanceOverlay = document.getElementById("balanceOverlay");
+  function openBalanceSheet(){
+    var totIn = sumType(entries,"income"), totOut = sumType(entries,"expense");
+    document.getElementById("balanceBox").innerHTML =
+      '<div class="summary-line"><span><strong>Balance</strong></span><span><strong>'+esc(fmt(totalBalance("All")))+'</strong></span></div>' +
+      '<div class="summary-line"><span>C/F</span><span>'+esc(fmt(opening))+'</span></div>' +
+      '<div class="summary-line"><span>Total Income (Credit)</span><span class="in">'+esc(fmt(totIn))+'</span></div>' +
+      '<div class="summary-line"><span>Total Expense (Debit)</span><span class="out">'+esc(fmt(totOut))+'</span></div>';
+    balanceOverlay.classList.add("open");
+  }
+  function closeBalanceSheet(){ balanceOverlay.classList.remove("open"); }
+  document.getElementById("closeBalanceBtn").addEventListener("click", closeBalanceSheet);
+  document.getElementById("balanceOkBtn").addEventListener("click", closeBalanceSheet);
+  balanceOverlay.addEventListener("click", function(ev){ if(ev.target===balanceOverlay) closeBalanceSheet(); });
+
+  /* ---------- person photos ---------- */
+  var photoOverlay = document.getElementById("photoOverlay");
+  var photoInput = document.getElementById("photoFileInput");
+  var photoTarget = "";
+  var photoSheetName = "";
+  function processPhotoFile(file, done){
+    var reader = new FileReader();
+    reader.onload = function(){
+      var img = new Image();
+      img.onload = function(){
+        var size = 128;
+        var canvas = document.createElement("canvas");
+        canvas.width = size; canvas.height = size;
+        var ctx = canvas.getContext("2d");
+        if(!ctx) return;
+        var scale = Math.max(size / img.width, size / img.height);
+        var w = img.width * scale, h = img.height * scale;
+        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+        var url = "";
+        try{ url = canvas.toDataURL("image/jpeg", 0.82); }catch(e){}
+        if(url) done(url);
+      };
+      img.src = String(reader.result || "");
+    };
+    reader.readAsDataURL(file);
+  }
+  function openPhotoPicker(target){
+    photoTarget = target;
+    photoInput.value = "";
+    photoInput.click();
+  }
+  photoInput.addEventListener("change", function(){
+    var f = photoInput.files && photoInput.files[0];
+    if(!f) return;
+    processPhotoFile(f, function(url){
+      if(photoTarget === "__new__"){
+        pendingPhoto = url;
+        syncPersonAvatarPicker();
+      } else if(photoTarget){
+        personPhotos[photoTarget] = url;
+        persist();
+        if(photoOverlay.classList.contains("open") && photoSheetName === photoTarget) refreshPhotoSheet();
+        render();
+        toast("Photo saved ✓");
+      }
+      photoTarget = "";
+    });
   });
-  function closeSettings(){ settingsOverlay.classList.remove("open"); }
-  document.getElementById("closeSettingsBtn").addEventListener("click", closeSettings);
-  document.getElementById("cancelSettingsBtn").addEventListener("click", closeSettings);
-  settingsOverlay.addEventListener("click", function(ev){ if(ev.target===settingsOverlay) closeSettings(); });
-  document.getElementById("saveSettingsBtn").addEventListener("click", function(){
-    profileName = settingsNameInput.value.trim();
-    var v = parseFloat(settingsOpeningInput.value);
-    opening = isNaN(v) ? 0 : Math.round(v*100)/100;
-    persist(); closeSettings(); render(); toast("Saved ✓");
+  function refreshPhotoSheet(){
+    document.getElementById("photoSheetTitle").textContent = photoSheetName;
+    document.getElementById("photoPreview").innerHTML = avatarHTML(photoSheetName, "xl");
+    document.getElementById("removePhotoBtn").style.display = personPhotos[photoSheetName] ? "" : "none";
+  }
+  function openPhotoSheet(name){
+    photoSheetName = name;
+    refreshPhotoSheet();
+    photoOverlay.classList.add("open");
+  }
+  function closePhotoSheet(){ photoOverlay.classList.remove("open"); }
+  document.getElementById("closePhotoBtn").addEventListener("click", closePhotoSheet);
+  document.getElementById("cancelPhotoBtn").addEventListener("click", closePhotoSheet);
+  photoOverlay.addEventListener("click", function(ev){ if(ev.target===photoOverlay) closePhotoSheet(); });
+  document.getElementById("choosePhotoBtn").addEventListener("click", function(){ openPhotoPicker(photoSheetName); });
+  document.getElementById("removePhotoBtn").addEventListener("click", function(){
+    if(!photoSheetName) return;
+    delete personPhotos[photoSheetName];
+    persist(); refreshPhotoSheet(); render();
+    toast("Photo removed");
+  });
+
+  /* ---------- backup & restore ---------- */
+  var backupOverlay = document.getElementById("backupOverlay");
+  var backupError = document.getElementById("backupError");
+  var backupMainBox = document.getElementById("backupMain");
+  var backupConfirmBox = document.getElementById("backupConfirm");
+  var restoreInput = document.getElementById("restoreFileInput");
+  var pendingRestore = null;
+  function showBackupMain(){
+    backupMainBox.style.display = "";
+    backupConfirmBox.style.display = "none";
+    backupError.classList.remove("show"); backupError.textContent = "";
+  }
+  function openBackup(){ pendingRestore = null; showBackupMain(); backupOverlay.classList.add("open"); }
+  function closeBackup(){ backupOverlay.classList.remove("open"); }
+  document.getElementById("backupBtn").addEventListener("click", openBackup);
+  document.getElementById("closeBackupBtn").addEventListener("click", closeBackup);
+  backupOverlay.addEventListener("click", function(ev){ if(ev.target===backupOverlay) closeBackup(); });
+  function doBackup(){
+    var data = {
+      app: "My Debit Diary",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      entries: entries,
+      opening: opening,
+      people: ledgerNames,
+      personNotes: personNotes,
+      personPhotos: personPhotos,
+      name: profileName,
+      customCats: customCats,
+      notes: notes,
+      currency: currency,
+      fiscalMonth: fiscalMonth,
+      customAccounts: customAccounts,
+      theme: theme,
+      dateFmt: dateFmt
+    };
+    var blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+    downloadBlob("my-debit-diary-backup-" + todayKey() + ".json", blob);
+    toast("Backup downloaded ✓");
+  }
+  document.getElementById("doBackupBtn").addEventListener("click", doBackup);
+  document.getElementById("doRestoreBtn").addEventListener("click", function(){
+    restoreInput.value = "";
+    restoreInput.click();
+  });
+  restoreInput.addEventListener("change", function(){
+    var f = restoreInput.files && restoreInput.files[0];
+    if(!f) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      var obj = null;
+      try{ obj = JSON.parse(String(reader.result || "")); }catch(e){ obj = null; }
+      backupOverlay.classList.add("open");
+      if(!obj || typeof obj !== "object" || !Array.isArray(obj.entries)){
+        pendingRestore = null;
+        showBackupMain();
+        backupError.textContent = "This is not a valid My Debit Diary backup file.";
+        backupError.classList.add("show");
+        return;
+      }
+      pendingRestore = obj;
+      document.getElementById("backupFileName").textContent = f.name;
+      backupMainBox.style.display = "none";
+      backupConfirmBox.style.display = "";
+      backupError.classList.remove("show"); backupError.textContent = "";
+    };
+    reader.readAsText(f);
+  });
+  document.getElementById("backupConfirmCancel").addEventListener("click", function(){
+    pendingRestore = null;
+    showBackupMain();
+  });
+  document.getElementById("backupConfirmBtn").addEventListener("click", function(){
+    if(!pendingRestore) return;
+    var d = pendingRestore;
+    pendingRestore = null;
+    entries = d.entries;
+    entries.forEach(function(e){
+      if(!e.category) e.category = (e.type==="income" ? "Other" : "Misc");
+      if(!Array.isArray(e.tags)) e.tags = [];
+      if(!e.account) e.account = "Cash";
+    });
+    opening = typeof d.opening === "number" ? d.opening : 0;
+    ledgerNames = Array.isArray(d.people) ? d.people.filter(function(n){ return typeof n === "string" && !!n.trim(); }) : [];
+    entries.forEach(function(e){ if(e.ledger && ledgerNames.indexOf(e.ledger)===-1) ledgerNames.push(e.ledger); });
+    personNotes = (d.personNotes && typeof d.personNotes === "object" && !Array.isArray(d.personNotes)) ? d.personNotes : {};
+    personPhotos = {};
+    if(d.personPhotos && typeof d.personPhotos === "object" && !Array.isArray(d.personPhotos)){
+      Object.keys(d.personPhotos).forEach(function(k){
+        if(typeof d.personPhotos[k] === "string" && d.personPhotos[k].indexOf("data:image/") === 0) personPhotos[k] = d.personPhotos[k];
+      });
+    }
+    profileName = typeof d.name === "string" ? d.name : "";
+    if(d.customCats && Array.isArray(d.customCats.expense) && Array.isArray(d.customCats.income)) customCats = d.customCats;
+    notes = Array.isArray(d.notes) ? d.notes : [];
+    if(typeof d.currency === "string" && CURRENCIES.some(function(c){ return c.code === d.currency; })) currency = d.currency;
+    if(typeof d.fiscalMonth === "number" && d.fiscalMonth >= 0 && d.fiscalMonth <= 11) fiscalMonth = d.fiscalMonth;
+    if(Array.isArray(d.customAccounts)) customAccounts = d.customAccounts.filter(function(x){ return typeof x === "string" && !!x.trim(); });
+    if(d.theme === "light" || d.theme === "dark") theme = d.theme;
+    if(["DMY","MDY","YMD"].indexOf(d.dateFmt) !== -1) dateFmt = d.dateFmt;
+    state.ledgerNameFilter = "";
+    applyTheme();
+    persist(); persistNotes();
+    closeBackup();
+    render();
+    toast("Backup restored ✓");
+  });
+
+  /* ---------- export as Excel (CSV) ---------- */
+  function csvCell(v){
+    var s = String(v == null ? "" : v);
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  function exportCSV(){
+    var list = entries.slice().sort(function(a,b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
+    var lines = ["Date,Text,Type,Debit,Credit,Category,Account,Ledger,Remarks"];
+    list.forEach(function(e){
+      lines.push([
+        e.date, e.text, e.type === "income" ? "Income (Credit)" : "Expense (Debit)",
+        e.type === "expense" ? (+e.amount).toFixed(2) : "",
+        e.type === "income" ? (+e.amount).toFixed(2) : "",
+        e.category || "", e.account || "Cash", e.ledger || "", e.remarks || ""
+      ].map(csvCell).join(","));
+    });
+    var blob = new Blob(["\ufeff" + lines.join("\r\n")], {type:"text/csv;charset=utf-8"});
+    downloadBlob("my-debit-diary-entries.csv", blob);
+    toast("Excel (CSV) file downloaded ✓");
+  }
+
+  /* ---------- Settings pages ---------- */
+  var SET_ICONS = {
+    language: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zm2.34-11.96c.08.66.14 1.32.14 2 0 .68-.06 1.34-.14 2h-4.68c-.08-.66-.14-1.32-.14-2 0-.68.06-1.34.14-2h4.68zm.25 11.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>',
+    money: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>',
+    lock: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>',
+    calc: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM7.5 18c-.83 0-1.5-.67-1.5-1.5S6.67 15 7.5 15s1.5.67 1.5 1.5S8.33 18 7.5 18zm0-9C6.67 9 6 8.33 6 7.5S6.67 6 7.5 6 9 6.67 9 7.5 8.33 9 7.5 9zm4.5 10.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm0-9c-.83 0-1.5-.67-1.5-1.5S11.17 6 12 6s1.5.67 1.5 1.5S12.83 10.5 12 10.5zm4.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm0-9c-.83 0-1.5-.67-1.5-1.5S15.67 6 16.5 6s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>',
+    cloud: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>',
+    grid: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg>',
+    gear: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>',
+    help: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>'
+  };
+  function openSettings(){
+    if(state.tab !== "settings" && state.tab !== "help") state.prevTab = state.tab;
+    state.tab = "settings";
+    state.settingsScreen = "main";
+    render(); window.scrollTo(0,0);
+  }
+  function openHelp(from){
+    if(from === "settings"){ state.helpFrom = "settings"; }
+    else { state.helpFrom = "menu"; if(state.tab !== "help") state.prevTab = state.tab; }
+    state.tab = "help";
+    render(); window.scrollTo(0,0);
+  }
+  function settingsBack(){
+    if(state.settingsScreen !== "main"){ state.settingsScreen = "main"; }
+    else state.tab = state.prevTab || "daily";
+    render(); window.scrollTo(0,0);
+  }
+  function setHeadHTML(title){
+    return '<div class="sub-head"><button class="back-btn" id="setBackBtn" aria-label="Back">←</button><h2>'+esc(title)+'</h2></div>';
+  }
+  function bindSetBack(){ document.getElementById("setBackBtn").addEventListener("click", settingsBack); }
+  function setRowHTML(id, icon, title, sub){
+    return '<button class="set-row" data-set-nav="'+id+'"><span class="set-ic">'+icon+'</span>' +
+      '<span class="set-texts"><span class="set-title">'+esc(title)+'</span>' +
+      (sub ? '<span class="set-sub">'+esc(sub)+'</span>' : '') + '</span><span class="set-chev">›</span></button>';
+  }
+  function pickRowHTML(val, label, sub, selected){
+    return '<button class="set-row" data-pick-val="'+esc(val)+'"><span class="set-texts"><span class="set-title" style="font-weight:500">'+esc(label)+'</span>' +
+      (sub ? '<span class="set-sub">'+esc(sub)+'</span>' : '') + '</span>' +
+      (selected ? '<span class="set-check">✓</span>' : '') + '</button>';
+  }
+  function renderSettings(){
+    var s = state.settingsScreen;
+    if(s === "language") return renderSetLanguage();
+    if(s === "currency") return renderSetCurrency();
+    if(s === "calculations") return renderSetCalculations();
+    if(s === "backup") return renderSetBackup();
+    if(s === "data") return renderSetData();
+    if(s === "preferences") return renderSetPreferences();
+    var ci = curInfo();
+    var html = setHeadHTML("Settings");
+    html += setRowHTML("language", SET_ICONS.language, "App Language", "English (English)");
+    html += setRowHTML("currency", SET_ICONS.money, "Currency", ci.code + " - " + ci.name);
+    html += '<div class="set-row"><span class="set-ic">'+SET_ICONS.lock+'</span>' +
+      '<span class="set-texts"><span class="set-title">App lock</span>' +
+      '<span class="set-sub">Helps you protect your data from being viewed by others accidentally.</span></span>' +
+      '<button type="button" class="switch'+(appPin ? " on" : "")+'" id="appLockSwitch" role="switch" aria-checked="'+(appPin ? "true" : "false")+'" aria-label="App lock"><span class="knob"></span></button></div>';
+    html += setRowHTML("calculations", SET_ICONS.calc, "Calculations", "Fiscal year, carry forward.");
+    html += setRowHTML("backup", SET_ICONS.cloud, "Backup and export", "Backup file, export as Excel");
+    html += setRowHTML("data", SET_ICONS.grid, "Data Management", "Manage profiles & accounts, Categories, Carry forward");
+    html += setRowHTML("preferences", SET_ICONS.gear, "Preferences", "Themes and more");
+    html += setRowHTML("help", SET_ICONS.help, "Help and Feedback", "");
+    main.innerHTML = html;
+    bindSetBack();
+    main.querySelectorAll("[data-set-nav]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var id = b.getAttribute("data-set-nav");
+        if(id === "help"){ openHelp("settings"); return; }
+        state.settingsScreen = id;
+        render(); window.scrollTo(0,0);
+      });
+    });
+    document.getElementById("appLockSwitch").addEventListener("click", function(){
+      if(appPin){
+        appPin = "";
+        persist(); render();
+        toast("App lock is off");
+      } else {
+        openPinSheet();
+      }
+    });
+  }
+  function renderSetLanguage(){
+    var html = setHeadHTML("App Language");
+    html += pickRowHTML("en", "English", "English (English)", true);
+    html += '<p class="hint" style="padding:14px 4px 0">More languages are coming soon. Right now the app is available in English only.</p>';
+    main.innerHTML = html;
+    bindSetBack();
+  }
+  function renderSetCurrency(){
+    var html = setHeadHTML("Currency");
+    CURRENCIES.forEach(function(c){
+      html += pickRowHTML(c.code, c.code + " - " + c.name, "Symbol: " + c.sym, currency === c.code);
+    });
+    html += '<p class="hint" style="padding:14px 4px 0">The symbol is shown with every amount in the app.</p>';
+    main.innerHTML = html;
+    bindSetBack();
+    main.querySelectorAll("[data-pick-val]").forEach(function(b){
+      b.addEventListener("click", function(){
+        currency = b.getAttribute("data-pick-val");
+        persist(); settingsBack();
+        toast("Currency set to " + currency + " ✓");
+      });
+    });
+  }
+  function renderSetCalculations(){
+    var html = setHeadHTML("Calculations");
+    html += '<div class="field"><label for="fiscalSel">Fiscal year starts in</label>' +
+      '<select id="fiscalSel">' + MONTHS.map(function(mn, i){ return '<option value="'+i+'"'+(i===fiscalMonth ? " selected" : "")+'>'+mn+'</option>'; }).join("") + '</select></div>';
+    html += '<div class="field"><label for="calcOpeningInput">Opening Balance — C/F ('+esc(curSym().trim())+')</label>' +
+      '<input type="number" id="calcOpeningInput" inputmode="decimal" step="0.01" placeholder="0.00" value="'+(opening ? opening : "")+'" /></div>';
+    html += '<p style="color:var(--muted);font-size:14.5px;line-height:1.5;margin:0 0 14px">The opening balance is the amount you had before starting this diary. Each day\'s C/F is calculated from it.</p>';
+    html += '<div class="sheet-actions"><button class="btn btn-primary" id="calcSaveBtn">Save</button></div>';
+    main.innerHTML = html;
+    bindSetBack();
+    document.getElementById("calcSaveBtn").addEventListener("click", function(){
+      var fm = parseInt(document.getElementById("fiscalSel").value, 10);
+      fiscalMonth = (isNaN(fm) || fm < 0 || fm > 11) ? 6 : fm;
+      var v = parseFloat(document.getElementById("calcOpeningInput").value);
+      opening = isNaN(v) ? 0 : Math.round(v*100)/100;
+      persist(); settingsBack();
+      toast("Saved ✓");
+    });
+  }
+  function renderSetBackup(){
+    var html = setHeadHTML("Backup and export");
+    html += '<div class="stack-actions" style="margin-top:2px">' +
+      '<button class="btn btn-primary" id="setBackupBtn">Backup — Download File</button>' +
+      '<button class="btn btn-ghost" id="setRestoreBtn">Restore — Choose Backup File</button>' +
+      '<button class="btn btn-ghost" id="setExcelBtn">Export as Excel (CSV)</button></div>';
+    html += '<p class="hint" style="padding:14px 4px 0">Backup saves everything — entries, people and their photos, notes and settings — into one file you can keep safe. Restore replaces the current data with the data from a backup file. Export as Excel downloads all entries as a CSV file that opens in Excel.</p>';
+    main.innerHTML = html;
+    bindSetBack();
+    document.getElementById("setBackupBtn").addEventListener("click", doBackup);
+    document.getElementById("setRestoreBtn").addEventListener("click", function(){
+      restoreInput.value = "";
+      restoreInput.click();
+    });
+    document.getElementById("setExcelBtn").addEventListener("click", exportCSV);
+  }
+  function renderSetData(){
+    var html = setHeadHTML("Data Management");
+    html += '<div class="set-section-head" style="margin-top:2px">Profiles</div>';
+    html += '<div class="field"><label for="dataNameInput">Your Name (shown on the report)</label>' +
+      '<input type="text" id="dataNameInput" value="'+esc(profileName)+'" placeholder="Enter your name" autocomplete="off" /></div>';
+    html += '<div style="text-align:right;margin:-6px 0 2px"><button type="button" class="tag-add-btn" id="dataNameSave">Save Name</button></div>';
+    html += '<div class="set-section-head">Accounts</div>';
+    allAccounts().forEach(function(a){
+      var isCustom = customAccounts.indexOf(a) !== -1;
+      html += '<div class="data-row"><span class="dr-main">'+esc(a)+'</span>' +
+        (isCustom ? '<button type="button" class="row-del" data-del-account="'+esc(a)+'" aria-label="Delete account '+esc(a)+'">✕</button>' : '<span class="dr-tag">Default</span>') + '</div>';
+    });
+    html += '<div class="tag-input-row" style="margin-top:10px"><input type="text" id="newAccountInput" placeholder="New account name" autocomplete="off" /><button type="button" class="tag-add-btn" id="addAccountBtn">Add</button></div>';
+    html += '<div class="set-section-head">Categories — Expense (Debit)</div>';
+    EXPENSE_CATS.forEach(function(c){
+      html += '<div class="data-row"><span class="dr-main">'+esc(c.name)+'</span><span class="dr-tag">Default</span></div>';
+    });
+    customCats.expense.forEach(function(n){
+      html += '<div class="data-row"><span class="dr-main">'+esc(n)+'</span><button type="button" class="row-del" data-del-cat-kind="expense" data-del-cat-name="'+esc(n)+'" aria-label="Delete category '+esc(n)+'">✕</button></div>';
+    });
+    html += '<div class="tag-input-row" style="margin-top:10px"><input type="text" id="newExpCatInput" placeholder="New expense category" autocomplete="off" /><button type="button" class="tag-add-btn" id="addExpCatBtn">Add</button></div>';
+    html += '<div class="set-section-head">Categories — Income (Credit)</div>';
+    INCOME_CATS.forEach(function(c){
+      html += '<div class="data-row"><span class="dr-main">'+esc(c.name)+'</span><span class="dr-tag">Default</span></div>';
+    });
+    customCats.income.forEach(function(n){
+      html += '<div class="data-row"><span class="dr-main">'+esc(n)+'</span><button type="button" class="row-del" data-del-cat-kind="income" data-del-cat-name="'+esc(n)+'" aria-label="Delete category '+esc(n)+'">✕</button></div>';
+    });
+    html += '<div class="tag-input-row" style="margin-top:10px"><input type="text" id="newIncCatInput" placeholder="New income category" autocomplete="off" /><button type="button" class="tag-add-btn" id="addIncCatBtn">Add</button></div>';
+    html += '<div class="set-section-head">Carry forward</div>';
+    html += '<div class="field"><label for="dataOpeningInput">Opening Balance — C/F ('+esc(curSym().trim())+')</label>' +
+      '<input type="number" id="dataOpeningInput" inputmode="decimal" step="0.01" placeholder="0.00" value="'+(opening ? opening : "")+'" /></div>';
+    html += '<div style="text-align:right;margin:-6px 0 2px"><button type="button" class="tag-add-btn" id="dataOpeningSave">Save</button></div>';
+    main.innerHTML = html;
+    bindSetBack();
+    document.getElementById("dataNameSave").addEventListener("click", function(){
+      profileName = document.getElementById("dataNameInput").value.trim();
+      persist(); toast("Name saved ✓");
+    });
+    document.getElementById("addAccountBtn").addEventListener("click", function(){
+      var inp = document.getElementById("newAccountInput");
+      var name = inp.value.trim();
+      if(!name){ inp.focus(); return; }
+      if(allAccounts().some(function(a){ return a.toLowerCase() === name.toLowerCase(); })){ toast("This account already exists"); return; }
+      customAccounts.push(name);
+      persist(); render();
+      toast("Account added ✓");
+    });
+    main.querySelectorAll("[data-del-account]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var name = b.getAttribute("data-del-account");
+        customAccounts = customAccounts.filter(function(a){ return a !== name; });
+        persist(); render();
+        toast("Account deleted");
+      });
+    });
+    function bindAddCat(btnId, inputId, kind){
+      document.getElementById(btnId).addEventListener("click", function(){
+        var inp = document.getElementById(inputId);
+        var name = inp.value.trim();
+        if(!name){ inp.focus(); return; }
+        if(catsFor(kind).some(function(c){ return c.name.toLowerCase() === name.toLowerCase(); })){ toast("This category already exists"); return; }
+        customCats[kind].push(name);
+        persist(); render();
+        toast("Category added ✓");
+      });
+    }
+    bindAddCat("addExpCatBtn", "newExpCatInput", "expense");
+    bindAddCat("addIncCatBtn", "newIncCatInput", "income");
+    main.querySelectorAll("[data-del-cat-name]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var kind = b.getAttribute("data-del-cat-kind");
+        var name = b.getAttribute("data-del-cat-name");
+        customCats[kind] = customCats[kind].filter(function(n){ return n !== name; });
+        persist(); render();
+        toast("Category deleted");
+      });
+    });
+    document.getElementById("dataOpeningSave").addEventListener("click", function(){
+      var v = parseFloat(document.getElementById("dataOpeningInput").value);
+      opening = isNaN(v) ? 0 : Math.round(v*100)/100;
+      persist(); toast("Opening balance saved ✓");
+    });
+  }
+  function renderSetPreferences(){
+    var html = setHeadHTML("Preferences");
+    html += '<div class="set-section-head" style="margin-top:2px">Theme</div>';
+    html += pickRowHTML("dark", "Dark", "", theme === "dark");
+    html += pickRowHTML("light", "Light", "", theme === "light");
+    html += '<div class="set-section-head">Date format</div>';
+    var tk = todayKey();
+    html += pickRowHTML("DMY", "DD/MM/YYYY", "Example: " + fmtDateWith("DMY", tk), dateFmt === "DMY");
+    html += pickRowHTML("MDY", "MM/DD/YYYY", "Example: " + fmtDateWith("MDY", tk), dateFmt === "MDY");
+    html += pickRowHTML("YMD", "YYYY-MM-DD", "Example: " + fmtDateWith("YMD", tk), dateFmt === "YMD");
+    main.innerHTML = html;
+    bindSetBack();
+    main.querySelectorAll("[data-pick-val]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var v = b.getAttribute("data-pick-val");
+        if(v === "dark" || v === "light"){ theme = v; applyTheme(); }
+        else dateFmt = v;
+        persist(); render();
+      });
+    });
+  }
+
+  /* ---------- Help screen ---------- */
+  function renderHelp(){
+    var html = '<div class="sub-head"><button class="back-btn" id="helpBackBtn" aria-label="Back">←</button><h2>Help and Feedback</h2></div>';
+    html += '<h3 class="help-h" style="margin-top:2px">Adding an entry</h3>' +
+      '<p class="help-p">Tap the + button, choose Income (Credit) or Expense (Debit), write the name and amount, pick a category and account, and tap Save. In the entry form you can also choose a person in the Ledger field to link the entry to that person.</p>';
+    html += '<h3 class="help-h">Editing or deleting an entry</h3>' +
+      '<p class="help-p">Tap an entry (or long-press it) to open it. Change anything and tap Save, or tap Delete to remove it.</p>';
+    html += '<h3 class="help-h">Daily, Monthly and Yearly</h3>' +
+      '<p class="help-p">Daily shows one day with its C/F and balance. Monthly groups entries by day for the month, and Yearly shows the whole year month by month. Use the arrows to move between days, months and years, and the date range to view a custom period.</p>';
+    html += '<h3 class="help-h">Ledger — people you deal with</h3>' +
+      '<p class="help-p">On the Ledger tab, tap + Add person to create a ledger for a person. Money you give them is an Expense (Debit) and money you receive back is an Income (Credit); their balance shows what they still owe. Tap a person to see only their entries. Tap their photo circle to add or change their photo.</p>';
+    html += '<h3 class="help-h">Notes</h3>' +
+      '<p class="help-p">Tap the pencil tab to write notes for any day. Notes are kept month by month.</p>';
+    html += '<h3 class="help-h">Charts and PDF report</h3>' +
+      '<p class="help-p">Tap the pie-chart icon in the top bar to see Charts. On the Monthly, Yearly and Charts views, the PDF button opens the Report, which you can download as a PDF for any period.</p>';
+    html += '<h3 class="help-h">Backup and restore</h3>' +
+      '<p class="help-p">Your data is saved in this browser on this device. Tap the cloud icon in the top bar (or Settings → Backup and export) to download a backup file. Keep it safe — Restore brings all your data back from that file on any device. Export as Excel downloads all entries as a CSV file.</p>';
+    html += '<h3 class="help-h">App lock</h3>' +
+      '<p class="help-p">In Settings, turn on App lock and set a 4-digit PIN. The app will ask for the PIN every time it opens. If you forget the PIN, tap "Forgot PIN" on the lock screen to remove the lock — your data stays.</p>';
+    html += '<h3 class="help-h">Feedback</h3>' +
+      '<p class="help-p">If something does not work as expected, note down what you tapped and what happened, and share it with the person who gave you this app so it can be fixed.</p>';
+    main.innerHTML = html;
+    document.getElementById("helpBackBtn").addEventListener("click", function(){
+      if(state.helpFrom === "settings"){ state.tab = "settings"; state.settingsScreen = "main"; }
+      else state.tab = state.prevTab || "daily";
+      render(); window.scrollTo(0,0);
+    });
+  }
+
+  /* ---------- App lock (PIN) ---------- */
+  var pinOverlay = document.getElementById("pinOverlay");
+  var pinError = document.getElementById("pinError");
+  function openPinSheet(){
+    pinError.classList.remove("show"); pinError.textContent = "";
+    document.getElementById("pinInput1").value = "";
+    document.getElementById("pinInput2").value = "";
+    pinOverlay.classList.add("open");
+    setTimeout(function(){ document.getElementById("pinInput1").focus(); }, 60);
+  }
+  function closePinSheet(){ pinOverlay.classList.remove("open"); }
+  document.getElementById("closePinBtn").addEventListener("click", closePinSheet);
+  document.getElementById("cancelPinBtn").addEventListener("click", closePinSheet);
+  pinOverlay.addEventListener("click", function(ev){ if(ev.target===pinOverlay) closePinSheet(); });
+  document.getElementById("savePinBtn").addEventListener("click", function(){
+    var p1 = document.getElementById("pinInput1").value.trim();
+    var p2 = document.getElementById("pinInput2").value.trim();
+    if(!/^\d{4}$/.test(p1)){
+      pinError.textContent = "Please enter a 4-digit PIN.";
+      pinError.classList.add("show");
+      return;
+    }
+    if(p1 !== p2){
+      pinError.textContent = "The two PINs do not match. Please enter the same PIN twice.";
+      pinError.classList.add("show");
+      return;
+    }
+    appPin = p1;
+    persist(); closePinSheet();
+    if(state.tab === "settings") render();
+    toast("App lock is on ✓");
+  });
+
+  var lockScreen = document.getElementById("lockScreen");
+  var lockPinInput = document.getElementById("lockPinInput");
+  var lockError = document.getElementById("lockError");
+  function tryUnlock(){
+    if(appPin && lockPinInput.value === appPin){
+      lockScreen.classList.remove("open");
+      lockPinInput.value = "";
+      lockError.classList.remove("show"); lockError.textContent = "";
+      document.getElementById("lockForgotBox").style.display = "none";
+    } else {
+      lockError.textContent = "Wrong PIN. Please try again.";
+      lockError.classList.add("show");
+      lockPinInput.select();
+    }
+  }
+  document.getElementById("lockUnlockBtn").addEventListener("click", tryUnlock);
+  lockPinInput.addEventListener("keydown", function(ev){ if(ev.key === "Enter") tryUnlock(); });
+  document.getElementById("lockForgotBtn").addEventListener("click", function(){
+    document.getElementById("lockForgotBox").style.display = "";
+  });
+  document.getElementById("lockForgotCancel").addEventListener("click", function(){
+    document.getElementById("lockForgotBox").style.display = "none";
+  });
+  document.getElementById("lockForgotRemove").addEventListener("click", function(){
+    appPin = "";
+    persist();
+    document.getElementById("lockForgotBox").style.display = "none";
+    lockScreen.classList.remove("open");
+    lockPinInput.value = "";
+    lockError.classList.remove("show"); lockError.textContent = "";
+    if(state.tab === "settings") render();
+    toast("App lock removed");
   });
 
   document.addEventListener("keydown", function(ev){
-    if(ev.key==="Escape"){ closeCalendar(); closeRangeCalendar(); closeSheet(); closeSettings(); closeTopMenu(); closePersonSheet(); accountOverlay.classList.remove("open"); categoryOverlay.classList.remove("open"); }
+    if(ev.key==="Escape"){ closeCalendar(); closeRangeCalendar(); closeSheet(); closeTopMenu(); closePersonSheet(); closePhotoSheet(); closeBackup(); closeBalanceSheet(); closePinSheet(); accountOverlay.classList.remove("open"); categoryOverlay.classList.remove("open"); }
   });
 
   /* ---------- init ---------- */
+  applyTheme();
   persist();
   render();
+  if(appPin){
+    lockScreen.classList.add("open");
+    setTimeout(function(){ lockPinInput.focus(); }, 80);
+  }
 })();
 </script>
 </body>
