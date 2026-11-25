@@ -160,6 +160,21 @@
   .summary-line:last-child{border-bottom:0}
   .summary-line .in{color:var(--mint)}
   .summary-line .out{color:var(--danger)}
+  /* Ledger — people list */
+  .people-head{display:flex;justify-content:space-between;align-items:center;margin:2px 2px 10px}
+  .people-title{font-size:17px;font-weight:700}
+  .add-person-btn{background:transparent;border:1.5px solid var(--teal);color:var(--mint);border-radius:999px;padding:8px 14px;font-size:14.5px;font-weight:700;min-height:40px}
+  .add-person-btn:active{background:#22352b}
+  .person-list{display:flex;flex-direction:column;gap:8px;margin-bottom:4px}
+  .person-row{display:flex;align-items:center;gap:10px;width:100%;background:var(--card-2);border:2px solid transparent;border-radius:8px;padding:11px 12px;color:var(--text);text-align:left;min-height:56px}
+  .person-row:active{background:#1a211c}
+  .person-row.selected{border-color:var(--mint);background:#22352b}
+  .person-main{flex:1;min-width:0}
+  .person-name{display:block;font-size:16.5px;font-weight:700;overflow-wrap:anywhere}
+  .person-sub{display:block;font-size:13px;color:var(--muted);margin-top:2px;overflow-wrap:anywhere}
+  .person-bal{font-size:16.5px;font-weight:700;white-space:nowrap}
+  .person-bal.pos{color:var(--mint)}
+  .person-bal.neg{color:var(--danger)}
   .ledger-names-head{font-size:16px;font-weight:700;margin:14px 2px 8px}
   .ledger-name-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
   .ledger-name-chip{background:var(--card-2);border:2px solid transparent;color:var(--text);border-radius:999px;padding:9px 15px;font-size:15px;font-weight:600;min-height:44px}
@@ -445,7 +460,7 @@
     </div>
     <div class="field" id="newLedgerField" style="display:none">
       <label for="fLedgerNew">New Ledger Name</label>
-      <input type="text" id="fLedgerNew" placeholder="New ledger name (e.g. Shop, Home, Salary)" autocomplete="off" />
+      <input type="text" id="fLedgerNew" placeholder="New person's name (e.g. Ahmed)" autocomplete="off" />
     </div>
 
 
@@ -519,6 +534,28 @@
   </div>
 </div>
 
+<!-- Add person sheet (Ledger) -->
+<div class="overlay" id="personOverlay" role="dialog" aria-modal="true" aria-label="Add a person">
+  <div class="sheet">
+    <button class="sheet-close" id="closePersonBtn" aria-label="Close"><span>⌄</span></button>
+    <h2 class="sheet-title">Add a Person</h2>
+    <div class="error-msg" id="personError"></div>
+    <div class="field">
+      <label for="personNameInput">Person's Name</label>
+      <input type="text" id="personNameInput" placeholder="e.g. Ahmed" autocomplete="off" />
+    </div>
+    <div class="field">
+      <label for="personRemarksInput">Remarks (optional)</label>
+      <input type="text" id="personRemarksInput" placeholder="Optional note about this person" autocomplete="off" />
+    </div>
+    <p style="color:#c9d4cb;font-size:14.5px;line-height:1.5;margin:0 0 14px">Money you give this person is an Expense (Debit); money you receive back from them is an Income (Credit).</p>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" id="cancelPersonBtn">Cancel</button>
+      <button class="btn btn-primary" id="savePersonBtn">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- Category picker -->
 <div class="overlay" id="categoryOverlay" role="dialog" aria-modal="true" aria-label="Choose category">
   <div class="sheet">
@@ -570,6 +607,7 @@
   var LS_OPENING1 = "mdd-web-opening-single-v1";
   var LS_CUSTOMCATS = "mdd-web-customcats-v1";
   var LS_NOTES = "mdd-web-notes-v1";
+  var LS_PERSON_NOTES = "mdd-web-person-notes-v1";
   var ADD_NEW_LEDGER = "__add_new_ledger__";
   var ACCOUNTS = ["Cash","Bank","JazzCash","Easypaisa","Other"];
   var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -623,16 +661,22 @@
   function loadLedgers(){
     var obj = parseJSON(lsGet(LS_LEDGERS), null);
     var out = [];
-    if(Array.isArray(obj)) out = obj.slice();
+    function pushName(n){ if(typeof n==="string" && n.trim() && out.indexOf(n)===-1) out.push(n); }
+    if(Array.isArray(obj)) obj.forEach(pushName);
     else if(obj && typeof obj === "object"){
       ["Personal","Business"].forEach(function(p){
-        if(Array.isArray(obj[p])) obj[p].forEach(function(n){ if(out.indexOf(n)===-1) out.push(n); });
+        if(Array.isArray(obj[p])) obj[p].forEach(pushName);
       });
-    } else {
-      var old = parseJSON(lsGet(LS_LEDGERS_OLD), []);
-      if(Array.isArray(old)) out = old.slice();
     }
-    return out.filter(function(x){ return typeof x==="string" && x.trim(); });
+    /* Names saved by older versions (mdd-web-ledgers-v1) are people too */
+    var old = parseJSON(lsGet(LS_LEDGERS_OLD), []);
+    if(Array.isArray(old)) old.forEach(pushName);
+    return out;
+  }
+  function loadPersonNotes(){
+    var o = parseJSON(lsGet(LS_PERSON_NOTES), {});
+    if(!o || typeof o !== "object" || Array.isArray(o)) return {};
+    return o;
   }
   function loadCustomCats(){
     var o = parseJSON(lsGet(LS_CUSTOMCATS), {expense:[], income:[]});
@@ -644,6 +688,7 @@
   var entries = loadEntries();
   var opening = loadOpening();
   var ledgerNames = loadLedgers();
+  var personNotes = loadPersonNotes();
   var profileName = lsGet(LS_NAME) || "";
   var customCats = loadCustomCats();
   entries.forEach(function(e){ if(e.ledger && ledgerNames.indexOf(e.ledger)===-1) ledgerNames.push(e.ledger); });
@@ -652,6 +697,7 @@
     lsSet(LS_ENTRIES, JSON.stringify(entries));
     lsSet(LS_OPENING1, String(opening));
     lsSet(LS_LEDGERS, JSON.stringify(ledgerNames));
+    lsSet(LS_PERSON_NOTES, JSON.stringify(personNotes));
     lsSet(LS_NAME, profileName);
     lsSet(LS_CUSTOMCATS, JSON.stringify(customCats));
   }
@@ -971,21 +1017,51 @@
     });
   }
 
-  /* ---------- LEDGER ---------- */
-  function renderLedger(){
-    var acct = state.ledgerAccount;
-    var cards = ['<button class="acct-card'+(acct==="All"?" selected":"")+'" data-acct="All"><span class="acct-name">All Accounts</span><span class="acct-bal">'+esc(fmt(totalBalance("All")))+'</span></button>'];
-    ACCOUNTS.forEach(function(a){
-      cards.push('<button class="acct-card'+(acct===a?" selected":"")+'" data-acct="'+a+'"><span class="acct-name">'+a+'</span><span class="acct-bal">'+esc(fmt(totalBalance(a)))+'</span></button>');
+  /* ---------- LEDGER (people) ---------- */
+  function personBalance(name){
+    var bal = 0;
+    entries.forEach(function(e){
+      if((e.ledger||"") !== name) return;
+      if(e.type === "expense") bal += +e.amount; else bal -= +e.amount;
     });
+    return Math.round(bal*100)/100;
+  }
+  function renderLedger(){
+    var sel = state.ledgerNameFilter;
+    var html = "";
+    /* People list — one row per person, with what they still owe / are owed */
+    html += '<div class="people-head"><span class="people-title">People</span>' +
+      '<button type="button" class="add-person-btn" id="addPersonBtn">+ Add person</button></div>';
+    if(!ledgerNames.length){
+      html += '<p class="empty-note" style="padding-top:2px">No ledgers yet. Tap + to add a person.</p>';
+    } else {
+      var allBal = 0;
+      ledgerNames.forEach(function(n){ allBal += personBalance(n); });
+      allBal = Math.round(allBal*100)/100;
+      html += '<div class="person-list">';
+      html += '<button type="button" class="person-row'+(sel===""?" selected":"")+'" data-person="">' +
+        '<span class="person-main"><span class="person-name">All</span>' +
+        '<span class="person-sub">'+ledgerNames.length+(ledgerNames.length===1 ? " person" : " people")+'</span></span>' +
+        '<span class="person-bal'+(allBal>0?" pos":(allBal<0?" neg":""))+'">'+esc(fmt(allBal))+'</span></button>';
+      ledgerNames.forEach(function(name){
+        var bal = personBalance(name);
+        var rem = personNotes[name] || "";
+        html += '<button type="button" class="person-row'+(sel===name?" selected":"")+'" data-person="'+esc(name)+'">' +
+          '<span class="person-main"><span class="person-name">'+esc(name)+'</span>' +
+          (rem ? '<span class="person-sub">'+esc(rem)+'</span>' : '') + '</span>' +
+          '<span class="person-bal'+(bal>0?" pos":(bal<0?" neg":""))+'">'+esc(fmt(bal))+'</span></button>';
+      });
+      html += '</div>';
+    }
+    /* Entries table — all entries, or only the selected person's */
     var list = entries.slice().sort(function(a,b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
-    if(acct !== "All") list = list.filter(function(e){ return e.account===acct; });
-    if(state.ledgerNameFilter) list = list.filter(function(e){ return (e.ledger||"")===state.ledgerNameFilter; });
-    var running = (acct==="All") ? opening : 0;
-    var startCF = running, totIn = 0, totOut = 0, rows = "";
+    if(sel) list = list.filter(function(e){ return (e.ledger||"")===sel; });
+    /* In a person's view the balance is what they owe: money given (Debit) adds, money received (Credit) subtracts */
+    var startCF = sel ? 0 : opening;
+    var running = startCF, totIn = 0, totOut = 0, rows = "";
     list.forEach(function(e){
-      running += signed(e);
       if(e.type==="income") totIn += +e.amount; else totOut += +e.amount;
+      running += sel ? (e.type==="expense" ? +e.amount : -(+e.amount)) : signed(e);
       var sub = [];
       if(e.category) sub.push(e.category);
       sub.push(e.account||"Cash");
@@ -1003,34 +1079,26 @@
         mobileAmt + debitCell + creditCell +
         '<span class="num cell-bal">'+esc(fmt(running))+'</span></button>';
     });
-    var ledgerChips = "";
-    if(ledgerNames.length){
-      ledgerChips = '<div class="ledger-names-head">Ledgers</div><div class="ledger-name-chips">' +
-        '<button class="ledger-name-chip'+(state.ledgerNameFilter===""?" selected":"")+'" data-ledger-name="">All Ledgers</button>' +
-        ledgerNames.map(function(name){
-          var cnt = entries.filter(function(e){ return (e.ledger||"")===name; }).length;
-          return '<button class="ledger-name-chip'+(state.ledgerNameFilter===name?" selected":"")+'" data-ledger-name="'+esc(name)+'">'+esc(name)+'<span class="cnt">'+cnt+'</span></button>';
-        }).join("") + '</div>';
-    }
-    var html = "";
-    html += '<div class="acct-grid">' + cards.join("") + '</div>';
-    html += ledgerChips;
     html += '<div class="cf-row" style="padding-top:6px"><span>C/F</span><span class="amt">'+esc(fmt(startCF))+'</span></div>';
     if(list.length){
       html += '<div class="ledger-head"><span>Date</span><span>Entry</span><span>Debit</span><span>Credit</span><span>Balance</span></div><div>' + rows + '</div>';
+    } else if(sel) {
+      html += '<p class="empty-note">No entries for '+esc(sel)+' yet. Tap the "+" button to add an entry for them.</p>';
     } else {
-      html += '<p class="empty-note">No entries yet. Tap the "+" button to add your first entry.</p>';
+      html += '<p class="empty-note">No entries yet.</p>';
     }
     html += '<div class="summary-box">' +
       '<div class="summary-line"><span>Total Income (Credit)</span><span class="in">'+esc(fmt(totIn))+'</span></div>' +
       '<div class="summary-line"><span>Total Expense (Debit)</span><span class="out">'+esc(fmt(totOut))+'</span></div>' +
       '<div class="summary-line"><span><strong>Balance</strong></span><span><strong>'+esc(fmt(running))+'</strong></span></div></div>';
     main.innerHTML = html;
-    main.querySelectorAll("[data-acct]").forEach(function(b){
-      b.addEventListener("click", function(){ state.ledgerAccount = b.getAttribute("data-acct"); render(); });
-    });
-    main.querySelectorAll("[data-ledger-name]").forEach(function(b){
-      b.addEventListener("click", function(){ state.ledgerNameFilter = b.getAttribute("data-ledger-name"); render(); });
+    document.getElementById("addPersonBtn").addEventListener("click", openPersonSheet);
+    main.querySelectorAll("[data-person]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var name = b.getAttribute("data-person");
+        state.ledgerNameFilter = (name === state.ledgerNameFilter) ? "" : name;
+        render();
+      });
     });
     bindEditButtons();
   }
@@ -1393,6 +1461,9 @@
     } else if(state.tab === "monthly" || state.tab === "yearly" || state.tab === "charts"){
       fab.innerHTML = '<span class="pdf-txt">PDF</span>';
       fab.setAttribute("aria-label", "Open PDF report");
+    } else if(state.tab === "ledger"){
+      fab.textContent = "+";
+      fab.setAttribute("aria-label", state.ledgerNameFilter ? "Add entry for " + state.ledgerNameFilter : "Add a person");
     } else {
       fab.textContent = "+";
       fab.setAttribute("aria-label", "Add new entry");
@@ -1420,6 +1491,7 @@
   fab.addEventListener("click", function(){
     if(state.tab === "notes"){ openNoteEditor(null); return; }
     if(state.tab === "monthly" || state.tab === "yearly" || state.tab === "charts") setTab("report");
+    else if(state.tab === "ledger" && !state.ledgerNameFilter) openPersonSheet();
     else openSheet(null);
   });
 
@@ -1734,6 +1806,46 @@
     persist(); closeSheet(); render(); toast("Entry deleted");
   });
 
+  /* ---------- add person sheet (Ledger) ---------- */
+  var personOverlay = document.getElementById("personOverlay");
+  var personNameInput = document.getElementById("personNameInput");
+  var personRemarksInput = document.getElementById("personRemarksInput");
+  var personError = document.getElementById("personError");
+  function openPersonSheet(){
+    personError.classList.remove("show"); personError.textContent = "";
+    personNameInput.value = ""; personRemarksInput.value = "";
+    personOverlay.classList.add("open");
+    setTimeout(function(){ personNameInput.focus(); }, 60);
+  }
+  function closePersonSheet(){ personOverlay.classList.remove("open"); }
+  document.getElementById("closePersonBtn").addEventListener("click", closePersonSheet);
+  document.getElementById("cancelPersonBtn").addEventListener("click", closePersonSheet);
+  personOverlay.addEventListener("click", function(ev){ if(ev.target===personOverlay) closePersonSheet(); });
+  document.getElementById("savePersonBtn").addEventListener("click", function(){
+    var name = personNameInput.value.trim();
+    if(!name){
+      personError.textContent = "Please enter the person's name first.";
+      personError.classList.add("show");
+      personNameInput.focus();
+      return;
+    }
+    var existing = null;
+    ledgerNames.forEach(function(n){ if(n.toLowerCase() === name.toLowerCase()) existing = n; });
+    if(existing){
+      state.ledgerNameFilter = existing;
+      closePersonSheet(); render();
+      toast(existing + " is already in the list");
+      return;
+    }
+    ensureLedger(name);
+    var rem = personRemarksInput.value.trim();
+    if(rem) personNotes[name] = rem;
+    persist();
+    state.ledgerNameFilter = name;
+    closePersonSheet(); render();
+    toast("Person added ✓");
+  });
+
   /* ---------- account picker ---------- */
   var accountOverlay = document.getElementById("accountOverlay");
   function openAccountPicker(){
@@ -1929,7 +2041,7 @@
   });
 
   document.addEventListener("keydown", function(ev){
-    if(ev.key==="Escape"){ closeCalendar(); closeRangeCalendar(); closeSheet(); closeSettings(); accountOverlay.classList.remove("open"); categoryOverlay.classList.remove("open"); }
+    if(ev.key==="Escape"){ closeCalendar(); closeRangeCalendar(); closeSheet(); closeSettings(); closePersonSheet(); accountOverlay.classList.remove("open"); categoryOverlay.classList.remove("open"); }
   });
 
   /* ---------- init ---------- */
