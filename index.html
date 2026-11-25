@@ -87,11 +87,11 @@
   .acct-select option{background:#222b26;color:var(--text)}
 
   /* Monthly — compact top row */
-  .period-row.monthly-compact{gap:8px;margin-bottom:8px}
-  .period-row.monthly-compact .period-nav{min-height:40px;padding:2px 4px;border-radius:8px}
-  .period-row.monthly-compact .period-nav .nav-arrow{width:32px;height:34px;min-height:34px;font-size:22px}
-  .period-row.monthly-compact .period-nav .period-label{font-size:16.5px}
-  .period-row.monthly-compact .acct-select{min-height:40px;font-size:15px;padding:4px 8px;border-radius:8px}
+  .period-row.monthly-compact,.period-row.yearly-compact{gap:8px;margin-bottom:8px}
+  .period-row.monthly-compact .period-nav,.period-row.yearly-compact .period-nav{min-height:40px;padding:2px 4px;border-radius:8px}
+  .period-row.monthly-compact .period-nav .nav-arrow,.period-row.yearly-compact .period-nav .nav-arrow{width:32px;height:34px;min-height:34px;font-size:22px}
+  .period-row.monthly-compact .period-nav .period-label,.period-row.yearly-compact .period-nav .period-label{font-size:16.5px}
+  .period-row.monthly-compact .acct-select,.period-row.yearly-compact .acct-select{min-height:40px;font-size:15px;padding:4px 8px;border-radius:8px}
   .month-range-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
   .range-btn{flex:1;display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(255,255,255,.04);border:1.5px solid #39423c;border-radius:8px;padding:6px 10px;min-height:38px;color:var(--text);text-align:left;font-size:14.5px}
   .range-btn:active{background:#1a211c}
@@ -129,12 +129,12 @@
 
   /* Yearly */
   .year-table{width:100%}
-  .year-head,.year-row{display:grid;grid-template-columns:52px 1fr 1fr 1fr;gap:6px;align-items:center;padding:11px 4px}
-  .year-head{font-size:16.5px;font-weight:700;border-bottom:1px solid #39423c}
+  .year-head,.year-row{display:grid;grid-template-columns:52px 1fr 1fr 1fr;gap:6px;align-items:center;padding:7px 4px}
+  .year-head{font-size:14.5px;font-weight:700;border-bottom:1px solid #39423c;line-height:1.25}
   .year-head span:not(:first-child),.year-row span:not(:first-child){text-align:right}
-  .year-row{border-bottom:1px solid #232a25;font-size:16.5px;width:100%;background:none;border-top:0;border-left:0;border-right:0;color:var(--text);text-align:left;min-height:0}
+  .year-row{border-bottom:1px solid #232a25;font-size:15px;width:100%;background:none;border-top:0;border-left:0;border-right:0;color:var(--text);text-align:left;min-height:0}
   button.year-row:active{background:#141a15}
-  .year-cf{display:grid;grid-template-columns:52px 1fr;gap:6px;padding:11px 4px;border-bottom:1px solid #232a25;font-size:17px}
+  .year-cf{display:grid;grid-template-columns:52px 1fr;gap:6px;padding:7px 4px;border-bottom:1px solid #232a25;font-size:15.5px}
   .year-cf .cf-bal{text-align:right;color:var(--mint);font-weight:600}
 
   /* Ledger */
@@ -705,6 +705,9 @@
     monthRangeTo: "",
     monthRangeActive: false,
     yearAccount: "All",
+    yearRangeFrom: "",
+    yearRangeTo: "",
+    yearRangeActive: false,
     ledgerAccount: "All",
     ledgerNameFilter: "",
     notesMonth: todayKey().slice(0,7),
@@ -904,29 +907,65 @@
   /* ---------- YEARLY ---------- */
   function renderYearly(){
     var y = state.yearCursor, acct = state.yearAccount;
-    var cf = balanceBefore(y+"-01-01", acct);
-    var html = '<div class="period-row">' +
+    var rangeOn = state.yearRangeActive && state.yearRangeFrom && state.yearRangeTo;
+    var cf = balanceBefore(rangeOn ? state.yearRangeFrom : (y+"-01-01"), acct);
+    var rangeLabel = rangeOn ? (keyToDisplay(state.yearRangeFrom) + " – " + keyToDisplay(state.yearRangeTo)) : "Full year";
+    var calSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/></svg>';
+    var html = '<div class="period-row yearly-compact">' +
       '<div class="period-nav"><button class="nav-arrow" data-ynav="-1" aria-label="Previous year">‹</button>' +
       '<span class="period-label">'+y+'</span>' +
       '<button class="nav-arrow" data-ynav="1" aria-label="Next year">›</button></div>' +
       '<select class="acct-select" id="yearAcctSel" aria-label="Account filter">'+accountOptionsHTML(acct)+'</select></div>';
-    html += '<div class="year-table"><div class="year-head"><span></span><span>Income (Credit)</span><span>Expense (Debit)</span><span>Balance</span></div>';
+    html += '<div class="month-range-row"><button type="button" class="range-btn'+(rangeOn?" active":"")+'" id="yearRangeBtn" aria-label="Pick a date range">' +
+      '<span class="rb-label">Date range</span><span class="rb-value">'+esc(rangeLabel)+'</span>' + calSvg + '</button>' +
+      (rangeOn ? '<button type="button" class="range-clear-btn" id="yearRangeClear" aria-label="Clear date range" title="Clear date range">✕</button>' : '') + '</div>';
+    html += '<div class="year-table"><div class="year-head"><span></span><span>Income<br>(Credit)</span><span>Expense<br>(Debit)</span><span>Balance</span></div>';
     html += '<div class="year-cf"><span style="color:var(--mint)">C/F</span><span class="cf-bal">'+esc(fmt(cf))+'</span></div>';
-    var running = cf;
-    for(var m=0;m<12;m++){
-      var mk = y+"-"+pad(m+1);
-      var list = entries.filter(function(e){ return e.date.slice(0,7)===mk && (acct==="All" || e.account===acct); });
+    var monthsList = [];
+    if(rangeOn){
+      var fp = state.yearRangeFrom.split("-"), tp = state.yearRangeTo.split("-");
+      var cy = +fp[0], cm = +fp[1]-1, ey = +tp[0], em = +tp[1]-1, guard = 0;
+      while((cy < ey || (cy === ey && cm <= em)) && guard < 240){
+        monthsList.push({y:cy, m:cm});
+        cm++; if(cm > 11){ cm = 0; cy++; }
+        guard++;
+      }
+    } else {
+      for(var m0=0;m0<12;m0++) monthsList.push({y:y, m:m0});
+    }
+    var multiYear = monthsList.length > 1 && monthsList[0].y !== monthsList[monthsList.length-1].y;
+    var running = cf, anyInRange = false;
+    monthsList.forEach(function(mo){
+      var mk = mo.y + "-" + pad(mo.m+1);
+      var list = entries.filter(function(e){
+        if(e.date.slice(0,7) !== mk) return false;
+        if(acct !== "All" && e.account !== acct) return false;
+        if(rangeOn && (e.date < state.yearRangeFrom || e.date > state.yearRangeTo)) return false;
+        return true;
+      });
+      if(list.length) anyInRange = true;
       var di = sumType(list,"income"), de = sumType(list,"expense");
       running += di - de;
-      html += '<button class="year-row" data-goto-month="'+mk+'"><span>'+MONTHS_S[m]+'</span>' +
+      var label = MONTHS_S[mo.m] + (multiYear ? " " + mo.y : "");
+      html += '<button class="year-row" data-goto-month="'+mk+'"><span>'+label+'</span>' +
         '<span>'+esc(fmtPlain(di))+'</span><span>'+esc(fmtPlain(de))+'</span><span>'+esc(fmtPlain(running))+'</span></button>';
-    }
+    });
     html += '</div>';
+    if(rangeOn && !anyInRange) html += '<p class="empty-note">No entries in this date range.</p>';
     main.innerHTML = html;
     main.querySelectorAll("[data-ynav]").forEach(function(b){
-      b.addEventListener("click", function(){ state.yearCursor += +b.getAttribute("data-ynav"); render(); });
+      b.addEventListener("click", function(){
+        state.yearCursor += +b.getAttribute("data-ynav");
+        state.yearRangeActive = false; state.yearRangeFrom = ""; state.yearRangeTo = "";
+        render();
+      });
     });
     document.getElementById("yearAcctSel").addEventListener("change", function(ev){ state.yearAccount = ev.target.value; render(); });
+    document.getElementById("yearRangeBtn").addEventListener("click", function(){ openRangeCalendar("year"); });
+    var yClearBtn = document.getElementById("yearRangeClear");
+    if(yClearBtn) yClearBtn.addEventListener("click", function(){
+      state.yearRangeActive = false; state.yearRangeFrom = ""; state.yearRangeTo = ""; render();
+    });
     main.querySelectorAll("[data-goto-month]").forEach(function(b){
       b.addEventListener("click", function(){ state.monthCursor = b.getAttribute("data-goto-month"); setTab("monthly"); });
     });
@@ -1525,7 +1564,7 @@
   var rangeToText = document.getElementById("rangeToText");
   var rangeFromBox = document.getElementById("rangeFromBox");
   var rangeToBox = document.getElementById("rangeToBox");
-  var rangeFromKey = "", rangeToKey = "", rangeTarget = "from", rangeCalView = null;
+  var rangeFromKey = "", rangeToKey = "", rangeTarget = "from", rangeCalView = null, rangeContext = "month";
   function syncRangeBoxes(){
     rangeFromText.textContent = keyToDisplay(rangeFromKey);
     rangeToText.textContent = keyToDisplay(rangeToKey);
@@ -1579,12 +1618,18 @@
       });
     });
   }
-  function openRangeCalendar(){
-    var mp = state.monthCursor.split("-");
-    var monthStart = state.monthCursor + "-01";
-    var monthEnd = toKey(new Date(+mp[0], +mp[1], 0));
-    rangeFromKey = state.monthRangeFrom || monthStart;
-    rangeToKey = state.monthRangeTo || monthEnd;
+  function openRangeCalendar(context){
+    rangeContext = context === "year" ? "year" : "month";
+    if(rangeContext === "year"){
+      rangeFromKey = state.yearRangeFrom || (state.yearCursor + "-01-01");
+      rangeToKey = state.yearRangeTo || (state.yearCursor + "-12-31");
+    } else {
+      var mp = state.monthCursor.split("-");
+      var monthStart = state.monthCursor + "-01";
+      var monthEnd = toKey(new Date(+mp[0], +mp[1], 0));
+      rangeFromKey = state.monthRangeFrom || monthStart;
+      rangeToKey = state.monthRangeTo || monthEnd;
+    }
     rangeTarget = "from";
     var sd = parseKey(rangeFromKey);
     rangeCalView = {y: sd.getFullYear(), m: sd.getMonth()};
@@ -1610,13 +1655,15 @@
   });
   document.getElementById("rangeCancelBtn").addEventListener("click", closeRangeCalendar);
   document.getElementById("rangeClearBtn").addEventListener("click", function(){
-    state.monthRangeActive = false; state.monthRangeFrom = ""; state.monthRangeTo = "";
+    if(rangeContext === "year"){ state.yearRangeActive = false; state.yearRangeFrom = ""; state.yearRangeTo = ""; }
+    else { state.monthRangeActive = false; state.monthRangeFrom = ""; state.monthRangeTo = ""; }
     closeRangeCalendar(); render();
   });
   document.getElementById("rangeApplyBtn").addEventListener("click", function(){
     if(!rangeFromKey || !rangeToKey){ closeRangeCalendar(); return; }
     if(rangeToKey < rangeFromKey){ var tmp = rangeFromKey; rangeFromKey = rangeToKey; rangeToKey = tmp; }
-    state.monthRangeFrom = rangeFromKey; state.monthRangeTo = rangeToKey; state.monthRangeActive = true;
+    if(rangeContext === "year"){ state.yearRangeFrom = rangeFromKey; state.yearRangeTo = rangeToKey; state.yearRangeActive = true; }
+    else { state.monthRangeFrom = rangeFromKey; state.monthRangeTo = rangeToKey; state.monthRangeActive = true; }
     closeRangeCalendar(); render();
   });
   rangeOverlay.addEventListener("click", function(ev){ if(ev.target === rangeOverlay) closeRangeCalendar(); });
