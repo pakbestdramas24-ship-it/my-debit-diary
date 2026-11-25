@@ -256,6 +256,52 @@
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .empty-note{color:var(--muted);font-size:16px;padding:16px 8px;margin:0}
+
+  /* Tags */
+  .tag-input-row{display:flex;gap:10px;align-items:flex-end}
+  .tag-input-row input{flex:1}
+  .tag-add-btn{
+    flex:0 0 auto;background:var(--teal);color:#eafff6;border:0;border-radius:999px;
+    padding:10px 18px;font-size:15.5px;font-weight:600;min-height:44px;
+  }
+  .tag-add-btn:active{background:var(--teal-dark)}
+  .tag-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+  .tag-chips:empty{margin-top:0}
+  .tag-chip{
+    display:inline-flex;align-items:center;gap:6px;background:#31463a;color:#dff5e9;
+    border:1px solid #4d6a58;border-radius:999px;padding:6px 8px 6px 12px;font-size:14px;font-weight:600;
+  }
+  .tag-chip .tag-x{
+    background:rgba(255,255,255,.14);border:0;color:#fff;width:22px;height:22px;min-height:22px;
+    border-radius:50%;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;
+  }
+  .tag-suggest-label{font-size:13px;color:#aebbb1;margin-top:12px}
+  .tag-chip.suggest{background:transparent;border-style:dashed;color:#cfe6d8;padding:6px 12px;cursor:pointer}
+  .entry-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+  .entry-tag{
+    background:#22352b;color:var(--mint);border:1px solid #3c5a49;border-radius:999px;
+    padding:4px 11px;font-size:13px;font-weight:600;min-height:30px;
+  }
+  .entry-tag:active{background:#2c4a3a}
+  .filter-bar{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:#22352b;border:1px solid #3c5a49;border-radius:8px;
+    padding:10px 12px;margin:0 0 12px;font-size:15px;
+  }
+  .filter-bar strong{color:var(--mint)}
+  .filter-clear{
+    background:transparent;border:1.5px solid #7d8f83;color:#e6efe8;border-radius:999px;
+    padding:7px 14px;font-size:14px;font-weight:600;min-height:38px;flex:0 0 auto;
+  }
+  /* Ledger name chips (Ledger tab) */
+  .ledger-names-head{font-size:16px;font-weight:700;margin:14px 2px 8px}
+  .ledger-name-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 4px}
+  .ledger-name-chip{
+    background:var(--card-2);border:2px solid transparent;color:var(--text);border-radius:999px;
+    padding:9px 15px;font-size:15px;font-weight:600;min-height:44px;
+  }
+  .ledger-name-chip.selected{border-color:var(--mint);background:#2a3a31}
+  .ledger-name-chip .cnt{color:var(--muted);font-weight:500;font-size:13px;margin-left:5px}
 </style>
 </head>
 <body>
@@ -319,7 +365,22 @@
 
     <div class="field">
       <label for="fLedger">Ledger</label>
-      <input type="text" id="fLedger" placeholder="Ledger (e.g. Shop, Home, Salary)" autocomplete="off" />
+      <select id="fLedger"></select>
+    </div>
+    <div class="field" id="newLedgerField" style="display:none">
+      <label for="fLedgerNew">New Ledger Name</label>
+      <input type="text" id="fLedgerNew" placeholder="Naye ledger ka naam (e.g. Shop, Home, Salary)" autocomplete="off" />
+    </div>
+
+    <div class="field">
+      <label for="fTagInput">Tags</label>
+      <div class="tag-input-row">
+        <input type="text" id="fTagInput" placeholder="Tag likhein, phir Add dabayein" autocomplete="off" />
+        <button type="button" class="tag-add-btn" id="addTagBtn">Add</button>
+      </div>
+      <div class="tag-chips" id="formTagChips"></div>
+      <div class="tag-suggest-label" id="tagSuggestLabel" style="display:none">Pehle use hue tags — tap kar ke add karein:</div>
+      <div class="tag-chips" id="tagSuggestions"></div>
     </div>
 
     <div class="field">
@@ -358,6 +419,8 @@
   "use strict";
   var LS_ENTRIES = "mdd-web-entries-v1";
   var LS_OPENING = "mdd-web-opening-v1";
+  var LS_LEDGERS = "mdd-web-ledgers-v1";
+  var ADD_NEW_LEDGER = "__add_new_ledger__";
   var ACCOUNTS = ["Cash","Bank","JazzCash","Easypaisa","Other"];
   var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   var DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
@@ -370,14 +433,42 @@
     try{ var v = parseFloat(localStorage.getItem(LS_OPENING)); return isNaN(v) ? 0 : v; }
     catch(e){ return 0; }
   }
+  function loadLedgers(){
+    try{ var raw = localStorage.getItem(LS_LEDGERS); var arr = raw ? JSON.parse(raw) : []; return Array.isArray(arr) ? arr.filter(function(x){ return typeof x==="string" && x.trim(); }) : []; }
+    catch(e){ return []; }
+  }
   var entries = loadEntries();
   var openingBalance = loadOpening();
+  var ledgers = loadLedgers();
+  // Migrate: any ledger name already used on an entry joins the saved list.
+  entries.forEach(function(e){ if(e.ledger && ledgers.indexOf(e.ledger)===-1) ledgers.push(e.ledger); });
 
   function persist(){
     try{
       localStorage.setItem(LS_ENTRIES, JSON.stringify(entries));
       localStorage.setItem(LS_OPENING, String(openingBalance));
+      localStorage.setItem(LS_LEDGERS, JSON.stringify(ledgers));
     }catch(e){}
+  }
+  function ensureLedger(name){
+    name = (name||"").trim();
+    if(name && ledgers.indexOf(name)===-1){ ledgers.push(name); return true; }
+    return false;
+  }
+  function allUsedTags(){
+    var seen = {}, out = [];
+    entries.forEach(function(e){
+      (e.tags||[]).forEach(function(t){
+        var k = String(t).toLowerCase();
+        if(!seen[k]){ seen[k]=1; out.push(t); }
+      });
+    });
+    return out;
+  }
+  function entryHasTag(e, tag){
+    if(!tag) return true;
+    var tl = String(tag).toLowerCase();
+    return (e.tags||[]).some(function(t){ return String(t).toLowerCase()===tl; });
   }
 
   function pad(n){ return (n<10?"0":"")+n; }
@@ -401,7 +492,9 @@
     date: todayKey(),
     monthCursor: todayKey().slice(0,7), // YYYY-MM
     yearCursor: new Date().getFullYear(),
-    ledgerAccount: "All"
+    ledgerAccount: "All",
+    tagFilter: "",
+    ledgerNameFilter: ""
   };
 
   /* ---------- calculations ---------- */
@@ -449,23 +542,49 @@
     sub.push(e.account || "Cash");
     if(e.ledger) sub.push(e.ledger);
     if(e.remarks) sub.push(e.remarks);
-    return '<li><button class="entry-item" data-edit="'+e.id+'">' +
+    var tagsHTML = "";
+    if(e.tags && e.tags.length){
+      tagsHTML = '<span class="entry-tags" style="display:flex">' + e.tags.map(function(t){
+        return '<span class="entry-tag" data-tag="'+esc(t)+'" role="button" tabindex="0">#'+esc(t)+'</span>';
+      }).join("") + '</span>';
+    }
+    return '<li><div class="entry-item" data-edit="'+e.id+'" role="button" tabindex="0">' +
       '<span class="entry-main"><span class="entry-text">'+esc(e.text)+'</span>' +
-      '<span class="entry-sub" style="display:block">'+esc(sub.join(" • "))+'</span></span>' +
+      '<span class="entry-sub" style="display:block">'+esc(sub.join(" • "))+'</span>' + tagsHTML + '</span>' +
       '<span class="entry-amt '+(e.type==="income"?"credit":"debit")+'">'+esc(fmt(+e.amount))+'</span>' +
-      '</button></li>';
+      '</div></li>';
+  }
+
+  function filterBarHTML(){
+    if(!state.tagFilter) return "";
+    return '<div class="filter-bar"><span>Tag: <strong>#'+esc(state.tagFilter)+'</strong> wali entries</span>' +
+      '<button class="filter-clear" data-clear-tag="1">✕ Clear</button></div>';
+  }
+  function bindTagFilter(){
+    main.querySelectorAll("[data-tag]").forEach(function(el){
+      el.addEventListener("click", function(ev){
+        ev.stopPropagation();
+        state.tagFilter = el.getAttribute("data-tag");
+        render();
+      });
+    });
+    main.querySelectorAll("[data-clear-tag]").forEach(function(b){
+      b.addEventListener("click", function(){ state.tagFilter = ""; render(); });
+    });
   }
 
   function renderDaily(){
     var d = parseKey(state.date);
     var cf = balanceBefore(state.date);
-    var list = dayEntries(state.date);
+    var allList = dayEntries(state.date);
+    var list = state.tagFilter ? allList.filter(function(e){ return entryHasTag(e, state.tagFilter); }) : allList;
     var inc = list.filter(function(e){return e.type==="income";});
     var exp = list.filter(function(e){return e.type==="expense";});
-    var incTotal = sumType(list,"income"), expTotal = sumType(list,"expense");
+    var incTotal = sumType(allList,"income"), expTotal = sumType(allList,"expense");
     var balance = cf + incTotal - expTotal;
     var hint = "Tap on '+' to add new item and tap an entry to edit.";
-    var html = dateCardHTML({
+    var html = filterBarHTML();
+    html += dateCardHTML({
       big: d.getDate(),
       line1: MONTHS[d.getMonth()] + ", " + d.getFullYear(),
       line2: DAYS[d.getDay()],
@@ -484,6 +603,7 @@
       state.date = toKey(nd); render();
     });
     bindEditButtons();
+    bindTagFilter();
   }
 
   function renderMonthly(){
@@ -574,6 +694,8 @@
     });
     var list = entries.slice().sort(function(a,b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
     if(acct !== "All") list = list.filter(function(e){ return e.account===acct; });
+    if(state.ledgerNameFilter) list = list.filter(function(e){ return (e.ledger||"")===state.ledgerNameFilter; });
+    if(state.tagFilter) list = list.filter(function(e){ return entryHasTag(e, state.tagFilter); });
     var running = (acct==="All") ? openingBalance : 0;
     var startCF = running;
     var totIn = 0, totOut = 0;
@@ -583,6 +705,7 @@
       if(e.type==="income") totIn += +e.amount; else totOut += +e.amount;
       var d = parseKey(e.date);
       var sub = [e.account||"Cash"]; if(e.ledger) sub.push(e.ledger); if(e.remarks) sub.push(e.remarks);
+      if(e.tags && e.tags.length) sub.push(e.tags.map(function(t){ return "#"+t; }).join(" "));
       var mobileAmt = e.type==="income"
         ? '<span class="num credit cell-amt">+ '+esc(fmt(+e.amount))+'</span>'
         : '<span class="num debit cell-amt">− '+esc(fmt(+e.amount))+'</span>';
@@ -595,7 +718,18 @@
         mobileAmt + debitCell + creditCell +
         '<span class="num cell-bal">'+esc(fmt(running))+'</span></button>';
     });
-    var html = '<div class="acct-grid">' + cards.join("") + '</div>';
+    var ledgerChips = "";
+    if(ledgers.length){
+      ledgerChips = '<div class="ledger-names-head">Ledgers</div><div class="ledger-name-chips">' +
+        '<button class="ledger-name-chip'+(state.ledgerNameFilter===""?" selected":"")+'" data-ledger-name="">All Ledgers</button>' +
+        ledgers.map(function(name){
+          var cnt = entries.filter(function(e){ return (e.ledger||"")===name; }).length;
+          return '<button class="ledger-name-chip'+(state.ledgerNameFilter===name?" selected":"")+'" data-ledger-name="'+esc(name)+'">'+esc(name)+'<span class="cnt">'+cnt+'</span></button>';
+        }).join("") + '</div>';
+    }
+    var html = filterBarHTML();
+    html += '<div class="acct-grid">' + cards.join("") + '</div>';
+    html += ledgerChips;
     html += '<div class="cf-row" style="padding-top:6px"><span>C/F</span><span class="amt">'+esc(fmt(startCF))+'</span></div>';
     if(list.length){
       html += '<div class="ledger-head"><span>Date</span><span>Entry</span><span>Debit</span><span>Credit</span><span>Balance</span></div>';
@@ -611,7 +745,11 @@
     main.querySelectorAll("[data-acct]").forEach(function(b){
       b.addEventListener("click", function(){ state.ledgerAccount = b.getAttribute("data-acct"); render(); });
     });
+    main.querySelectorAll("[data-ledger-name]").forEach(function(b){
+      b.addEventListener("click", function(){ state.ledgerNameFilter = b.getAttribute("data-ledger-name"); render(); });
+    });
     bindEditButtons();
+    bindTagFilter();
   }
 
   function bindNav(fn){
@@ -657,11 +795,79 @@
   var fDate = document.getElementById("fDate"), fText = document.getElementById("fText"),
       fAmount = document.getElementById("fAmount"), fAccount = document.getElementById("fAccount"),
       fLedger = document.getElementById("fLedger"), fRemarks = document.getElementById("fRemarks"),
+      fLedgerNew = document.getElementById("fLedgerNew"), newLedgerField = document.getElementById("newLedgerField"),
+      fTagInput = document.getElementById("fTagInput"),
+      formTagChips = document.getElementById("formTagChips"),
+      tagSuggestions = document.getElementById("tagSuggestions"),
+      tagSuggestLabel = document.getElementById("tagSuggestLabel"),
       formError = document.getElementById("formError"),
       typeIncome = document.getElementById("typeIncome"), typeExpense = document.getElementById("typeExpense"),
       fromLabel = document.getElementById("fromLabel"), fromType = document.getElementById("fromType"),
       deleteBtn = document.getElementById("deleteBtn");
   var formType = "expense", editingId = null;
+  var formTags = [];
+
+  /* ---------- ledger dropdown ---------- */
+  function populateLedgerOptions(selected){
+    var html = '<option value="">— Koi ledger nahi —</option>';
+    ledgers.forEach(function(name){
+      html += '<option value="'+esc(name)+'"'+(name===selected ? " selected" : "")+'>'+esc(name)+'</option>';
+    });
+    html += '<option value="'+ADD_NEW_LEDGER+'">+ Add new ledger…</option>';
+    fLedger.innerHTML = html;
+    fLedger.value = selected || "";
+    newLedgerField.style.display = "none";
+    fLedgerNew.value = "";
+  }
+  fLedger.addEventListener("change", function(){
+    if(fLedger.value === ADD_NEW_LEDGER){
+      newLedgerField.style.display = "";
+      setTimeout(function(){ fLedgerNew.focus(); }, 40);
+    } else {
+      newLedgerField.style.display = "none";
+    }
+  });
+  function currentLedgerValue(){
+    if(fLedger.value === ADD_NEW_LEDGER) return fLedgerNew.value.trim();
+    return fLedger.value || "";
+  }
+
+  /* ---------- tags in form ---------- */
+  function renderFormTags(){
+    formTagChips.innerHTML = formTags.map(function(t, i){
+      return '<span class="tag-chip">#'+esc(t)+'<button type="button" class="tag-x" data-remove-tag="'+i+'" aria-label="Remove tag">✕</button></span>';
+    }).join("");
+    formTagChips.querySelectorAll("[data-remove-tag]").forEach(function(b){
+      b.addEventListener("click", function(){
+        formTags.splice(+b.getAttribute("data-remove-tag"), 1);
+        renderFormTags(); renderTagSuggestions();
+      });
+    });
+  }
+  function renderTagSuggestions(){
+    var used = allUsedTags().filter(function(t){
+      return !formTags.some(function(ft){ return ft.toLowerCase()===t.toLowerCase(); });
+    });
+    tagSuggestLabel.style.display = used.length ? "" : "none";
+    tagSuggestions.innerHTML = used.map(function(t){
+      return '<button type="button" class="tag-chip suggest" data-suggest-tag="'+esc(t)+'">#'+esc(t)+'</button>';
+    }).join("");
+    tagSuggestions.querySelectorAll("[data-suggest-tag]").forEach(function(b){
+      b.addEventListener("click", function(){ addFormTag(b.getAttribute("data-suggest-tag")); });
+    });
+  }
+  function addFormTag(raw){
+    var t = String(raw||"").trim().replace(/^#+/, "").trim();
+    if(!t) return;
+    if(formTags.some(function(ft){ return ft.toLowerCase()===t.toLowerCase(); })) return;
+    formTags.push(t);
+    fTagInput.value = "";
+    renderFormTags(); renderTagSuggestions();
+  }
+  document.getElementById("addTagBtn").addEventListener("click", function(){ addFormTag(fTagInput.value); fTagInput.focus(); });
+  fTagInput.addEventListener("keydown", function(ev){
+    if(ev.key==="Enter" || ev.key===","){ ev.preventDefault(); addFormTag(fTagInput.value); }
+  });
 
   function setFormType(t){
     formType = t;
@@ -685,14 +891,21 @@
       if(!e) return;
       setFormType(e.type);
       fDate.value = e.date; fText.value = e.text; fAmount.value = e.amount;
-      fAccount.value = e.account || "Cash"; fLedger.value = e.ledger || ""; fRemarks.value = e.remarks || "";
+      fAccount.value = e.account || "Cash"; fRemarks.value = e.remarks || "";
+      if(e.ledger) ensureLedger(e.ledger);
+      populateLedgerOptions(e.ledger || "");
+      formTags = (e.tags || []).slice();
       deleteBtn.style.display = "";
     } else {
       setFormType("expense");
       fDate.value = state.tab==="daily" ? state.date : todayKey();
-      fText.value = ""; fAmount.value = ""; fAccount.value = "Cash"; fLedger.value = ""; fRemarks.value = "";
+      fText.value = ""; fAmount.value = ""; fAccount.value = "Cash"; fRemarks.value = "";
+      populateLedgerOptions(state.ledgerNameFilter || "");
+      formTags = state.tagFilter ? [state.tagFilter] : [];
       deleteBtn.style.display = "none";
     }
+    fTagInput.value = "";
+    renderFormTags(); renderTagSuggestions();
     overlay.classList.add("open");
     setTimeout(function(){ fText.focus(); }, 60);
   }
@@ -704,9 +917,14 @@
     var date = fDate.value || todayKey();
     if(!text){ showError("Pehle entry ka naam (Enter Text) likhein."); fText.focus(); return; }
     if(isNaN(amount) || amount <= 0){ showError("Sahi Amount likhein — 0 se zyada hona chahiye."); fAmount.focus(); return; }
+    if(fTagInput.value.trim()) addFormTag(fTagInput.value);
+    var ledgerName = currentLedgerValue();
+    if(fLedger.value === ADD_NEW_LEDGER && !ledgerName){ showError("Naye ledger ka naam likhein, ya list se koi ledger chunein."); fLedgerNew.focus(); return; }
+    ensureLedger(ledgerName);
     var data = {
       date: date, type: formType, text: text, amount: Math.round(amount*100)/100,
-      account: fAccount.value, ledger: fLedger.value.trim(), remarks: fRemarks.value.trim()
+      account: fAccount.value, ledger: ledgerName, remarks: fRemarks.value.trim(),
+      tags: formTags.slice()
     };
     if(editingId){
       for(var i=0;i<entries.length;i++) if(entries[i].id===editingId){ for(var k in data) entries[i][k]=data[k]; }
