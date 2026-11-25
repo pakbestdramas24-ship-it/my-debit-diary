@@ -75,11 +75,6 @@
   .entry-amt{font-size:17px;font-weight:600;white-space:nowrap}
   .entry-amt.credit{color:var(--mint)}
   .entry-amt.debit{color:var(--danger)}
-  .entry-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
-  .entry-tag{background:#22352b;color:var(--mint);border:1px solid #4d6a58;border-radius:999px;padding:4px 11px;font-size:13px;font-weight:600;min-height:30px}
-  .filter-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#22352b;border:1px solid #4d6a58;border-radius:8px;padding:10px 12px;margin:0 0 12px;font-size:15px}
-  .filter-bar strong{color:var(--mint)}
-  .filter-clear{background:transparent;border:1.5px solid #93a698;color:var(--text);border-radius:999px;padding:7px 14px;font-size:14px;font-weight:600;min-height:38px;flex:0 0 auto}
 
   /* Period selector row (Monthly / Yearly / Report) */
   .period-row{display:flex;gap:10px;align-items:stretch;margin-bottom:14px}
@@ -259,16 +254,10 @@
   .picker-item .pi-check{margin-left:auto;color:var(--mint);font-weight:800}
   .picker-item:active{background:#2c352f}
 
-  /* Tags */
+  /* Inline input row (custom category) */
   .tag-input-row{display:flex;gap:10px;align-items:flex-end}
   .tag-input-row input{flex:1;background:transparent;border:0;border-bottom:1.5px solid #93a698;padding:9px 2px;font-size:17px;color:var(--text);outline:none}
   .tag-add-btn{flex:0 0 auto;background:var(--teal);color:#eafff6;border:0;border-radius:999px;padding:10px 18px;font-size:15.5px;font-weight:600;min-height:44px}
-  .tag-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
-  .tag-chips:empty{margin-top:0}
-  .tag-chip{display:inline-flex;align-items:center;gap:6px;background:#31463a;color:#dff5e9;border:1px solid #4d6a58;border-radius:999px;padding:6px 8px 6px 12px;font-size:14px;font-weight:600}
-  .tag-chip .tag-x{background:rgba(255,255,255,.18);border:0;color:var(--text);width:22px;height:22px;min-height:22px;border-radius:50%;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
-  .tag-suggest-label{font-size:13px;color:#c9d4cb;margin-top:12px}
-  .tag-chip.suggest{background:transparent;border-style:dashed;padding:6px 12px;cursor:pointer}
 
   .toast{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:96px;z-index:60;background:#e8f5ec;color:#12241a;padding:11px 18px;border-radius:999px;font-size:15px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;box-shadow:0 6px 18px rgba(0,0,0,.4);max-width:92vw;text-align:center}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -343,7 +332,7 @@
       </div>
       <button class="save-fab" id="quickSaveBtn" aria-label="Save entry">✓</button>
     </div>
-    <p style="margin:4px 0 0 64px;font-size:13.5px;color:#c9d4cb">Category: <strong id="catNameLabel">Misc</strong> — icon par tap kar ke badlein</p>
+    <p style="margin:4px 0 0 64px;font-size:13.5px;color:#c9d4cb">Category: <strong id="catNameLabel">Misc</strong> — tap the icon to change</p>
 
     <div class="field" style="margin-top:14px">
       <label for="fDate">Date</label>
@@ -362,19 +351,9 @@
     </div>
     <div class="field" id="newLedgerField" style="display:none">
       <label for="fLedgerNew">New Ledger Name</label>
-      <input type="text" id="fLedgerNew" placeholder="Naye ledger ka naam (e.g. Shop, Home, Salary)" autocomplete="off" />
+      <input type="text" id="fLedgerNew" placeholder="New ledger name (e.g. Shop, Home, Salary)" autocomplete="off" />
     </div>
 
-    <div class="field">
-      <label for="fTagInput">Tags</label>
-      <div class="tag-input-row">
-        <input type="text" id="fTagInput" placeholder="Tag likhein, phir Add dabayein" autocomplete="off" />
-        <button type="button" class="tag-add-btn" id="addTagBtn">Add</button>
-      </div>
-      <div class="tag-chips" id="formTagChips"></div>
-      <div class="tag-suggest-label" id="tagSuggestLabel" style="display:none">Pehle use hue tags — tap kar ke add karein:</div>
-      <div class="tag-chips" id="tagSuggestions"></div>
-    </div>
 
     <div class="desc-row">
       <span class="desc-ic" aria-hidden="true">✎</span>
@@ -408,9 +387,9 @@
     <h2 class="sheet-title">Category</h2>
     <ul class="picker-list" id="categoryList"></ul>
     <div class="field" style="margin-top:16px">
-      <label for="customCatInput">Apni Category Add Karein</label>
+      <label for="customCatInput">Add Your Own Category</label>
       <div class="tag-input-row">
-        <input type="text" id="customCatInput" placeholder="Nayi category ka naam" autocomplete="off" />
+        <input type="text" id="customCatInput" placeholder="New category name" autocomplete="off" />
         <button type="button" class="tag-add-btn" id="addCustomCatBtn">Add</button>
       </div>
     </div>
@@ -423,14 +402,14 @@
     <button class="sheet-close" id="closeProfileBtn" aria-label="Close"><span>⌄</span></button>
     <h2 class="sheet-title">Name &amp; Opening Balance</h2>
     <div class="field">
-      <label for="profileNameInput">Aap ka Naam (report par dikhe ga)</label>
-      <input type="text" id="profileNameInput" placeholder="Naam likhein" autocomplete="off" />
+      <label for="profileNameInput">Your Name (shown on the report)</label>
+      <input type="text" id="profileNameInput" placeholder="Enter your name" autocomplete="off" />
     </div>
     <div class="field">
       <label for="openingInput">Opening Balance — C/F (Rs)</label>
       <input type="number" id="openingInput" inputmode="decimal" step="0.01" placeholder="0.00" />
     </div>
-    <p style="color:#c9d4cb;font-size:14.5px;line-height:1.5;margin:0 0 14px">Opening balance woh rakam hai jo diary shuru karne se pehle aap ke paas thi. Har din ka C/F isi se hisaab hota hai.</p>
+    <p style="color:#c9d4cb;font-size:14.5px;line-height:1.5;margin:0 0 14px">The opening balance is the amount you had before starting this diary. Each day's C/F is calculated from it.</p>
     <div class="sheet-actions">
       <button class="btn btn-ghost" id="cancelProfileBtn">Cancel</button>
       <button class="btn btn-primary" id="saveProfileBtn">Save</button>
@@ -585,7 +564,6 @@
     yearAccount: "All",
     ledgerAccount: "All",
     ledgerNameFilter: "",
-    tagFilter: "",
     chartType: "expense",
     chartPeriod: "month",
     chartMonth: todayKey().slice(0,7),
@@ -619,20 +597,6 @@
   }
   function dayEntries(key){ return entries.filter(function(e){ return e.date===key; }); }
   function sumType(list, type){ var t=0; list.forEach(function(e){ if(e.type===type) t += +e.amount; }); return t; }
-  function entryHasTag(e, tag){
-    if(!tag) return true;
-    var tl = String(tag).toLowerCase();
-    return (e.tags||[]).some(function(t){ return String(t).toLowerCase()===tl; });
-  }
-  function allUsedTags(){
-    var seen = {}, out = [];
-    entries.forEach(function(e){ (e.tags||[]).forEach(function(t){
-      var k = String(t).toLowerCase();
-      if(!seen[k]){ seen[k]=1; out.push(t); }
-    }); });
-    return out;
-  }
-
   /* ---------- shared render helpers ---------- */
   var main = document.getElementById("mainView");
   var topbar = document.getElementById("topbar");
@@ -660,34 +624,11 @@
     sub.push(e.account || "Cash");
     if(e.ledger) sub.push(e.ledger);
     if(e.remarks) sub.push(e.remarks);
-    var tagsHTML = "";
-    if(e.tags && e.tags.length){
-      tagsHTML = '<span class="entry-tags">' + e.tags.map(function(t){
-        return '<span class="entry-tag" data-tag="'+esc(t)+'" role="button" tabindex="0">#'+esc(t)+'</span>';
-      }).join("") + '</span>';
-    }
     return '<li><div class="entry-item" data-edit="'+e.id+'" role="button" tabindex="0">' +
       '<span class="entry-main"><span class="entry-text">'+esc(e.text)+'</span>' +
-      '<span class="entry-sub">'+esc(sub.join(" • "))+'</span>' + tagsHTML + '</span>' +
+      '<span class="entry-sub">'+esc(sub.join(" • "))+'</span></span>' +
       '<span class="entry-amt '+(e.type==="income"?"credit":"debit")+'">'+esc(fmt(+e.amount))+'</span>' +
       '</div></li>';
-  }
-  function filterBarHTML(){
-    if(!state.tagFilter) return "";
-    return '<div class="filter-bar"><span>Tag: <strong>#'+esc(state.tagFilter)+'</strong> wali entries</span>' +
-      '<button class="filter-clear" data-clear-tag="1">✕ Clear</button></div>';
-  }
-  function bindTagFilter(){
-    main.querySelectorAll("[data-tag]").forEach(function(el){
-      el.addEventListener("click", function(ev){
-        ev.stopPropagation();
-        state.tagFilter = el.getAttribute("data-tag");
-        if(state.tab!=="daily" && state.tab!=="ledger") setTab("daily"); else render();
-      });
-    });
-    main.querySelectorAll("[data-clear-tag]").forEach(function(b){
-      b.addEventListener("click", function(){ state.tagFilter = ""; render(); });
-    });
   }
   function bindNav(fn){
     main.querySelectorAll("[data-nav]").forEach(function(b){
@@ -711,14 +652,13 @@
   function renderDaily(){
     var d = parseKey(state.date);
     var cf = balanceBefore(state.date);
-    var allList = dayEntries(state.date);
-    var list = state.tagFilter ? allList.filter(function(e){ return entryHasTag(e, state.tagFilter); }) : allList;
+    var list = dayEntries(state.date);
     var inc = list.filter(function(e){ return e.type==="income"; });
     var exp = list.filter(function(e){ return e.type==="expense"; });
-    var incTotal = sumType(allList,"income"), expTotal = sumType(allList,"expense");
+    var incTotal = sumType(list,"income"), expTotal = sumType(list,"expense");
     var balance = cf + incTotal - expTotal;
     var hint = "Tap on '+' to add new item and long press an entry to edit.";
-    var html = filterBarHTML();
+    var html = "";
     html += dateCardHTML({
       big: d.getDate(),
       line1: MONTHS[d.getMonth()] + ", " + d.getFullYear(),
@@ -737,7 +677,7 @@
       var nd = parseKey(state.date); nd.setDate(nd.getDate()+dir);
       state.date = toKey(nd); render();
     });
-    bindEditButtons(); bindTagFilter();
+    bindEditButtons();
   }
 
   /* ---------- MONTHLY ---------- */
@@ -766,7 +706,7 @@
     var byDay = {};
     monthEntries.forEach(function(e){ (byDay[e.date] = byDay[e.date] || []).push(e); });
     var days = Object.keys(byDay).sort().reverse();
-    if(!days.length) html += '<p class="empty-note">Is mahine mein koi entry nahi hai.</p>';
+    if(!days.length) html += '<p class="empty-note">No entries this month.</p>';
     days.forEach(function(key){
       var list = byDay[key];
       var dd = parseKey(key);
@@ -839,7 +779,6 @@
     var list = entries.slice().sort(function(a,b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
     if(acct !== "All") list = list.filter(function(e){ return e.account===acct; });
     if(state.ledgerNameFilter) list = list.filter(function(e){ return (e.ledger||"")===state.ledgerNameFilter; });
-    if(state.tagFilter) list = list.filter(function(e){ return entryHasTag(e, state.tagFilter); });
     var running = (acct==="All") ? opening : 0;
     var startCF = running, totIn = 0, totOut = 0, rows = "";
     list.forEach(function(e){
@@ -850,7 +789,6 @@
       sub.push(e.account||"Cash");
       if(e.ledger) sub.push(e.ledger);
       if(e.remarks) sub.push(e.remarks);
-      if(e.tags && e.tags.length) sub.push(e.tags.map(function(t){ return "#"+t; }).join(" "));
       var d = parseKey(e.date);
       var mobileAmt = e.type==="income"
         ? '<span class="num credit cell-amt">+ '+esc(fmt(+e.amount))+'</span>'
@@ -872,14 +810,14 @@
           return '<button class="ledger-name-chip'+(state.ledgerNameFilter===name?" selected":"")+'" data-ledger-name="'+esc(name)+'">'+esc(name)+'<span class="cnt">'+cnt+'</span></button>';
         }).join("") + '</div>';
     }
-    var html = filterBarHTML();
+    var html = "";
     html += '<div class="acct-grid">' + cards.join("") + '</div>';
     html += ledgerChips;
     html += '<div class="cf-row" style="padding-top:6px"><span>C/F</span><span class="amt">'+esc(fmt(startCF))+'</span></div>';
     if(list.length){
       html += '<div class="ledger-head"><span>Date</span><span>Entry</span><span>Debit</span><span>Credit</span><span>Balance</span></div><div>' + rows + '</div>';
     } else {
-      html += '<p class="empty-note">Abhi koi entry nahi hai. "+" button se pehli entry add karein.</p>';
+      html += '<p class="empty-note">No entries yet. Tap the "+" button to add your first entry.</p>';
     }
     html += '<div class="summary-box">' +
       '<div class="summary-line"><span>Total Income (Credit)</span><span class="in">'+esc(fmt(totIn))+'</span></div>' +
@@ -892,7 +830,7 @@
     main.querySelectorAll("[data-ledger-name]").forEach(function(b){
       b.addEventListener("click", function(){ state.ledgerNameFilter = b.getAttribute("data-ledger-name"); render(); });
     });
-    bindEditButtons(); bindTagFilter();
+    bindEditButtons();
   }
 
   /* ---------- CHARTS ---------- */
@@ -943,7 +881,7 @@
     }
     var svg = '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto" role="img" aria-label="Daily income and expense bar chart">';
     if(maxV <= 0){
-      svg += '<text x="'+(W/2)+'" y="150" fill="#a7b3aa" font-size="17" text-anchor="middle">Is mahine mein koi entry nahi hai</text>';
+      svg += '<text x="'+(W/2)+'" y="150" fill="#a7b3aa" font-size="17" text-anchor="middle">No entries this month</text>';
     } else {
       var ticks = 5;
       for(var t=0; t<=ticks; t++){
@@ -994,7 +932,7 @@
       '<button data-ctype="income" class="'+(type==="income"?"sel":"")+'">Income (Credit)</button>' +
       '<button data-ctype="expense" class="'+(type==="expense"?"sel":"")+'">Expense (Debit)</button></div>';
     if(total <= 0){
-      html += '<p class="empty-note">Is period mein koi '+(type==="expense"?"expense":"income")+' entry nahi hai.</p>';
+      html += '<p class="empty-note">No '+(type==="expense"?"expense":"income")+' entries in this period.</p>';
     } else {
       html += '<div class="donut-row"><div class="donut-left"><div class="donut-total">'+esc(fmt(total))+'</div>' +
         '<div class="donut-label">Total '+(type==="expense" ? "Expense<br>(Debit)" : "Income<br>(Credit)")+'</div></div>' +
@@ -1013,7 +951,7 @@
     html += '<div class="chart-card"><button class="collapse-head" id="collapseHead"><span>COLLAPSE</span><span class="car">'+(state.chartCollapseOpen ? "⌃" : "⌄")+'</span></button>';
     if(state.chartCollapseOpen){
       html += '<p class="collapse-hint">Click on each item below for details</p>';
-      if(!catsAsc.length) html += '<p class="empty-note">Koi category data nahi hai.</p>';
+      if(!catsAsc.length) html += '<p class="empty-note">No category data.</p>';
       catsAsc.forEach(function(c){
         var info = catInfo(type, c);
         var pct = total ? (byCat[c]/total*100) : 0;
@@ -1111,7 +1049,7 @@
         '<td class="num">'+(e.type==="income" ? esc(fmtPlain(+e.amount)) : "—")+'</td>' +
         '<td class="num">'+esc(fmtPlain(running))+'</td></tr>';
     });
-    if(!list.length) rows = '<tr><td colspan="5" style="text-align:center;color:#777;padding:18px 4px">Is period mein koi entry nahi hai.</td></tr>';
+    if(!list.length) rows = '<tr><td colspan="5" style="text-align:center;color:#777;padding:18px 4px">No entries in this period.</td></tr>';
     html += '<div class="preview-page"><h3>My Debit Diary</h3>' +
       '<div class="pp-name">'+esc(profileName)+'</div>' +
       '<div class="pp-meta">'+esc(rangeLabel)+' • Amounts in Rs</div>' +
@@ -1239,7 +1177,7 @@
     lines.push("Total Expense (Debit): " + fmt(totOut));
     lines.push("Balance: " + fmt(running));
     downloadBlob("my-debit-diary-report.pdf", makePDF(lines));
-    toast("PDF report download ho gaya ✓");
+    toast("PDF report downloaded ✓");
   }
 
   /* ---------- render / tabs / FAB ---------- */
@@ -1291,20 +1229,16 @@
       fAmount = document.getElementById("fAmount"),
       fLedger = document.getElementById("fLedger"), fRemarks = document.getElementById("fRemarks"),
       fLedgerNew = document.getElementById("fLedgerNew"), newLedgerField = document.getElementById("newLedgerField"),
-      fTagInput = document.getElementById("fTagInput"),
-      formTagChips = document.getElementById("formTagChips"),
-      tagSuggestions = document.getElementById("tagSuggestions"),
-      tagSuggestLabel = document.getElementById("tagSuggestLabel"),
       formError = document.getElementById("formError"),
       typeIncome = document.getElementById("typeIncome"), typeExpense = document.getElementById("typeExpense"),
       fromLabel = document.getElementById("fromLabel"), fromType = document.getElementById("fromType"),
       fromAcctName = document.getElementById("fromAcctName"),
       catIconBtn = document.getElementById("catIconBtn"), catNameLabel = document.getElementById("catNameLabel"),
       deleteBtn = document.getElementById("deleteBtn");
-  var formType = "expense", editingId = null, formTags = [], formAccount = "Cash", formCategory = "Misc";
+  var formType = "expense", editingId = null, formAccount = "Cash", formCategory = "Misc";
 
   function populateLedgerOptions(selected){
-    var html = '<option value="">— Koi ledger nahi —</option>';
+    var html = '<option value="">— No ledger —</option>';
     ledgerNames.forEach(function(name){
       html += '<option value="'+esc(name)+'"'+(name===selected ? " selected" : "")+'>'+esc(name)+'</option>';
     });
@@ -1330,42 +1264,6 @@
     catIconBtn.style.color = info.color;
     catNameLabel.textContent = info.name;
   }
-  function renderFormTags(){
-    formTagChips.innerHTML = formTags.map(function(t, i){
-      return '<span class="tag-chip">#'+esc(t)+'<button type="button" class="tag-x" data-remove-tag="'+i+'" aria-label="Remove tag">✕</button></span>';
-    }).join("");
-    formTagChips.querySelectorAll("[data-remove-tag]").forEach(function(b){
-      b.addEventListener("click", function(){
-        formTags.splice(+b.getAttribute("data-remove-tag"), 1);
-        renderFormTags(); renderTagSuggestions();
-      });
-    });
-  }
-  function renderTagSuggestions(){
-    var used = allUsedTags().filter(function(t){
-      return !formTags.some(function(ft){ return ft.toLowerCase()===t.toLowerCase(); });
-    });
-    tagSuggestLabel.style.display = used.length ? "" : "none";
-    tagSuggestions.innerHTML = used.map(function(t){
-      return '<button type="button" class="tag-chip suggest" data-suggest-tag="'+esc(t)+'">#'+esc(t)+'</button>';
-    }).join("");
-    tagSuggestions.querySelectorAll("[data-suggest-tag]").forEach(function(b){
-      b.addEventListener("click", function(){ addFormTag(b.getAttribute("data-suggest-tag")); });
-    });
-  }
-  function addFormTag(raw){
-    var t = String(raw||"").trim().replace(/^#+/, "").trim();
-    if(!t) return;
-    if(formTags.some(function(ft){ return ft.toLowerCase()===t.toLowerCase(); })) return;
-    formTags.push(t);
-    fTagInput.value = "";
-    renderFormTags(); renderTagSuggestions();
-  }
-  document.getElementById("addTagBtn").addEventListener("click", function(){ addFormTag(fTagInput.value); fTagInput.focus(); });
-  fTagInput.addEventListener("keydown", function(ev){
-    if(ev.key==="Enter" || ev.key===","){ ev.preventDefault(); addFormTag(fTagInput.value); }
-  });
-
   function setFormType(t){
     formType = t;
     typeIncome.classList.toggle("sel", t==="income");
@@ -1393,7 +1291,6 @@
       formAccount = e.account || "Cash"; fRemarks.value = e.remarks || "";
       if(e.ledger) ensureLedger(e.ledger);
       populateLedgerOptions(e.ledger || "");
-      formTags = (e.tags || []).slice();
       formCategory = e.category || (e.type==="income" ? "Other" : "Misc");
       setFormType(e.type);
       deleteBtn.style.display = "";
@@ -1401,14 +1298,11 @@
       fDate.value = state.tab==="daily" ? state.date : todayKey();
       fText.value = ""; fAmount.value = ""; formAccount = "Cash"; fRemarks.value = "";
       populateLedgerOptions(state.ledgerNameFilter || "");
-      formTags = state.tagFilter ? [state.tagFilter] : [];
       formCategory = "Misc";
       setFormType("expense");
       deleteBtn.style.display = "none";
     }
     fromAcctName.textContent = formAccount;
-    fTagInput.value = "";
-    renderFormTags(); renderTagSuggestions();
     overlay.classList.add("open");
     setTimeout(function(){ fText.focus(); }, 60);
   }
@@ -1418,24 +1312,23 @@
     var text = fText.value.trim();
     var amount = parseFloat(fAmount.value);
     var date = fDate.value || todayKey();
-    if(!text){ showError("Pehle entry ka naam (Enter Text) likhein."); fText.focus(); return; }
-    if(isNaN(amount) || amount <= 0){ showError("Sahi Amount likhein — 0 se zyada hona chahiye."); fAmount.focus(); return; }
-    if(fTagInput.value.trim()) addFormTag(fTagInput.value);
+    if(!text){ showError("Please enter the entry name (Enter Text) first."); fText.focus(); return; }
+    if(isNaN(amount) || amount <= 0){ showError("Enter a valid Amount — it must be greater than 0."); fAmount.focus(); return; }
     var ledgerName = currentLedgerValue();
-    if(fLedger.value === ADD_NEW_LEDGER && !ledgerName){ showError("Naye ledger ka naam likhein, ya list se koi ledger chunein."); fLedgerNew.focus(); return; }
+    if(fLedger.value === ADD_NEW_LEDGER && !ledgerName){ showError("Enter the new ledger name, or choose a ledger from the list."); fLedgerNew.focus(); return; }
     ensureLedger(ledgerName);
     var data = {
       date: date, type: formType, text: text, amount: Math.round(amount*100)/100,
       account: formAccount, category: formCategory, ledger: ledgerName,
-      remarks: fRemarks.value.trim(), tags: formTags.slice()
+      remarks: fRemarks.value.trim(), tags: []
     };
     if(editingId){
       for(var i=0;i<entries.length;i++) if(entries[i].id===editingId){ for(var k in data) entries[i][k]=data[k]; }
-      toast("Entry update ho gayi ✓");
+      toast("Entry updated ✓");
     } else {
       data.id = uid(); data.createdAt = Date.now();
       entries.push(data);
-      toast(formType==="income" ? "Income (Credit) add ho gayi ✓" : "Expense (Debit) add ho gaya ✓");
+      toast(formType==="income" ? "Income (Credit) added ✓" : "Expense (Debit) added ✓");
     }
     persist();
     if(state.tab==="daily") state.date = date;
@@ -1450,7 +1343,7 @@
   deleteBtn.addEventListener("click", function(){
     if(!editingId) return;
     entries = entries.filter(function(e){ return e.id!==editingId; });
-    persist(); closeSheet(); render(); toast("Entry delete ho gayi");
+    persist(); closeSheet(); render(); toast("Entry deleted");
   });
 
   /* ---------- account picker ---------- */
@@ -1506,7 +1399,7 @@
     inp.value = "";
     syncCategoryUI();
     categoryOverlay.classList.remove("open");
-    toast("Category add ho gayi ✓");
+    toast("Category added ✓");
   });
 
   /* ---------- pencil: name + opening balance ---------- */
@@ -1527,7 +1420,7 @@
     profileName = profileNameInput.value.trim();
     var v = parseFloat(openingInput.value);
     opening = isNaN(v) ? 0 : Math.round(v*100)/100;
-    persist(); closeProfile(); render(); toast("Save ho gaya ✓");
+    persist(); closeProfile(); render(); toast("Saved ✓");
   });
 
   document.addEventListener("keydown", function(ev){
