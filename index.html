@@ -454,6 +454,13 @@
       </div>
     </div>
 
+    <div class="field" id="ledgerField">
+      <label for="fLedger">Ledger</label>
+      <select id="fLedger" aria-label="Ledger">
+        <option value="">Select a person</option>
+      </select>
+    </div>
+
     <div class="desc-row">
       <span class="desc-ic" aria-hidden="true">✎</span>
       <div class="field">
@@ -1505,11 +1512,27 @@
       deleteBtn = document.getElementById("deleteBtn");
   var formType = "expense", editingId = null, formAccount = "Cash", formCategory = "Misc";
 
-  /* The entry form has no Ledger field. The person is assigned automatically:
-     a new entry opened from a person's ledger (Ledger tab, person selected)
-     is saved under that person; opened anywhere else it has no ledger.
-     Editing an entry keeps the ledger it already has. */
+  /* The entry form has a Ledger field listing only people (added from the
+     Ledger tab). It is hidden only when a new entry is opened from a
+     selected person's ledger — the person is already chosen there, so the
+     entry is saved under them without showing the field again. Opened from
+     Daily/Monthly/Yearly, or when editing an entry, the field is shown. */
   var formLedger = "";
+  var fLedger = document.getElementById("fLedger");
+  var ledgerField = document.getElementById("ledgerField");
+  var hideLedgerField = false;
+  function syncLedgerField(){
+    var opts = '<option value="">Select a person</option>';
+    ledgerNames.forEach(function(n){
+      opts += '<option value="'+esc(n)+'"'+(n===formLedger ? ' selected' : '')+'>'+esc(n)+'</option>';
+    });
+    if(formLedger && ledgerNames.indexOf(formLedger)===-1)
+      opts += '<option value="'+esc(formLedger)+'" selected>'+esc(formLedger)+'</option>';
+    fLedger.innerHTML = opts;
+    fLedger.value = formLedger || "";
+    ledgerField.style.display = hideLedgerField ? "none" : "";
+  }
+  fLedger.addEventListener("change", function(){ formLedger = fLedger.value; });
   function syncCategoryUI(){
     var info = catInfo(formType, formCategory);
     catIconBtn.textContent = info.icon;
@@ -1723,18 +1746,26 @@
       formAccount = e.account || "Cash"; fRemarks.value = e.remarks || "";
       if(e.ledger) ensureLedger(e.ledger);
       formLedger = e.ledger || "";
+      hideLedgerField = false;
       formCategory = e.category || (e.type==="income" ? "Other" : "Misc");
       setFormType(e.type);
       deleteBtn.style.display = "";
     } else {
       formDateKey = todayKey(); syncDateBox();
       fText.value = ""; fAmount.value = ""; formAccount = "Cash"; fRemarks.value = "";
-      formLedger = (state.tab === "ledger") ? (state.ledgerNameFilter || "") : "";
+      if(state.tab === "ledger" && state.ledgerNameFilter){
+        formLedger = state.ledgerNameFilter;
+        hideLedgerField = true;
+      } else {
+        formLedger = "";
+        hideLedgerField = false;
+      }
       formCategory = "Misc";
       setFormType("expense");
       deleteBtn.style.display = "none";
     }
     fromAcctName.textContent = formAccount;
+    syncLedgerField();
     overlay.classList.add("open");
     setTimeout(function(){ fText.focus(); }, 60);
   }
@@ -1746,6 +1777,7 @@
     var date = formDateKey;
     if(!text){ showError("Please enter the entry name (Enter Text) first."); fText.focus(); return; }
     if(isNaN(amount) || amount <= 0){ showError("Enter a valid Amount — it must be greater than 0."); fAmount.focus(); return; }
+    if(!hideLedgerField) formLedger = fLedger.value;
     var ledgerName = formLedger;
     ensureLedger(ledgerName);
     var data = {
