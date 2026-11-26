@@ -370,6 +370,9 @@
   .pdf-table tr.month-total td{background:#eef6f4;font-weight:700}
   .pdf-table tr.month-total td.gt-label{text-align:right}
   .pdf-table tr.month-total td.num{font-size:8.7px;letter-spacing:-.4px}
+  .pdf-table tr.pdf-col-head td{background:#0097a7;color:#fff;font-weight:700;text-align:center;font-size:9px;padding:5px 1px;border:1px solid #00838f}
+  .pdf-year-title{text-align:center;font-weight:700;font-size:14.5px;margin-top:18px;line-height:1.2;color:#222}
+  .pdf-table.pdf-summary-table{margin-top:8px}
   /* Notes chip — blank paper with the period's notes as plain text */
   .pdf-notes{margin-top:14px;min-height:300px;text-align:left}
   .pdf-note{margin-bottom:16px}
@@ -2007,6 +2010,7 @@
        which is the only amount column shown. The Grand Total and the
        Balance still use the full-period totals above. */
     var groups = null;
+    var yearSummary = null;
     if(groupByMonth && filter !== "notes"){
       var byMonth = {};
       list.forEach(function(e){
@@ -2021,6 +2025,43 @@
         g.totIn = Math.round(g.totIn*100)/100;
         g.totOut = Math.round(g.totOut*100)/100;
       });
+      /* Full (unfiltered) totals for ALL twelve months of the year,
+         respecting only the period, the account and the open person's
+         ledger — never the filter chip. The C/F chain runs through
+         them: the first month's C/F is the year's opening balance
+         (cf above), each month's closing Balance is its C/F + its full
+         Income - its full Expense, and that Balance becomes the next
+         month's C/F. Each displayed group inherits its month's C/F,
+         full totals and closing Balance from this chain, and the same
+         twelve rows form the "Yearly Report" summary table at the end
+         (December's Balance is the year's final Balance). */
+      var fullMonths = [];
+      for(var fm = 0; fm < 12; fm++) fullMonths.push({month: fm, name: MONTHS_S[fm], totIn: 0, totOut: 0, cf: 0, balance: 0});
+      entries.forEach(function(e){
+        if(e.date < from || e.date > to) return;
+        if(person && (e.ledger || "") !== person) return;
+        if(account && account !== "All" && e.account !== account) return;
+        var mm = +e.date.slice(5,7) - 1;
+        if(mm < 0 || mm > 11) return;
+        if(e.type === "income") fullMonths[mm].totIn += +e.amount;
+        else fullMonths[mm].totOut += +e.amount;
+      });
+      var runBal = cf;
+      fullMonths.forEach(function(fmo){
+        fmo.totIn = Math.round(fmo.totIn*100)/100;
+        fmo.totOut = Math.round(fmo.totOut*100)/100;
+        fmo.cf = Math.round(runBal*100)/100;
+        fmo.balance = Math.round((runBal + fmo.totIn - fmo.totOut)*100)/100;
+        runBal = fmo.balance;
+      });
+      groups.forEach(function(g){
+        var fmg = fullMonths[g.month];
+        g.cf = fmg.cf;
+        g.fullIn = fmg.totIn;
+        g.fullOut = fmg.totOut;
+        g.balance = fmg.balance;
+      });
+      yearSummary = {year: +String(from).slice(0,4), cf: cf, months: fullMonths};
     }
     /* The Notes chip is not an entry filter: it shows the Notes tab's
        notes for this period on a blank page instead of the table. */
@@ -2040,7 +2081,8 @@
       filter: filter,
       notesList: notesList,
       grouped: !!groups,
-      groups: groups || []
+      groups: groups || [],
+      yearSummary: yearSummary
     };
   }
   function pdfDateCell(key){
@@ -2079,12 +2121,20 @@
     var single = model.filter === "expense" || model.filter === "income";
     var isIncFilter = model.filter === "income";
     var amtCls = isIncFilter ? "inc-g" : "exp-r";
+    /* Year mode with month sections: each month carries its own
+       heading, column-header row, C/F row, entries, Total row and
+       Balance row, so there is no single C/F row or column header at
+       the very top — the first month's C/F (the year's opening
+       balance) opens the first section, and every later month's C/F
+       is the previous month's closing Balance. */
+    var hasGroups = !!(model.grouped && model.groups && model.groups.length);
     var rows, colgroup, thead;
     if(single){
       /* One amount column only: the other type leaves the report. The
          C/F label sits in the Account column, its amount in the single
          amount column; the Total row shows only that total. */
-      rows = '<tr class="pdf-cf-row"><td colspan="3"></td>' +
+      rows = hasGroups ? '' :
+        '<tr class="pdf-cf-row"><td colspan="3"></td>' +
         '<td>C/F</td><td class="num">' + esc(fmt(model.cf)) + '</td></tr>';
       if(model.empty){
         rows += '<tr><td colspan="5" style="text-align:center;color:#777;padding:16px 4px">No entries in this period.</td></tr>';
@@ -2095,13 +2145,17 @@
           '<td>' + esc(e.account || "") + '</td>' +
           '<td class="num ' + amtCls + '">' + esc(fmtPlain(+e.amount)) + '</td></tr>';
       };
-      if(model.grouped && model.groups.length){
+      if(hasGroups){
         model.groups.forEach(function(g){
           rows += '<tr class="pdf-month-head"><td colspan="5">' + esc(g.name) + '</td></tr>';
+          rows += '<tr class="pdf-col-head"><td>Date</td><td>Description</td><td>Category</td><td>Account</td><td>' + (isIncFilter ? "Income" : "Expense") + '</td></tr>';
+          rows += '<tr class="pdf-cf-row"><td colspan="3"></td>' +
+            '<td>C/F</td><td class="num">' + esc(fmt(g.cf)) + '</td></tr>';
           g.entries.forEach(function(e){ rows += singleRow(e); });
           rows += '<tr class="month-total"><td colspan="3"></td>' +
             '<td class="gt-label">Total</td>' +
             '<td class="num ' + amtCls + '">' + esc(fmtWhole(isIncFilter ? g.totIn : g.totOut)) + '</td></tr>';
+          rows += '<tr class="balance-row"><td colspan="5">Balance = ' + esc(curSym() + " " + fmtWhole(g.balance) + "/-") + '</td></tr>';
         });
       } else {
         model.rows.forEach(function(r){
@@ -2115,9 +2169,10 @@
         '<td class="num ' + amtCls + '">' + esc(fmtWhole(isIncFilter ? model.totIn : model.totOut)) + '</td></tr>';
       rows += '<tr class="balance-row"><td colspan="5">Balance = ' + esc(curSym() + " " + fmtWhole(model.balance) + "/-") + '</td></tr>';
       colgroup = '<colgroup><col style="width:17%"><col style="width:19%"><col style="width:21%"><col style="width:16%"><col style="width:27%"></colgroup>';
-      thead = '<thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Account</th><th>' + (isIncFilter ? "Income" : "Expense") + '</th></tr></thead>';
+      thead = hasGroups ? '' : '<thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Account</th><th>' + (isIncFilter ? "Income" : "Expense") + '</th></tr></thead>';
     } else {
-      rows = '<tr class="pdf-cf-row"><td colspan="4"></td>' +
+      rows = hasGroups ? '' :
+        '<tr class="pdf-cf-row"><td colspan="4"></td>' +
         '<td>C/F</td><td class="num">' + esc(fmt(model.cf)) + '</td></tr>';
       if(model.empty){
         rows += '<tr><td colspan="6" style="text-align:center;color:#777;padding:16px 4px">No entries in this period.</td></tr>';
@@ -2131,14 +2186,18 @@
             ? '<td class="num inc-g">' + amt + '</td><td class="num"></td></tr>'
             : '<td class="num"></td><td class="num exp-r">' + amt + '</td></tr>');
       };
-      if(model.grouped && model.groups.length){
+      if(hasGroups){
         model.groups.forEach(function(g){
           rows += '<tr class="pdf-month-head"><td colspan="6">' + esc(g.name) + '</td></tr>';
+          rows += '<tr class="pdf-col-head"><td>Date</td><td>Description</td><td>Category</td><td>Account</td><td>Income</td><td>Expense</td></tr>';
+          rows += '<tr class="pdf-cf-row"><td colspan="4"></td>' +
+            '<td>C/F</td><td class="num">' + esc(fmt(g.cf)) + '</td></tr>';
           g.entries.forEach(function(e){ rows += dualRow(e); });
           rows += '<tr class="month-total"><td colspan="3"></td>' +
             '<td class="gt-label">Total</td>' +
             '<td class="num inc-g">' + esc(fmtWhole(g.totIn)) + '</td>' +
             '<td class="num exp-r">' + esc(fmtWhole(g.totOut)) + '</td></tr>';
+          rows += '<tr class="balance-row"><td colspan="6">Balance = ' + esc(curSym() + " " + fmtWhole(g.balance) + "/-") + '</td></tr>';
         });
       } else {
         model.rows.forEach(function(r){
@@ -2153,11 +2212,33 @@
         '<td class="num exp-r">' + esc(fmtWhole(model.totOut)) + '</td></tr>';
       rows += '<tr class="balance-row"><td colspan="6">Balance = ' + esc(curSym() + " " + fmtWhole(model.balance) + "/-") + '</td></tr>';
       colgroup = '<colgroup><col style="width:15%"><col style="width:16%"><col style="width:19%"><col style="width:14%"><col style="width:18%"><col style="width:18%"></colgroup>';
-      thead = '<thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Account</th><th>Income</th><th>Expense</th></tr></thead>';
+      thead = hasGroups ? '' : '<thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Account</th><th>Income</th><th>Expense</th></tr></thead>';
+    }
+    /* Year mode only: a separate summary table after the Grand Total —
+       "Yearly Report <year>" with a C/F row (the year's opening balance
+       in the Balance column) and one row per month, Jan to Dec, all
+       twelve months even when a month has no entries. It always shows
+       Income, Expense and the running Balance (built from the full
+       unfiltered monthly totals), whatever filter chip is selected. */
+    var summary = '';
+    if(model.yearSummary){
+      var ys = model.yearSummary;
+      summary = '<div class="pdf-year-title">Yearly Report ' + esc(ys.year) + '</div>' +
+        '<table class="pdf-table pdf-summary-table">' +
+        '<colgroup><col style="width:22%"><col style="width:26%"><col style="width:26%"><col style="width:26%"></colgroup>' +
+        '<thead><tr><th>Month</th><th>Income (Credit)</th><th>Expense (Debit)</th><th>Balance</th></tr></thead><tbody>' +
+        '<tr><td>C/F</td><td class="num"></td><td class="num"></td><td class="num">' + esc(fmt(ys.cf)) + '</td></tr>';
+      ys.months.forEach(function(mo){
+        summary += '<tr><td>' + esc(mo.name) + '</td>' +
+          '<td class="num">' + esc(fmtPlain(mo.totIn)) + '</td>' +
+          '<td class="num">' + esc(fmtPlain(mo.totOut)) + '</td>' +
+          '<td class="num">' + esc(fmtPlain(mo.balance)) + '</td></tr>';
+      });
+      summary += '</tbody></table>';
     }
     return head +
       '<table class="pdf-table">' + colgroup + thead +
-      '<tbody>' + rows + '</tbody></table></div>';
+      '<tbody>' + rows + '</tbody></table>' + summary + '</div>';
   }
   function pdfFabsHTML(){
     return '<div class="pdf-fabs">' +
@@ -2543,6 +2624,13 @@
     if(notesMode){
       drawPdfNotes(genStamp ? headY - 36 : headY - 24);
     } else {
+    /* Year mode with month sections: no single header or C/F row at
+       the top — each month section draws its own header row and C/F
+       row (see the grouped loop below). */
+    var hasGroups = !!(model.grouped && model.groups && model.groups.length);
+    if(hasGroups){
+      y = tableTop;
+    } else {
     y = headerRow(tableTop);
     if(singleMode){
       /* C/F with its label in the Account column and its amount in the
@@ -2559,6 +2647,7 @@
         {text: "C/F", col: 4, font: "F2", color: DARK},
         {text: fmt(model.cf), col: 5, font: "F2", size: 8.6, color: DARK, align: "right"}
       ], null, y);
+    }
     }
     if(model.empty){
       if(y - 16 < 42) y = newPage();
@@ -2608,16 +2697,91 @@
         ], opts, y);
       }
     }
+    /* ----- "Yearly Report" summary table (Year mode only) -----
+       A separate four-column table drawn after the Grand Total: a
+       C/F row carrying the year's opening balance in the Balance
+       column, then Jan–Dec with each month's full Income, Expense
+       and running Balance. It has its own column geometry, so it
+       gets its own header/row helpers on the same grid style. */
+    var sumCols = [120, 138, 138, 139];
+    var sumX = [ML];
+    for(var sxi = 0; sxi < sumCols.length; sxi++) sumX.push(sumX[sxi] + sumCols[sxi]);
+    function sumHeaderRow(top){
+      fill(0, 0.592, 0.655); rectF(ML, top - 20, CW, 20);
+      fill(1,1,1);
+      var labels = ["Month", "Income (Credit)", "Expense (Debit)", "Balance"];
+      for(var li = 0; li < labels.length; li++) txt(labels[li], sumX[li] + sumCols[li]/2, top - 13.5, "F2", 8.6, "center");
+      strokeC(0.72, 0.78, 0.8); ops.push("0.6 w");
+      ops.push(n2(ML) + " " + n2(top - 20) + " m " + n2(ML + CW) + " " + n2(top - 20) + " l S");
+      ops.push(n2(ML) + " " + n2(top) + " m " + n2(ML + CW) + " " + n2(top) + " l S");
+      for(var vi = 0; vi < sumX.length; vi++) ops.push(n2(sumX[vi]) + " " + n2(top - 20) + " m " + n2(sumX[vi]) + " " + n2(top) + " l S");
+      return top - 20;
+    }
+    function sumNewPage(){
+      pages.push(ops.join("\n")); ops = [];
+      return sumHeaderRow(PH - 40);
+    }
+    function sumRow(cells, yy){
+      if(yy - 16 < 42) yy = sumNewPage();
+      var bottom = yy - 16;
+      cells.forEach(function(c){
+        if(!c.text) return;
+        fill(c.color[0], c.color[1], c.color[2]);
+        if(c.align === "right") txt(c.text, sumX[c.col] + sumCols[c.col] - 4, bottom + 5.4, c.font, c.size || 9.3, "right");
+        else txt(c.text, sumX[c.col] + 4, bottom + 5.4, c.font, c.size || 9.3, "left");
+      });
+      strokeC(0.72, 0.78, 0.8); ops.push("0.6 w");
+      ops.push(n2(ML) + " " + n2(bottom) + " m " + n2(ML + CW) + " " + n2(bottom) + " l S");
+      for(var vi2 = 0; vi2 < sumX.length; vi2++) ops.push(n2(sumX[vi2]) + " " + n2(bottom) + " m " + n2(sumX[vi2]) + " " + n2(yy) + " l S");
+      return bottom;
+    }
+    function drawYearSummary(){
+      var ys = model.yearSummary;
+      if(y - 76 < 42){ pages.push(ops.join("\n")); ops = []; y = PH - 56; }
+      else y -= 20;
+      fill(0.13, 0.13, 0.13);
+      txt("Yearly Report " + ys.year, PW/2, y, "F2", 12, "center");
+      y = sumHeaderRow(y - 8);
+      y = sumRow([
+        {text: "C/F", col: 0, font: "F1", color: DARK},
+        {text: fmt(ys.cf), col: 3, font: "F1", color: DARK, align: "right"}
+      ], y);
+      ys.months.forEach(function(mo){
+        y = sumRow([
+          {text: mo.name, col: 0, font: "F1", color: DARK},
+          {text: fmtPlain(mo.totIn), col: 1, font: "F1", color: DARK, align: "right"},
+          {text: fmtPlain(mo.totOut), col: 2, font: "F1", color: DARK, align: "right"},
+          {text: fmtPlain(mo.balance), col: 3, font: "F1", color: DARK, align: "right"}
+        ], y);
+      });
+    }
     if(model.grouped && model.groups && model.groups.length){
-      /* Year mode: one section per month — heading row, that month's
-         entries, then the month's total row. Grand Total follows. */
+      /* Year mode: one section per month — heading row, the column
+         header row, that month's C/F row, its entries, its Total row
+         and its Balance row (the month's closing balance, which the
+         next month's C/F row then repeats). Grand Total follows. */
       model.groups.forEach(function(g){
-        if(y - 32 < 42) y = newPage();
+        if(y - 52 < 42) y = newPage();
         y = rowOut([
           {text: g.name, col: 0, span: singleMode ? 5 : 6, font: "F2", color: [0.03, 0.37, 0.32]}
         ], {fillColor: [0.81, 0.91, 0.89], skipV: singleMode ? [1, 2, 3, 4] : [1, 2, 3, 4, 5]}, y);
+        y = headerRow(y);
+        if(singleMode){
+          y = rowOut([
+            {text: "C/F", col: 3, font: "F2", color: DARK},
+            {text: fmt(g.cf), col: 4, font: "F2", size: 8.6, color: DARK, align: "right"}
+          ], null, y);
+        } else {
+          y = rowOut([
+            {text: "C/F", col: 4, font: "F2", color: DARK},
+            {text: fmt(g.cf), col: 5, font: "F2", size: 8.6, color: DARK, align: "right"}
+          ], null, y);
+        }
         g.entries.forEach(drawEntryRow);
         drawTotalRow("Total", g.totIn, g.totOut, [0.937, 0.965, 0.957]);
+        y = rowOut([
+          {text: "Balance = " + curSym() + " " + fmtWhole(g.balance) + "/-", col: 0, span: singleMode ? 5 : 6, font: "F2", size: 10, color: [0.086, 0.4, 0.753], align: "right"}
+        ], {fillColor: [0.878, 0.949, 0.945], skipV: singleMode ? [1, 2, 3, 4] : [1, 2, 3, 4, 5]}, y);
       });
     } else {
       model.rows.forEach(function(r){
@@ -2629,6 +2793,9 @@
     y = rowOut([
       {text: "Balance = " + curSym() + " " + fmtWhole(model.balance) + "/-", col: 0, span: singleMode ? 5 : 6, font: "F2", size: 10, color: [0.086, 0.4, 0.753], align: "right"}
     ], {fillColor: [0.878, 0.949, 0.945], skipV: singleMode ? [1, 2, 3, 4] : [1, 2, 3, 4, 5]}, y);
+    /* Year mode: the "Yearly Report" summary table is the last
+       section of the report, after the Grand Total. */
+    if(model.yearSummary) drawYearSummary();
     }
     pages.push(ops.join("\n"));
     var bytes = [], offsets = {};
