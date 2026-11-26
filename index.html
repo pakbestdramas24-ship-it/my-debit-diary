@@ -3573,7 +3573,7 @@
       });
       var total = list.reduce(function(t, e){ return t + (+e.amount); }, 0);
       var catsDesc = Object.keys(byCat).sort(function(a, b){ return byCat[b] - byCat[a]; });
-      var need = total <= 0 ? 44 : Math.max(150, 62 + catsDesc.length * 15) + 30;
+      var need = total <= 0 ? 44 : Math.max(160, 72 + catsDesc.length * 15) + 30;
       if(y - need < 42) newPage();
       fill(0.03, 0.37, 0.32);
       txt(type === "expense" ? "Expense (Debit)" : "Income (Credit)", ML, y, "F2", 12.5, "left");
@@ -3592,15 +3592,28 @@
       fill(0.27, 0.27, 0.27);
       txt("Total " + (type === "expense" ? "Expense" : "Income"), rx, cy + 24, "F1", 11, "left");
       txt(type === "expense" ? "(Debit)" : "(Credit)", rx, cy + 11, "F1", 11, "left");
-      var ry = cy - 6;
+      /* Coloured segment bar, like the on-screen preview: one segment
+         per category, coloured and sized by its share, drawn across the
+         breakdown column between the total and the breakdown rows. */
+      var segRight = ML + CW - 10, segW = segRight - rx, sx = rx;
+      catsDesc.forEach(function(c, i){
+        var col = hexRgb(catInfo(type, c).color);
+        fill(col[0], col[1], col[2]);
+        var wSeg = i === catsDesc.length - 1 ? segRight - sx : segW * byCat[c] / total;
+        if(wSeg > 0) rectF(sx, cy - 9, wSeg, 7);
+        sx += wSeg;
+      });
+      var ry = cy - 25;
       catsDesc.forEach(function(c){
         var col = hexRgb(catInfo(type, c).color);
         fill(col[0], col[1], col[2]); rectF(rx, ry - 1, 8, 8);
         fill(DARK[0], DARK[1], DARK[2]);
         txt(fitW(c, 170, 10), rx + 13, ry, "F1", 10, "left");
         var pct = total ? (byCat[c] / total * 100) : 0;
-        txt(pct.toFixed(1) + "%", rx + 250, ry, "F1", 10, "right");
-        txt(fmtPlain(byCat[c]), ML + CW, ry, "F1", 10, "right");
+        txt(pct.toFixed(1) + "%", rx + 242, ry, "F1", 10, "right");
+        /* Amount column ends 10pt inside the right margin so the full
+           amount (e.g. "14,200.00") is never clipped at the page edge. */
+        txt(fmtPlain(byCat[c]), ML + CW - 10, ry, "F1", 10, "right");
         ry -= 15;
       });
       y = Math.min(cy - 80, ry + 6) - 12;
