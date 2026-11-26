@@ -289,6 +289,7 @@
   .pdf-page h3{margin:0;text-align:center;color:#0e8a75;font-size:19px;font-weight:700;line-height:1.15}
   .pdf-page .pp-name{text-align:center;color:#6a1fa2;font-size:13px;font-weight:600;margin-top:1px;line-height:1.2}
   .pdf-page .pp-period{text-align:center;font-weight:700;font-size:14.5px;margin-top:2px;line-height:1.2;color:#222}
+  .pdf-page .pp-generated{text-align:left;color:#777;font-size:11px;margin-top:5px;line-height:1.25}
   .pdf-table{width:100%;border-collapse:collapse;margin-top:9px;font-size:10.5px;table-layout:fixed}
   .pdf-table th{background:#0097a7;color:#fff;font-weight:700;text-align:center;padding:5px 2px;border:1px solid #00838f;font-size:9.5px}
   .pdf-table td{border:1px solid #c3ced1;padding:4px 3px;vertical-align:top;overflow-wrap:break-word}
@@ -1075,6 +1076,8 @@
     pdfHeading: "",
     pdfAccount: "All",
     pdfBack: "monthly",
+    pdfGenerated: "",
+    reportGenerated: "",
     prevTab: "daily",
     settingsScreen: "main",
     helpFrom: "menu"
@@ -1704,7 +1707,17 @@
     var d = parseKey(key);
     return pad(d.getDate()) + "-" + pad(d.getMonth()+1) + "-" + d.getFullYear();
   }
-  function pdfPreviewHTML(model, heading, name){
+  /* "Generated on" stamp: date in the app's chosen date format, time on a
+     12-hour clock. Captured once when a report preview is opened, so the
+     downloaded PDF shows the same moment as the preview. */
+  function makeGenStamp(){
+    var now = new Date();
+    var h = now.getHours();
+    var ampm = h >= 12 ? "PM" : "AM";
+    var h12 = h % 12; if(h12 === 0) h12 = 12;
+    return "Generated on: " + fmtDateKey(toKey(now)) + ", " + h12 + ":" + pad(now.getMinutes()) + " " + ampm;
+  }
+  function pdfPreviewHTML(model, heading, name, genStamp){
     var rows = '<tr class="pdf-cf-row"><td colspan="6">C/F ' + esc(fmt(model.cf)) + '</td></tr>';
     if(model.empty){
       rows += '<tr><td colspan="6" style="text-align:center;color:#777;padding:16px 4px">No entries in this period.</td></tr>';
@@ -1729,6 +1742,7 @@
     return '<div class="pdf-page"><h3>My Debit Diary</h3>' +
       '<div class="pp-name">' + esc(name != null ? name : profileName) + '</div>' +
       '<div class="pp-period">' + esc(heading) + '</div>' +
+      (genStamp ? '<div class="pp-generated">' + esc(genStamp) + '</div>' : '') +
       '<table class="pdf-table"><colgroup><col style="width:16%"><col style="width:19%"><col style="width:19%"><col style="width:11%"><col style="width:17.5%"><col style="width:17.5%"></colgroup>' +
       '<thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Account</th><th>Income (Credit)</th><th>Expense (Debit)</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table></div>';
@@ -1738,9 +1752,9 @@
       '<button type="button" class="pdf-fab" id="pdfShareBtn" aria-label="Share PDF" title="Share PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg></button>' +
       '<button type="button" class="pdf-fab" id="pdfDownloadBtn" aria-label="Download PDF" title="Download PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></button></div>';
   }
-  function bindPdfFabs(model, heading, name){
-    document.getElementById("pdfShareBtn").addEventListener("click", function(){ shareStyledPDF(model, heading, name); });
-    document.getElementById("pdfDownloadBtn").addEventListener("click", function(){ downloadStyledPDF(model, heading, name); });
+  function bindPdfFabs(model, heading, name, genStamp){
+    document.getElementById("pdfShareBtn").addEventListener("click", function(){ shareStyledPDF(model, heading, name, genStamp); });
+    document.getElementById("pdfDownloadBtn").addEventListener("click", function(){ downloadStyledPDF(model, heading, name, genStamp); });
   }
   function pdfFilterChipsHTML(current, attr){
     return '<div class="report-chips">' +
@@ -1776,6 +1790,7 @@
     /* If a person's ledger is open on the Ledger tab, the report is for
        that person only; otherwise it is the general report. */
     state.pdfPerson = state.ledgerNameFilter || "";
+    state.pdfGenerated = makeGenStamp();
     state.tab = "pdfpreview";
     render(); window.scrollTo(0,0);
   }
@@ -1785,14 +1800,14 @@
     var dispName = person || profileName;
     var html = '<div class="sub-head"><button class="back-btn" id="pdfBack" aria-label="Back">←</button><h2>PDF Report</h2></div>';
     html += pdfFilterChipsHTML(state.pdfFilter, "data-pdf-filter");
-    html += pdfPreviewHTML(model, state.pdfHeading, dispName);
+    html += pdfPreviewHTML(model, state.pdfHeading, dispName, state.pdfGenerated);
     html += pdfFabsHTML();
     main.innerHTML = html;
     document.getElementById("pdfBack").addEventListener("click", function(){ setTab(state.pdfBack || "monthly"); });
     main.querySelectorAll("[data-pdf-filter]").forEach(function(b){
       b.addEventListener("click", function(){ state.pdfFilter = b.getAttribute("data-pdf-filter"); render(); });
     });
-    bindPdfFabs(model, state.pdfHeading, dispName);
+    bindPdfFabs(model, state.pdfHeading, dispName, state.pdfGenerated);
   }
   function renderReport(){
     var r = reportRange();
@@ -1811,7 +1826,7 @@
         '<label>To<input type="date" id="repTo" value="' + esc(state.reportTo) + '"></label></div>';
     }
     html += pdfFilterChipsHTML(state.reportFilter, "data-rep-filter");
-    html += pdfPreviewHTML(model, heading, dispName);
+    html += pdfPreviewHTML(model, heading, dispName, state.reportGenerated);
     html += pdfFabsHTML();
     main.innerHTML = html;
     document.getElementById("reportBack").addEventListener("click", function(){ setTab("monthly"); });
@@ -1830,7 +1845,7 @@
     main.querySelectorAll("[data-rep-filter]").forEach(function(b){
       b.addEventListener("click", function(){ state.reportFilter = b.getAttribute("data-rep-filter"); render(); });
     });
-    bindPdfFabs(model, heading, dispName);
+    bindPdfFabs(model, heading, dispName, state.reportGenerated);
   }
 
   /* ---------- PDF export ---------- */
@@ -1917,7 +1932,7 @@
     while(str.length && helvWidth(str + "...", size) > maxW) str = str.slice(0, -1);
     return str + "...";
   }
-  function buildStyledPDF(model, heading, name){
+  function buildStyledPDF(model, heading, name, genStamp){
     var dispName = name != null ? name : profileName;
     var PW = 595, PH = 842, ML = 30, CW = PW - 60;
     var cols = [65, 120, 95, 70, 92, 93];
@@ -1981,7 +1996,13 @@
     }
     fill(0.13, 0.13, 0.13);
     txt(heading, PW/2, headY, "F2", 12, "center");
-    y = headerRow(headY - 19);
+    var tableTop = headY - 19;
+    if(genStamp){
+      fill(0.45, 0.45, 0.45);
+      txt(genStamp, ML, headY - 13, "F1", 8.5, "left");
+      tableTop = headY - 31;
+    }
+    y = headerRow(tableTop);
     /* C/F as the first table row — one blank spanning row like the
        Balance row at the bottom, with no internal cell borders. */
     y = rowOut([
@@ -2057,12 +2078,12 @@
     var slug = String(heading || "report").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
     return "my-debit-diary-" + (slug || "report") + ".pdf";
   }
-  function downloadStyledPDF(model, heading, name){
-    downloadBlob(pdfFileName(heading), buildStyledPDF(model, heading, name));
+  function downloadStyledPDF(model, heading, name, genStamp){
+    downloadBlob(pdfFileName(heading), buildStyledPDF(model, heading, name, genStamp));
     toast("PDF downloaded ✓");
   }
-  function shareStyledPDF(model, heading, name){
-    var blob = buildStyledPDF(model, heading, name);
+  function shareStyledPDF(model, heading, name, genStamp){
+    var blob = buildStyledPDF(model, heading, name, genStamp);
     var shared = false;
     try{
       var file = new File([blob], pdfFileName(heading), {type: "application/pdf"});
@@ -2116,7 +2137,7 @@
     else if(state.tab === "help") renderHelp();
     updateFab();
   }
-  function setTab(tab){ state.tab = tab; state.noteMode = "list"; state.noteEditId = null; state.noteDraft = ""; render(); window.scrollTo(0,0); }
+  function setTab(tab){ state.tab = tab; state.noteMode = "list"; state.noteEditId = null; state.noteDraft = ""; if(tab === "report") state.reportGenerated = makeGenStamp(); render(); window.scrollTo(0,0); }
   document.querySelectorAll(".tab").forEach(function(t){
     t.addEventListener("click", function(){ setTab(t.getAttribute("data-tab")); });
   });
