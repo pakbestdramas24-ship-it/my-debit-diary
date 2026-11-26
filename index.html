@@ -3115,6 +3115,72 @@
   }
   function padR(s, n){ s = String(s); while(s.length < n) s += " "; return s.slice(0, n); }
   function padL(s, n){ s = String(s); while(s.length < n) s = " " + s; return s.length > n ? s.slice(s.length - n) : s; }
+  /* ---------- "Bakhshal" in the downloaded PDFs ----------
+     The preview shows the All Ledgers name in the Dancing Script
+     webfont, but the hand-built PDFs only carry Helvetica — so the
+     name is rendered once in that same webfont on a canvas and
+     embedded in the PDF as a JPEG image (white background; the PDF
+     page is white), which makes the saved PDF match the preview.
+     When the webfont cannot be loaded, the builders fall back to
+     the previous slanted bold text. Geometry is in PDF points at a
+     20pt size — the preview's name is 20px beside its 19px title,
+     with the same red colour and italic script style. */
+  var bakhshalImgCache = null;
+  function bakhshalNameImage(){
+    if(bakhshalImgCache) return Promise.resolve(bakhshalImgCache);
+    function drawIt(){
+      var F = 120;
+      var font = "italic 700 " + F + "px \"Dancing Script\"";
+      var word = "Bakhshal";
+      var cv = document.createElement("canvas");
+      var ctx = cv.getContext("2d");
+      ctx.font = font;
+      ctx.letterSpacing = "2.4px";
+      var m = ctx.measureText(word);
+      var aL = m.actualBoundingBoxLeft || 0;
+      var aR = (m.actualBoundingBoxRight != null ? m.actualBoundingBoxRight : m.width);
+      var aA = m.actualBoundingBoxAscent || F;
+      var aD = (m.actualBoundingBoxDescent != null ? m.actualBoundingBoxDescent : F * 0.3);
+      var pad = 8;
+      cv.width = Math.ceil(aL + aR + pad * 2);
+      cv.height = Math.ceil(aA + aD + pad * 2);
+      ctx = cv.getContext("2d");
+      ctx.font = font;
+      ctx.letterSpacing = "2.4px";
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, cv.width, cv.height);
+      ctx.fillStyle = "#d81f26";
+      ctx.fillText(word, pad + aL, pad + aA);
+      var b64 = String(cv.toDataURL("image/jpeg", 0.92)).split(",")[1] || "";
+      if(!b64) return null;
+      var bin = atob(b64);
+      var bytes = new Uint8Array(bin.length);
+      for(var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i) & 255;
+      var sc = 20 / F;
+      return { bytes: bytes, pxW: cv.width, pxH: cv.height,
+        wPt: cv.width * sc, hPt: cv.height * sc,
+        inkWPt: (aL + aR) * sc, inkLeftPt: pad * sc,
+        basePt: (aD + pad) * sc };
+    }
+    function finish(){
+      var img = null;
+      try{ img = drawIt(); }catch(e){}
+      if(img) bakhshalImgCache = img;
+      return img;
+    }
+    try{
+      if(document.fonts && document.fonts.load){
+        return Promise.race([
+          document.fonts.load("italic 700 120px \"Dancing Script\"", "Bakhshal").then(function(){ return true; }, function(){ return false; }),
+          new Promise(function(res){ setTimeout(function(){ res(false); }, 2500); })
+        ]).then(function(ok){
+          if(!ok && document.fonts.check && !document.fonts.check("italic 700 120px \"Dancing Script\"")) return null;
+          return finish();
+        });
+      }
+    }catch(e){}
+    return Promise.resolve(finish());
+  }
   /* ---------- styled PDF (drawn to match the on-screen preview) ---------- */
   var HELV_W = [278,278,355,556,556,889,667,222,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,222,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
   function helvWidth(str, size){
@@ -3139,6 +3205,7 @@
   }
   function buildStyledPDF(model, heading, name, genStamp){
     var dispName = name ? name : "Bakhshal";
+    var bakhImg = (dispName === "Bakhshal" && bakhshalImgCache) ? bakhshalImgCache : null;
     var PW = 595, PH = 842, ML = 30, CW = PW - 60;
     /* The table adapts to the filter chip: Expense or Income alone
        drops the other amount column; Notes drops the table entirely. */
@@ -3196,7 +3263,7 @@
        headed by its date, flowing onto fresh blank pages as needed. */
     function drawPdfNotes(startY){
       var yy = startY;
-      function ensure(space){
+      function ensure(price){
         if(yy - price < 42){ pages.push(ops.join("\n")); ops = []; yy = PH - 50; }
       }
       if(!model.notesList || !model.notesList.length){
@@ -3245,11 +3312,19 @@
     var headY = PH - 67;
     if(dispName){
       if(dispName === "Bakhshal"){
-        /* All Ledgers name: stylish red — bold, slanted (an italic
-           look) and a touch larger, with the built-in bold font. */
-        fill(0.85, 0.08, 0.1);
-        var bakhW = helvWidth(dispName, 12.5);
-        ops.push("BT /F2 12.5 Tf 1 0 0.26 1 " + n2(PW/2 - bakhW/2 - 1.5) + " " + n2(headY) + " Tm (" + pdfEscapeText(dispName) + ") Tj ET");
+        if(bakhImg){
+          /* All Ledgers name in the true script font: "Bakhshal"
+             rendered in the Dancing Script webfont (the same look
+             as the preview) and embedded as an image — centred on
+             the title block, its baseline sitting on headY. */
+          ops.push("q " + n2(bakhImg.wPt) + " 0 0 " + n2(bakhImg.hPt) + " " + n2(PW/2 - bakhImg.inkWPt/2 - bakhImg.inkLeftPt) + " " + n2(headY - bakhImg.basePt) + " cm /ImB Do Q");
+        } else {
+          /* Fallback (script image unavailable): stylish red —
+             bold, slanted (an italic look), built-in bold font. */
+          fill(0.85, 0.08, 0.1);
+          var bakhW = helvWidth(dispName, 12.5);
+          ops.push("BT /F2 12.5 Tf 1 0 0.26 1 " + n2(PW/2 - bakhW/2 - 1.5) + " " + n2(headY) + " Tm (" + pdfEscapeText(dispName) + ") Tj ET");
+        }
       } else {
         fill(0.416, 0.122, 0.635);
         txt(dispName, PW/2, headY, "F2", 10.5, "center");
@@ -3441,6 +3516,7 @@
     if(model.yearSummary) drawYearSummary();
     }
     pages.push(ops.join("\n"));
+    var imgObj = bakhImg ? 5 + pages.length*2 : 0;
     var bytes = [], offsets = {};
     function pushStr(s){ var b = winAnsiBytes(s); for(var j=0;j<b.length;j++) bytes.push(b[j]); }
     function beginObj(n){ offsets[n] = bytes.length; pushStr(n + " 0 obj\n"); }
@@ -3454,14 +3530,20 @@
     for(var q=0;q<pages.length;q++){
       var pageObj = 5 + q*2, contentObj = pageObj + 1;
       beginObj(pageObj);
-      pushStr("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents " + contentObj + " 0 R >>\nendobj\n");
+      pushStr("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>" + (imgObj && q === 0 ? " /XObject << /ImB " + imgObj + " 0 R >>" : "") + " >> /Contents " + contentObj + " 0 R >>\nendobj\n");
       var streamBytes = winAnsiBytes(pages[q]);
       beginObj(contentObj);
       pushStr("<< /Length " + streamBytes.length + " >>\nstream\n");
       for(var s2=0;s2<streamBytes.length;s2++) bytes.push(streamBytes[s2]);
       pushStr("\nendstream\nendobj\n");
     }
-    var totalObjs = 4 + pages.length*2;
+    if(imgObj){
+      beginObj(imgObj);
+      pushStr("<< /Type /XObject /Subtype /Image /Width " + bakhImg.pxW + " /Height " + bakhImg.pxH + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + bakhImg.bytes.length + " >>\nstream\n");
+      for(var ib=0;ib<bakhImg.bytes.length;ib++) bytes.push(bakhImg.bytes[ib]);
+      pushStr("\nendstream\nendobj\n");
+    }
+    var totalObjs = 4 + pages.length*2 + (imgObj ? 1 : 0);
     var xrefPos = bytes.length;
     pushStr("xref\n0 " + (totalObjs+1) + "\n0000000000 65535 f \n");
     for(var o=1;o<=totalObjs;o++){
@@ -3477,26 +3559,30 @@
     return "my-debit-diary-" + (slug || "report") + ".pdf";
   }
   function downloadStyledPDF(model, heading, name, genStamp){
-    downloadBlob(pdfFileName(heading), buildStyledPDF(model, heading, name, genStamp));
-    toast("PDF downloaded ✓");
+    bakhshalNameImage().then(function(){
+      downloadBlob(pdfFileName(heading), buildStyledPDF(model, heading, name, genStamp));
+      toast("PDF downloaded ✓");
+    });
   }
   function shareStyledPDF(model, heading, name, genStamp){
-    var blob = buildStyledPDF(model, heading, name, genStamp);
-    var shared = false;
-    try{
-      var file = new File([blob], pdfFileName(heading), {type: "application/pdf"});
-      if(navigator.canShare && navigator.canShare({files: [file]})){
-        navigator.share({files: [file], title: "My Debit Diary"}).catch(function(){});
-        shared = true;
+    bakhshalNameImage().then(function(){
+      var blob = buildStyledPDF(model, heading, name, genStamp);
+      var shared = false;
+      try{
+        var file = new File([blob], pdfFileName(heading), {type: "application/pdf"});
+        if(navigator.canShare && navigator.canShare({files: [file]})){
+          navigator.share({files: [file], title: "My Debit Diary"}).catch(function(){});
+          shared = true;
+        }
+      }catch(e){}
+      if(shared) return;
+      if(navigator.share){
+        try{ navigator.share({title: "My Debit Diary", text: "My Debit Diary — " + heading}); }
+        catch(e2){ toast("Sharing is not available on this device"); }
+      } else {
+        toast("Sharing is not available here — tap Download instead");
       }
-    }catch(e){}
-    if(shared) return;
-    if(navigator.share){
-      try{ navigator.share({title: "My Debit Diary", text: "My Debit Diary — " + heading}); }
-      catch(e2){ toast("Sharing is not available on this device"); }
-    } else {
-      toast("Sharing is not available here — tap Download instead");
-    }
+    });
   }
 
   /* ---------- chart PDF (for the Charts Report screen) ----------
@@ -3505,6 +3591,7 @@
      graphics. No entries table is drawn. */
   function buildChartPDF(from, to, heading, name, genStamp, filter, person, account, monthlyBuckets){
     var dispName = name ? name : "Bakhshal";
+    var bakhImg = (dispName === "Bakhshal" && bakhshalImgCache) ? bakhshalImgCache : null;
     var PW = 595, PH = 842, ML = 30, CW = PW - 60;
     var pages = [], ops = [];
     function n2(v){ return Math.round(v * 100) / 100; }
@@ -3564,11 +3651,19 @@
     var headY = PH - 67;
     if(dispName){
       if(dispName === "Bakhshal"){
-        /* All Ledgers name: stylish red — bold, slanted (an italic
-           look) and a touch larger, with the built-in bold font. */
-        fill(0.85, 0.08, 0.1);
-        var bakhW = helvWidth(dispName, 12.5);
-        ops.push("BT /F2 12.5 Tf 1 0 0.26 1 " + n2(PW / 2 - bakhW / 2 - 1.5) + " " + n2(headY) + " Tm (" + pdfEscapeText(dispName) + ") Tj ET");
+        if(bakhImg){
+          /* All Ledgers name in the true script font: "Bakhshal"
+             rendered in the Dancing Script webfont (the same look
+             as the preview) and embedded as an image — centred on
+             the title block, its baseline sitting on headY. */
+          ops.push("q " + n2(bakhImg.wPt) + " 0 0 " + n2(bakhImg.hPt) + " " + n2(PW / 2 - bakhImg.inkWPt / 2 - bakhImg.inkLeftPt) + " " + n2(headY - bakhImg.basePt) + " cm /ImB Do Q");
+        } else {
+          /* Fallback (script image unavailable): stylish red —
+             bold, slanted (an italic look), built-in bold font. */
+          fill(0.85, 0.08, 0.1);
+          var bakhW = helvWidth(dispName, 12.5);
+          ops.push("BT /F2 12.5 Tf 1 0 0.26 1 " + n2(PW / 2 - bakhW / 2 - 1.5) + " " + n2(headY) + " Tm (" + pdfEscapeText(dispName) + ") Tj ET");
+        }
       } else {
         fill(0.416, 0.122, 0.635);
         txt(dispName, PW / 2, headY, "F2", 10.5, "center");
@@ -3683,6 +3778,7 @@
       y = ly - 18;
     }
     pages.push(ops.join("\n"));
+    var imgObj = bakhImg ? 5 + pages.length * 2 : 0;
     var bytes = [], offsets = {};
     function pushStr(s){ var b = winAnsiBytes(s); for(var j = 0; j < b.length; j++) bytes.push(b[j]); }
     function beginObj(nn){ offsets[nn] = bytes.length; pushStr(nn + " 0 obj\n"); }
@@ -3696,14 +3792,20 @@
     for(var q = 0; q < pages.length; q++){
       var pageObj = 5 + q * 2, contentObj = pageObj + 1;
       beginObj(pageObj);
-      pushStr("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents " + contentObj + " 0 R >>\nendobj\n");
+      pushStr("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>" + (imgObj && q === 0 ? " /XObject << /ImB " + imgObj + " 0 R >>" : "") + " >> /Contents " + contentObj + " 0 R >>\nendobj\n");
       var streamBytes = winAnsiBytes(pages[q]);
       beginObj(contentObj);
       pushStr("<< /Length " + streamBytes.length + " >>\nstream\n");
       for(var s2 = 0; s2 < streamBytes.length; s2++) bytes.push(streamBytes[s2]);
       pushStr("\nendstream\nendobj\n");
     }
-    var totalObjs = 4 + pages.length * 2;
+    if(imgObj){
+      beginObj(imgObj);
+      pushStr("<< /Type /XObject /Subtype /Image /Width " + bakhImg.pxW + " /Height " + bakhImg.pxH + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + bakhImg.bytes.length + " >>\nstream\n");
+      for(var ib = 0; ib < bakhImg.bytes.length; ib++) bytes.push(bakhImg.bytes[ib]);
+      pushStr("\nendstream\nendobj\n");
+    }
+    var totalObjs = 4 + pages.length * 2 + (imgObj ? 1 : 0);
     var xrefPos = bytes.length;
     pushStr("xref\n0 " + (totalObjs + 1) + "\n0000000000 65535 f \n");
     for(var o = 1; o <= totalObjs; o++){
@@ -3715,26 +3817,30 @@
     return new Blob([new Uint8Array(bytes)], {type: "application/pdf"});
   }
   function downloadChartPDF(from, to, heading, name, genStamp, filter, person, account, monthlyBuckets){
-    downloadBlob(pdfFileName(heading), buildChartPDF(from, to, heading, name, genStamp, filter, person, account, monthlyBuckets));
-    toast("PDF downloaded ✓");
+    bakhshalNameImage().then(function(){
+      downloadBlob(pdfFileName(heading), buildChartPDF(from, to, heading, name, genStamp, filter, person, account, monthlyBuckets));
+      toast("PDF downloaded ✓");
+    });
   }
   function shareChartPDF(from, to, heading, name, genStamp, filter, person, account, monthlyBuckets){
-    var blob = buildChartPDF(from, to, heading, name, genStamp, filter, person, account, monthlyBuckets);
-    var shared = false;
-    try{
-      var file = new File([blob], pdfFileName(heading), {type: "application/pdf"});
-      if(navigator.canShare && navigator.canShare({files: [file]})){
-        navigator.share({files: [file], title: "My Debit Diary"}).catch(function(){});
-        shared = true;
+    bakhshalNameImage().then(function(){
+      var blob = buildChartPDF(from, to, heading, name, genStamp, filter, person, account, monthlyBuckets);
+      var shared = false;
+      try{
+        var file = new File([blob], pdfFileName(heading), {type: "application/pdf"});
+        if(navigator.canShare && navigator.canShare({files: [file]})){
+          navigator.share({files: [file], title: "My Debit Diary"}).catch(function(){});
+          shared = true;
+        }
+      }catch(e){}
+      if(shared) return;
+      if(navigator.share){
+        try{ navigator.share({title: "My Debit Diary", text: "My Debit Diary — " + heading}); }
+        catch(e2){ toast("Sharing is not available on this device"); }
+      } else {
+        toast("Sharing is not available here — tap Download instead");
       }
-    }catch(e){}
-    if(shared) return;
-    if(navigator.share){
-      try{ navigator.share({title: "My Debit Diary", text: "My Debit Diary — " + heading}); }
-      catch(e2){ toast("Sharing is not available on this device"); }
-    } else {
-      toast("Sharing is not available here — tap Download instead");
-    }
+    });
   }
   function bindChartPdfFabs(from, to, heading, name, genStamp, filter, person, account, monthlyBuckets){
     document.getElementById("pdfShareBtn").addEventListener("click", function(){ shareChartPDF(from, to, heading, name, genStamp, filter, person, account, monthlyBuckets); });
