@@ -225,6 +225,7 @@
   /* Sub-screen header (Charts / Report) */
   .sub-head{display:flex;align-items:center;gap:8px;padding:6px 0 14px}
   .sub-head h2{margin:0;font-size:27px;font-weight:600}
+  .sub-head h2.pdf-title{font-size:20px}
   .back-btn{background:none;border:0;color:var(--text);font-size:28px;width:44px;height:48px;display:flex;align-items:center;justify-content:center}
 
   /* Charts */
@@ -292,9 +293,10 @@
   .pdf-page .pp-name{text-align:center;color:#6a1fa2;font-size:13px;font-weight:600;margin-top:1px;line-height:1.2}
   .pdf-page .pp-period{text-align:center;font-weight:700;font-size:14.5px;margin-top:2px;line-height:1.2;color:#222}
   .pdf-page .pp-generated{text-align:left;color:#777;font-size:11px;margin-top:5px;line-height:1.25}
-  .pdf-table{width:100%;border-collapse:collapse;margin-top:9px;font-size:10.5px;table-layout:fixed}
+  .pdf-table{width:100%;border-collapse:collapse;margin-top:9px;font-size:10px;table-layout:fixed}
   .pdf-table th{background:#0097a7;color:#fff;font-weight:700;text-align:center;padding:5px 2px;border:1px solid #00838f;font-size:9.5px}
-  .pdf-table td{border:1px solid #c3ced1;padding:4px 3px;vertical-align:top;overflow-wrap:break-word}
+  .pdf-table td{border:1px solid #c3ced1;padding:4px 3px;vertical-align:top;overflow-wrap:normal;word-break:normal}
+  .pdf-table tr.grand-total td.gt-label{text-align:right}
   .pdf-table td.dt{white-space:nowrap;font-size:10px;letter-spacing:-.3px}
   .pdf-table td.num{text-align:right;white-space:nowrap;font-size:10px;letter-spacing:-.2px}
   .pdf-table tr.grand-total td.num{font-size:9px;letter-spacing:-.3px}
@@ -1806,7 +1808,8 @@
             : '<td class="num"></td><td class="num exp-r">' + amt + '</td></tr>');
       }
     });
-    rows += '<tr class="grand-total"><td colspan="4"></td>' +
+    rows += '<tr class="grand-total"><td colspan="3"></td>' +
+      '<td class="gt-label">Total</td>' +
       '<td class="num inc-g">' + esc(fmtWhole(model.totIn)) + '</td>' +
       '<td class="num exp-r">' + esc(fmtWhole(model.totOut)) + '</td></tr>';
     rows += '<tr class="balance-row"><td colspan="6">Balance = ' + esc(curSym() + " " + fmtWhole(model.balance) + "/-") + '</td></tr>';
@@ -1814,7 +1817,7 @@
       '<div class="pp-name">' + esc(name != null ? name : profileName) + '</div>' +
       '<div class="pp-period">' + esc(heading) + '</div>' +
       (genStamp ? '<div class="pp-generated">' + esc(genStamp) + '</div>' : '') +
-      '<table class="pdf-table"><colgroup><col style="width:16%"><col style="width:21%"><col style="width:17%"><col style="width:12%"><col style="width:17%"><col style="width:17%"></colgroup>' +
+      '<table class="pdf-table"><colgroup><col style="width:16%"><col style="width:17%"><col style="width:20%"><col style="width:16%"><col style="width:15.5%"><col style="width:15.5%"></colgroup>' +
       '<thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Account</th><th>Income</th><th>Expense</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table></div>';
   }
@@ -1869,7 +1872,7 @@
     var person = state.pdfPerson || "";
     var model = pdfModel(state.pdfFrom, state.pdfTo, state.pdfAccount, state.pdfFilter, person);
     var dispName = person || profileName;
-    var html = '<div class="sub-head"><button class="back-btn" id="pdfBack" aria-label="Back">←</button><h2>PDF Report</h2></div>';
+    var html = '<div class="sub-head"><button class="back-btn" id="pdfBack" aria-label="Back">←</button><h2 class="pdf-title">PDF Report</h2></div>';
     html += pdfFilterChipsHTML(state.pdfFilter, "data-pdf-filter");
     html += pdfPreviewHTML(model, state.pdfHeading, dispName, state.pdfGenerated);
     html += pdfFabsHTML();
@@ -2006,7 +2009,7 @@
   function buildStyledPDF(model, heading, name, genStamp){
     var dispName = name != null ? name : profileName;
     var PW = 595, PH = 842, ML = 30, CW = PW - 60;
-    var cols = [86, 112, 91, 60, 93, 93];
+    var cols = [86, 91, 107, 86, 83, 82];
     var colX = [ML];
     for(var ci=0; ci<cols.length; ci++) colX.push(colX[ci] + cols[ci]);
     var pages = [], ops = [];
@@ -2105,6 +2108,7 @@
       }
     });
     y = rowOut([
+      {text: "Total", col: 3, font: "F2", color: DARK, align: "right"},
       {text: fmtWhole(model.totIn), col: 4, font: "F2", color: [0.118, 0.49, 0.196], align: "right"},
       {text: fmtWhole(model.totOut), col: 5, font: "F2", color: [0.753, 0.224, 0.169], align: "right"}
     ], {fillColor: [0.878, 0.949, 0.945]}, y);
