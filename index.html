@@ -121,6 +121,8 @@
   .summary-card .sc-label{font-size:13.5px;line-height:1.25;color:#d7e0d8}
   .summary-card .sc-amt{font-size:16.5px;font-weight:700;margin-top:2px;line-height:1.2}
   .summary-card .right{text-align:right}
+  .summary-card .sc-amt.credit{color:var(--mint)}
+  .summary-card .sc-amt.debit{color:var(--danger)}
   .day-card{border:1.5px solid #39423c;border-radius:10px;padding:10px 12px 9px;margin-bottom:10px}
   .day-card-date{text-align:center;font-size:17.5px;font-weight:600;margin-bottom:8px}
   .day-cols{display:grid;grid-template-columns:1fr 1fr;gap:3px 14px}
@@ -1181,6 +1183,12 @@
     ledgerAccount: "All",
     ledgerNameFilter: "",
     ledgerView: "list",
+    ledgerPeriod: "month",
+    ledgerMonth: todayKey().slice(0,7),
+    ledgerYear: new Date().getFullYear(),
+    ledgerRangeFrom: "",
+    ledgerRangeTo: "",
+    ledgerRangeActive: false,
     pdfPerson: "",
     notesMonth: todayKey().slice(0,7),
     noteMode: "list",
@@ -1515,6 +1523,9 @@
       function openTile(){
         state.ledgerNameFilter = t.getAttribute("data-person");
         state.ledgerView = "detail";
+        state.ledgerPeriod = "month";
+        state.ledgerMonth = todayKey().slice(0,7);
+        state.ledgerYear = new Date().getFullYear();
         render(); window.scrollTo(0,0);
       }
       t.addEventListener("click", openTile);
@@ -1533,15 +1544,17 @@
   /* ---------- LEDGER (one ledger's detail screen) ---------- */
   function renderLedgerDetail(){
     var sel = state.ledgerNameFilter;
-    var html = '<div class="sub-head"><button class="back-btn" id="ledgerBackBtn" aria-label="Back to people list">←</button><h2 style="font-size:21px">' + (sel ? esc(sel) : "All People") + '</h2></div>';
-    /* Selected person's detail header — photo/icon, name, remarks, balance */
+    /* Top bar — only the back arrow; the person's name lives in the header card below */
+    var html = '<div class="sub-head"><button class="back-btn" id="ledgerBackBtn" aria-label="Back to people list">←</button></div>';
+    /* Selected person's detail header — photo/icon with a pencil badge, name, remarks, balance */
     if(sel){
       var selBal = personBalance(sel);
       var selRem = personNotes[sel] || "";
       html += '<div class="person-detail">' +
-        '<span data-avatar-edit="'+esc(sel)+'" role="button" aria-label="Change photo for '+esc(sel)+'" title="Change photo">'+avatarHTML(sel, "large")+'</span>' +
+        '<span class="tile-avatar-wrap"><span data-avatar-edit="'+esc(sel)+'" role="button" aria-label="Change photo for '+esc(sel)+'" title="Change photo">'+avatarHTML(sel, "large")+'</span>' +
+        '<button type="button" class="tile-pencil" data-avatar-edit="'+esc(sel)+'" aria-label="Change photo for '+esc(sel)+'" title="Change photo">✎</button></span>' +
         '<span class="person-main"><span class="person-name">'+esc(sel)+'</span>' +
-        (selRem ? '<span class="person-sub">'+esc(selRem)+'</span>' : '<span class="person-sub">Tap the photo to change it</span>') + '</span>' +
+        (selRem ? '<span class="person-sub">'+esc(selRem)+'</span>' : '') + '</span>' +
         '<span class="person-bal'+(selBal>0?" pos":(selBal<0?" neg":""))+'">'+esc(fmt(selBal))+'</span></div>';
     }
     if(!sel){
@@ -1553,11 +1566,35 @@
         '<span class="person-sub">'+ledgerNames.length+(ledgerNames.length===1 ? " person" : " people")+'</span></span>' +
         '<span class="person-bal'+(allBalD>0?" pos":(allBalD<0?" neg":""))+'">'+esc(fmt(allBalD))+'</span></div>';
     }
-    /* Entries table — all entries, or only the selected person's */
-    var list = entries.slice().sort(function(a,b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
-    if(sel) list = list.filter(function(e){ return (e.ledger||"")===sel; });
+    /* Period filter — Month / Year / Date range. The summary and the entries
+       below both follow the selected period. */
+    var period = state.ledgerPeriod;
+    var rangeOn = state.ledgerRangeActive && state.ledgerRangeFrom && state.ledgerRangeTo;
+    var startKey = null;
+    if(period === "month") startKey = state.ledgerMonth + "-01";
+    else if(period === "year") startKey = state.ledgerYear + "-01-01";
+    else if(rangeOn) startKey = state.ledgerRangeFrom;
+    function inPeriod(e){
+      if(period === "month") return e.date.slice(0,7) === state.ledgerMonth;
+      if(period === "year") return e.date.slice(0,4) === String(state.ledgerYear);
+      if(rangeOn) return e.date >= state.ledgerRangeFrom && e.date <= state.ledgerRangeTo;
+      return true;
+    }
+    /* This ledger's entries (all of them, or only the selected person's) */
+    var allList = entries.slice().sort(function(a,b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
+    if(sel) allList = allList.filter(function(e){ return (e.ledger||"")===sel; });
     /* In a person's view the balance is what they owe: money given (Debit) adds, money received (Credit) subtracts */
-    var startCF = sel ? 0 : opening;
+    var startCF;
+    if(!startKey){
+      startCF = sel ? 0 : opening;
+    } else if(sel){
+      startCF = 0;
+      allList.forEach(function(e){ if(e.date < startKey) startCF += (e.type==="expense" ? +e.amount : -(+e.amount)); });
+      startCF = Math.round(startCF*100)/100;
+    } else {
+      startCF = balanceBefore(startKey, "All");
+    }
+    var list = allList.filter(inPeriod);
     var running = startCF, totIn = 0, totOut = 0, rows = "";
     list.forEach(function(e){
       if(e.type==="income") totIn += +e.amount; else totOut += +e.amount;
@@ -1567,7 +1604,6 @@
       sub.push(e.account||"Cash");
       if(e.ledger) sub.push(e.ledger);
       if(e.remarks) sub.push(e.remarks);
-      var d = parseKey(e.date);
       var mobileAmt = e.type==="income"
         ? '<span class="num credit cell-amt">+ '+esc(fmt(+e.amount))+'</span>'
         : '<span class="num debit cell-amt">− '+esc(fmt(+e.amount))+'</span>';
@@ -1579,18 +1615,43 @@
         mobileAmt + debitCell + creditCell +
         '<span class="num cell-bal">'+esc(fmt(running))+'</span></button>';
     });
-    html += '<div class="cf-row" style="padding-top:6px"><span>C/F</span><span class="amt">'+esc(fmt(startCF))+'</span></div>';
+    /* Compact summary — C/F, Credit, Debit, Balance for the selected period */
+    html += '<div class="summary-card">' +
+      '<div><div class="sc-label">C/F</div><div class="sc-amt">'+esc(fmt(startCF))+'</div></div>' +
+      '<div class="right"><div class="sc-label">Credit</div><div class="sc-amt credit">'+esc(fmt(totIn))+'</div></div>' +
+      '<div><div class="sc-label">Debit</div><div class="sc-amt debit">'+esc(fmt(totOut))+'</div></div>' +
+      '<div class="right"><div class="sc-label">Balance</div><div class="sc-amt">'+esc(fmt(running))+'</div></div></div>';
+    /* Period tabs */
+    html += '<div class="seg-toggle" role="tablist" aria-label="Ledger period">' +
+      '<button type="button" data-ltab="month"'+(period==="month"?' class="sel"':"")+'>Month</button>' +
+      '<button type="button" data-ltab="year"'+(period==="year"?' class="sel"':"")+'>Year</button>' +
+      '<button type="button" data-ltab="range"'+(period==="range"?' class="sel"':"")+'>Date range</button></div>';
+    /* Period selector for the active tab */
+    if(period === "month"){
+      var lp = state.ledgerMonth.split("-");
+      html += '<div class="period-row monthly-compact"><div class="period-nav">' +
+        '<button class="nav-arrow" data-lmnav="-1" aria-label="Previous month">‹</button>' +
+        '<span class="period-label">'+MONTHS[+lp[1]-1]+' '+lp[0]+'</span>' +
+        '<button class="nav-arrow" data-lmnav="1" aria-label="Next month">›</button></div></div>';
+    } else if(period === "year"){
+      html += '<div class="period-row yearly-compact"><div class="period-nav">' +
+        '<button class="nav-arrow" data-lynav="-1" aria-label="Previous year">‹</button>' +
+        '<span class="period-label">'+state.ledgerYear+'</span>' +
+        '<button class="nav-arrow" data-lynav="1" aria-label="Next year">›</button></div></div>';
+    } else {
+      var calSvgL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/></svg>';
+      var rangeLabelL = rangeOn ? (keyToDisplay(state.ledgerRangeFrom) + " – " + keyToDisplay(state.ledgerRangeTo)) : "All entries";
+      html += '<div class="month-range-row"><button type="button" class="range-btn'+(rangeOn?" active":"")+'" id="ledgerRangeBtn" aria-label="Pick a date range">' +
+        '<span class="rb-label">Date range</span><span class="rb-value">'+esc(rangeLabelL)+'</span>' + calSvgL + '</button>' +
+        (rangeOn ? '<button type="button" class="range-clear-btn" id="ledgerRangeClear" aria-label="Clear date range" title="Clear date range">✕</button>' : '') + '</div>';
+    }
     if(list.length){
       html += '<div class="ledger-head"><span>Date</span><span>Entry</span><span>Debit</span><span>Credit</span><span>Balance</span></div><div>' + rows + '</div>';
     } else if(sel) {
-      html += '<p class="empty-note">No entries for '+esc(sel)+' yet. Tap the "+" button to add an entry for them.</p>';
+      html += '<p class="empty-note">No entries for '+esc(sel)+' in this period. Tap the "+" button to add an entry for them.</p>';
     } else {
-      html += '<p class="empty-note">No entries yet.</p>';
+      html += '<p class="empty-note">No entries in this period.</p>';
     }
-    html += '<div class="summary-box">' +
-      '<div class="summary-line"><span>Total Income (Credit)</span><span class="in">'+esc(fmt(totIn))+'</span></div>' +
-      '<div class="summary-line"><span>Total Expense (Debit)</span><span class="out">'+esc(fmt(totOut))+'</span></div>' +
-      '<div class="summary-line"><span><strong>Balance</strong></span><span><strong>'+esc(fmt(running))+'</strong></span></div></div>';
     main.innerHTML = html;
     document.getElementById("ledgerBackBtn").addEventListener("click", function(){
       state.ledgerView = "list";
@@ -1602,6 +1663,26 @@
         ev.stopPropagation();
         openPhotoPicker(el.getAttribute("data-avatar-edit"));
       });
+    });
+    main.querySelectorAll("[data-ltab]").forEach(function(b){
+      b.addEventListener("click", function(){ state.ledgerPeriod = b.getAttribute("data-ltab"); render(); });
+    });
+    main.querySelectorAll("[data-lmnav]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var p = state.ledgerMonth.split("-");
+        var nd = new Date(+p[0], (+p[1]-1) + (+b.getAttribute("data-lmnav")), 1);
+        state.ledgerMonth = nd.getFullYear()+"-"+pad(nd.getMonth()+1);
+        render();
+      });
+    });
+    main.querySelectorAll("[data-lynav]").forEach(function(b){
+      b.addEventListener("click", function(){ state.ledgerYear += +b.getAttribute("data-lynav"); render(); });
+    });
+    var lRangeBtn = document.getElementById("ledgerRangeBtn");
+    if(lRangeBtn) lRangeBtn.addEventListener("click", function(){ openRangeCalendar("ledger"); });
+    var lRangeClear = document.getElementById("ledgerRangeClear");
+    if(lRangeClear) lRangeClear.addEventListener("click", function(){
+      state.ledgerRangeActive = false; state.ledgerRangeFrom = ""; state.ledgerRangeTo = ""; render();
     });
     bindEditButtons();
   }
@@ -2498,8 +2579,14 @@
     });
   }
   function openRangeCalendar(context){
-    rangeContext = context === "year" ? "year" : (context === "chart" ? "chart" : "month");
-    if(rangeContext === "year"){
+    rangeContext = context === "year" ? "year" : (context === "chart" ? "chart" : (context === "ledger" ? "ledger" : "month"));
+    if(rangeContext === "ledger"){
+      var lMonthStart = state.ledgerMonth + "-01";
+      var lparts = state.ledgerMonth.split("-");
+      var lMonthEnd = toKey(new Date(+lparts[0], +lparts[1], 0));
+      rangeFromKey = state.ledgerRangeFrom || lMonthStart;
+      rangeToKey = state.ledgerRangeTo || lMonthEnd;
+    } else if(rangeContext === "year"){
       rangeFromKey = state.yearRangeFrom || (state.yearCursor + "-01-01");
       rangeToKey = state.yearRangeTo || (state.yearCursor + "-12-31");
     } else if(rangeContext === "chart"){
@@ -2542,6 +2629,7 @@
   document.getElementById("rangeClearBtn").addEventListener("click", function(){
     if(rangeContext === "year"){ state.yearRangeActive = false; state.yearRangeFrom = ""; state.yearRangeTo = ""; }
     else if(rangeContext === "chart"){ state.chartRangeActive = false; state.chartRangeFrom = ""; state.chartRangeTo = ""; }
+    else if(rangeContext === "ledger"){ state.ledgerRangeActive = false; state.ledgerRangeFrom = ""; state.ledgerRangeTo = ""; }
     else { state.monthRangeActive = false; state.monthRangeFrom = ""; state.monthRangeTo = ""; }
     closeRangeCalendar(); render();
   });
@@ -2550,6 +2638,7 @@
     if(rangeToKey < rangeFromKey){ var tmp = rangeFromKey; rangeFromKey = rangeToKey; rangeToKey = tmp; }
     if(rangeContext === "year"){ state.yearRangeFrom = rangeFromKey; state.yearRangeTo = rangeToKey; state.yearRangeActive = true; }
     else if(rangeContext === "chart"){ state.chartRangeFrom = rangeFromKey; state.chartRangeTo = rangeToKey; state.chartRangeActive = true; }
+    else if(rangeContext === "ledger"){ state.ledgerRangeFrom = rangeFromKey; state.ledgerRangeTo = rangeToKey; state.ledgerRangeActive = true; }
     else { state.monthRangeFrom = rangeFromKey; state.monthRangeTo = rangeToKey; state.monthRangeActive = true; }
     closeRangeCalendar(); render();
   });
