@@ -1028,6 +1028,13 @@
     var v = Math.abs(n);
     return v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   }
+  /* Whole rupees, no symbol and no decimals — the report's totals row
+     format, e.g. "60,000". */
+  function fmtWhole(n){
+    var neg = n < 0; var v = Math.round(Math.abs(n));
+    var s = String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return (neg ? "-" : "") + s;
+  }
   function esc(s){
     return String(s==null?"":s).replace(/[&<>"']/g, function(c){
       return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
@@ -1726,9 +1733,9 @@
       }
     });
     rows += '<tr class="grand-total"><td colspan="4"></td>' +
-      '<td class="num inc-g">' + esc(fmt(model.totIn)) + '</td>' +
-      '<td class="num exp-r">' + esc(fmt(model.totOut)) + '</td></tr>';
-    rows += '<tr class="balance-row"><td colspan="6">Balance = ' + esc(fmt(model.balance)) + '</td></tr>';
+      '<td class="num inc-g">' + esc(fmtWhole(model.totIn)) + '</td>' +
+      '<td class="num exp-r">' + esc(fmtWhole(model.totOut)) + '</td></tr>';
+    rows += '<tr class="balance-row"><td colspan="6">Balance = ' + esc(curSym() + " " + fmtWhole(model.balance) + "/-") + '</td></tr>';
     return '<div class="pdf-page"><h3>My Debit Diary</h3>' +
       '<div class="pp-name">' + esc(name != null ? name : profileName) + '</div>' +
       '<div class="pp-period">' + esc(heading) + '</div>' +
@@ -2020,12 +2027,12 @@
       }
     });
     y = rowOut([
-      {text: fmt(model.totIn), col: 4, font: "F2", color: [0.118, 0.49, 0.196], align: "right"},
-      {text: fmt(model.totOut), col: 5, font: "F2", color: [0.753, 0.224, 0.169], align: "right"}
+      {text: fmtWhole(model.totIn), col: 4, font: "F2", color: [0.118, 0.49, 0.196], align: "right"},
+      {text: fmtWhole(model.totOut), col: 5, font: "F2", color: [0.753, 0.224, 0.169], align: "right"}
     ], {fillColor: [0.878, 0.949, 0.945]}, y);
     /* Balance in its own row below the totals row, as the last table row. */
     y = rowOut([
-      {text: "Balance = " + fmt(model.balance), col: 0, span: 6, font: "F2", size: 10, color: [0.086, 0.4, 0.753], align: "right"}
+      {text: "Balance = " + curSym() + " " + fmtWhole(model.balance) + "/-", col: 0, span: 6, font: "F2", size: 10, color: [0.086, 0.4, 0.753], align: "right"}
     ], {fillColor: [0.878, 0.949, 0.945], skipV: [1, 2, 3, 4, 5]}, y);
     pages.push(ops.join("\n"));
     var bytes = [], offsets = {};
