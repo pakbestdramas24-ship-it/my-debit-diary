@@ -300,7 +300,7 @@
   .pdf-table .inc-g{color:#1e7d32}
   .pdf-table .exp-r{color:#c0392b}
   .pdf-table tr.balance-row td{background:#e0f2f1;color:#1565c0;font-weight:700;text-align:right;white-space:nowrap;font-size:10px;padding-right:5px}
-  .pdf-page .pp-cf{text-align:right;font-size:11px;color:#1c1c1c;margin-top:5px}
+  .pdf-table tr.pdf-cf-row td{color:#1c1c1c;font-weight:700;text-align:right;white-space:nowrap;font-size:10px;padding-right:5px}
   .pdf-fabs{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:30;display:flex;gap:14px}
   .pdf-fab{width:56px;height:56px;min-height:56px;border-radius:50%;border:0;background:var(--mint-btn);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.45);padding:0}
   .pdf-fab:active{background:var(--mint)}
@@ -1705,7 +1705,7 @@
     return pad(d.getDate()) + "-" + pad(d.getMonth()+1) + "-" + d.getFullYear();
   }
   function pdfPreviewHTML(model, heading, name){
-    var rows = "";
+    var rows = '<tr class="pdf-cf-row"><td colspan="6">C/F ' + esc(fmt(model.cf)) + '</td></tr>';
     if(model.empty){
       rows += '<tr><td colspan="6" style="text-align:center;color:#777;padding:16px 4px">No entries in this period.</td></tr>';
     }
@@ -1729,7 +1729,6 @@
     return '<div class="pdf-page"><h3>My Debit Diary</h3>' +
       '<div class="pp-name">' + esc(name != null ? name : profileName) + '</div>' +
       '<div class="pp-period">' + esc(heading) + '</div>' +
-      '<div class="pp-cf">C/F ' + esc(fmt(model.cf)) + '</div>' +
       '<table class="pdf-table"><colgroup><col style="width:16%"><col style="width:19%"><col style="width:19%"><col style="width:11%"><col style="width:17.5%"><col style="width:17.5%"></colgroup>' +
       '<thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Account</th><th>Income (Credit)</th><th>Expense (Debit)</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table></div>';
@@ -1982,10 +1981,12 @@
     }
     fill(0.13, 0.13, 0.13);
     txt(heading, PW/2, headY, "F2", 12, "center");
-    /* C/F as plain right-aligned text above the table — no cell, no grid. */
-    fill(DARK[0], DARK[1], DARK[2]);
-    txt("C/F " + fmt(model.cf), ML + CW - 4, headY - 14, "F1", 9.3, "right");
     y = headerRow(headY - 19);
+    /* C/F as the first table row — one blank spanning row like the
+       Balance row at the bottom, with no internal cell borders. */
+    y = rowOut([
+      {text: "C/F " + fmt(model.cf), col: 0, span: 6, font: "F2", size: 10, color: DARK, align: "right"}
+    ], {skipV: [1, 2, 3, 4, 5]}, y);
     if(model.empty){
       if(y - 16 < 42) y = newPage();
       var eb = y - 16;
@@ -2019,7 +2020,7 @@
     /* Balance in its own row below the totals row, as the last table row. */
     y = rowOut([
       {text: "Balance = " + fmt(model.balance), col: 0, span: 6, font: "F2", size: 10, color: [0.086, 0.4, 0.753], align: "right"}
-    ], {fillColor: [0.878, 0.949, 0.945]}, y);
+    ], {fillColor: [0.878, 0.949, 0.945], skipV: [1, 2, 3, 4, 5]}, y);
     pages.push(ops.join("\n"));
     var bytes = [], offsets = {};
     function pushStr(s){ var b = winAnsiBytes(s); for(var j=0;j<b.length;j++) bytes.push(b[j]); }
