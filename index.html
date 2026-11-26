@@ -819,23 +819,6 @@
   </div>
 </div>
 
-<!-- Person photo sheet -->
-<div class="overlay" id="photoOverlay" role="dialog" aria-modal="true" aria-label="Person photo">
-  <div class="sheet">
-    <button class="sheet-close" id="closePhotoBtn" aria-label="Close"><span>⌄</span></button>
-    <h2 class="sheet-title" id="photoSheetTitle">Photo</h2>
-    <div class="photo-preview" id="photoPreview"></div>
-    <div style="font-weight:600;font-size:15.5px;margin:2px 0 4px">Icon</div>
-    <p style="color:#c9d4cb;font-size:13.5px;margin:0 0 10px">Pick an icon for this person — it shows in their circle when no photo is set.</p>
-    <div class="icon-grid" id="photoIconGrid" style="margin-bottom:16px"></div>
-    <div class="stack-actions">
-      <button class="btn btn-primary" id="choosePhotoBtn">Choose Photo</button>
-      <button class="btn-danger" id="removePhotoBtn">Remove Photo</button>
-      <button class="btn btn-ghost" id="cancelPhotoBtn">Cancel</button>
-    </div>
-  </div>
-</div>
-
 <!-- Backup & Restore sheet -->
 <div class="overlay" id="backupOverlay" role="dialog" aria-modal="true" aria-label="Backup and restore">
   <div class="sheet">
@@ -1509,7 +1492,7 @@
     /* People grid — one icon tile per person (circle on top, name and
        balance below). There is no "All" tile: tapping a tile opens that
        person's own ledger detail screen, and the small pencil badge on
-       the circle opens the photo / icon picker for that person. */
+       the circle opens the device photo picker directly for that person. */
     html += '<div class="people-head"><span class="people-title">People</span>' +
       '<button type="button" class="add-person-btn" id="addPersonBtn">+ Add person</button></div>';
     if(!ledgerNames.length){
@@ -1520,7 +1503,7 @@
         var bal = personBalance(name);
         html += '<div class="person-tile" data-person="'+esc(name)+'" role="button" tabindex="0" aria-label="Open the ledger for '+esc(name)+'">' +
           '<span class="tile-avatar-wrap">' + avatarHTML(name, "large") +
-          '<button type="button" class="tile-pencil" data-tile-edit="'+esc(name)+'" aria-label="Change photo or icon for '+esc(name)+'" title="Change photo or icon">✎</button></span>' +
+          '<button type="button" class="tile-pencil" data-tile-edit="'+esc(name)+'" aria-label="Change photo for '+esc(name)+'" title="Change photo">✎</button></span>' +
           '<span class="tile-name">'+esc(name)+'</span>' +
           '<span class="tile-bal'+(bal>0?" pos":(bal<0?" neg":""))+'">'+esc(fmt(bal))+'</span></div>';
       });
@@ -1542,7 +1525,7 @@
     main.querySelectorAll("[data-tile-edit]").forEach(function(el){
       el.addEventListener("click", function(ev){
         ev.stopPropagation();
-        openPhotoSheet(el.getAttribute("data-tile-edit"));
+        openPhotoPicker(el.getAttribute("data-tile-edit"));
       });
     });
   }
@@ -1617,7 +1600,7 @@
     main.querySelectorAll("[data-avatar-edit]").forEach(function(el){
       el.addEventListener("click", function(ev){
         ev.stopPropagation();
-        openPhotoSheet(el.getAttribute("data-avatar-edit"));
+        openPhotoPicker(el.getAttribute("data-avatar-edit"));
       });
     });
     bindEditButtons();
@@ -2945,10 +2928,8 @@
   balanceOverlay.addEventListener("click", function(ev){ if(ev.target===balanceOverlay) closeBalanceSheet(); });
 
   /* ---------- person photos ---------- */
-  var photoOverlay = document.getElementById("photoOverlay");
   var photoInput = document.getElementById("photoFileInput");
   var photoTarget = "";
-  var photoSheetName = "";
   function processPhotoFile(file, done){
     var reader = new FileReader();
     reader.onload = function(){
@@ -2985,44 +2966,11 @@
       } else if(photoTarget){
         personPhotos[photoTarget] = url;
         persist();
-        if(photoOverlay.classList.contains("open") && photoSheetName === photoTarget) refreshPhotoSheet();
         render();
         toast("Photo saved ✓");
       }
       photoTarget = "";
     });
-  });
-  function refreshPhotoSheet(){
-    document.getElementById("photoSheetTitle").textContent = photoSheetName;
-    document.getElementById("photoPreview").innerHTML = avatarHTML(photoSheetName, "xl");
-    document.getElementById("removePhotoBtn").style.display = personPhotos[photoSheetName] ? "" : "none";
-    var grid = document.getElementById("photoIconGrid");
-    var initial = (String(photoSheetName || "?").trim().charAt(0) || "?").toUpperCase();
-    grid.innerHTML = iconGridHTML(personIcons[photoSheetName] || "", initial);
-    grid.querySelectorAll("[data-icon-pick]").forEach(function(b){
-      b.addEventListener("click", function(){
-        var id = b.getAttribute("data-icon-pick");
-        if(id) personIcons[photoSheetName] = id; else delete personIcons[photoSheetName];
-        persist(); refreshPhotoSheet(); render();
-        toast(id ? "Icon saved ✓" : "Icon removed");
-      });
-    });
-  }
-  function openPhotoSheet(name){
-    photoSheetName = name;
-    refreshPhotoSheet();
-    photoOverlay.classList.add("open");
-  }
-  function closePhotoSheet(){ photoOverlay.classList.remove("open"); }
-  document.getElementById("closePhotoBtn").addEventListener("click", closePhotoSheet);
-  document.getElementById("cancelPhotoBtn").addEventListener("click", closePhotoSheet);
-  photoOverlay.addEventListener("click", function(ev){ if(ev.target===photoOverlay) closePhotoSheet(); });
-  document.getElementById("choosePhotoBtn").addEventListener("click", function(){ openPhotoPicker(photoSheetName); });
-  document.getElementById("removePhotoBtn").addEventListener("click", function(){
-    if(!photoSheetName) return;
-    delete personPhotos[photoSheetName];
-    persist(); refreshPhotoSheet(); render();
-    toast("Photo removed");
   });
 
   /* ---------- backup & restore ---------- */
@@ -3574,7 +3522,7 @@
   });
 
   document.addEventListener("keydown", function(ev){
-    if(ev.key==="Escape"){ closeCalendar(); closeRangeCalendar(); closeSheet(); closeTopMenu(); closePersonSheet(); closePhotoSheet(); closeBackup(); closeBalanceSheet(); closePinSheet(); accountOverlay.classList.remove("open"); categoryOverlay.classList.remove("open"); }
+    if(ev.key==="Escape"){ closeCalendar(); closeRangeCalendar(); closeSheet(); closeTopMenu(); closePersonSheet(); closeBackup(); closeBalanceSheet(); closePinSheet(); accountOverlay.classList.remove("open"); categoryOverlay.classList.remove("open"); }
   });
 
   /* ---------- init ---------- */
