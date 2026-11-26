@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="color-scheme" content="dark" />
 <link rel="icon" href="data:," />
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet" />
 <title>My Debit Diary Web</title>
 <style>
   :root{
@@ -433,6 +434,9 @@
   .pdf-page{background:#ffffff;color:#1c1c1c;border-radius:4px;padding:16px 8px 24px;margin:0 -8px}
   .pdf-page h3{margin:0;text-align:center;color:#0e8a75;font-size:19px;font-weight:700;line-height:1.15}
   .pdf-page .pp-name{text-align:center;color:#6a1fa2;font-size:13px;font-weight:600;margin-top:1px;line-height:1.2}
+  /* "Bakhshal" (the All Ledgers name in the PDF title block): stylish
+     script look in red — a person's own name keeps the purple style. */
+  .pdf-page .pp-name.bakhshal{color:#d81f26;font-family:"Dancing Script","Segoe Script","Brush Script MT","Lucida Handwriting",cursive;font-size:20px;font-weight:700;font-style:italic;letter-spacing:.4px;line-height:1.15}
   .pdf-page .pp-period{text-align:center;font-weight:700;font-size:14.5px;margin-top:2px;line-height:1.2;color:#222}
   .pdf-page .pp-generated{text-align:left;color:#777;font-size:11px;margin-top:5px;line-height:1.25}
   .pdf-table{width:100%;border-collapse:collapse;margin-top:9px;font-size:9.5px;table-layout:fixed}
@@ -2432,8 +2436,9 @@
     return "Generated on: " + fmtDateKey(toKey(now)) + ", " + h12 + ":" + pad(now.getMinutes()) + " " + ampm;
   }
   function pdfPreviewHTML(model, heading, name, genStamp){
+    var shownName = name ? name : "Bakhshal";
     var head = '<div class="pdf-page"><h3>My Debit Diary</h3>' +
-      '<div class="pp-name">' + esc(name != null ? name : profileName) + '</div>' +
+      '<div class="pp-name' + (shownName === "Bakhshal" ? " bakhshal" : "") + '">' + esc(shownName) + '</div>' +
       '<div class="pp-period">' + esc(heading) + '</div>' +
       (genStamp ? '<div class="pp-generated">' + esc(genStamp) + '</div>' : '');
     /* Notes chip: no table — the page is a blank paper showing the
@@ -2758,7 +2763,7 @@
     var rng = pdfCurrentRange();
     state.pdfFrom = rng.from; state.pdfTo = rng.to; state.pdfHeading = rng.heading;
     var model = pdfModel(rng.from, rng.to, pdfAcct, state.pdfFilter, person, state.pdfPeriod === "year");
-    var dispName = person || profileName;
+    var dispName = person || "Bakhshal";
     var html = '<div class="sub-head slim"><button class="back-btn" id="pdfBack" aria-label="Back">Back</button></div>';
     /* Period tabs — Month | Year | Date Range (Excel sample layout) */
     html += '<div class="seg-toggle ledger-seg" role="tablist" aria-label="Report period">' +
@@ -2930,7 +2935,7 @@
   }
   function chartReportHTML(from, to, heading, dispName, genStamp, filter, person, account, monthlyBuckets){
     var head = '<div class="pdf-page"><h3>My Debit Diary</h3>' +
-      '<div class="pp-name">' + esc(dispName || "") + '</div>' +
+      '<div class="pp-name' + (dispName === "Bakhshal" ? " bakhshal" : "") + '">' + esc(dispName || "") + '</div>' +
       '<div class="pp-period">' + esc(heading) + '</div>' +
       (genStamp ? '<div class="pp-generated">' + esc(genStamp) + '</div>' : '');
     var types = filter === "all" ? ["expense", "income"] : [filter];
@@ -2976,7 +2981,7 @@
     var led = reportLedgerSel();
     var person = led === "All" ? "" : led;
     var acct = reportAccountSel();
-    var dispName = person || profileName;
+    var dispName = person || "Bakhshal";
     var heading = r.heading;
     var mode = state.reportMode;
     var rangeOn = mode === "range" && state.reportRangeActive && state.reportFrom && state.reportTo;
@@ -3133,7 +3138,7 @@
     return str + "...";
   }
   function buildStyledPDF(model, heading, name, genStamp){
-    var dispName = name != null ? name : profileName;
+    var dispName = name ? name : "Bakhshal";
     var PW = 595, PH = 842, ML = 30, CW = PW - 60;
     /* The table adapts to the filter chip: Expense or Income alone
        drops the other amount column; Notes drops the table entirely. */
@@ -3239,8 +3244,16 @@
     txt("My Debit Diary", PW/2, PH - 50, "F2", 17, "center");
     var headY = PH - 67;
     if(dispName){
-      fill(0.416, 0.122, 0.635);
-      txt(dispName, PW/2, headY, "F2", 10.5, "center");
+      if(dispName === "Bakhshal"){
+        /* All Ledgers name: stylish red — bold, slanted (an italic
+           look) and a touch larger, with the built-in bold font. */
+        fill(0.85, 0.08, 0.1);
+        var bakhW = helvWidth(dispName, 12.5);
+        ops.push("BT /F2 12.5 Tf 1 0 0.26 1 " + n2(PW/2 - bakhW/2 - 1.5) + " " + n2(headY) + " Tm (" + pdfEscapeText(dispName) + ") Tj ET");
+      } else {
+        fill(0.416, 0.122, 0.635);
+        txt(dispName, PW/2, headY, "F2", 10.5, "center");
+      }
       headY -= 13;
     }
     fill(0.13, 0.13, 0.13);
@@ -3491,7 +3504,7 @@
      the selected ledger and the Income vs Expense bar chart — as vector
      graphics. No entries table is drawn. */
   function buildChartPDF(from, to, heading, name, genStamp, filter, person, account, monthlyBuckets){
-    var dispName = name != null ? name : profileName;
+    var dispName = name ? name : "Bakhshal";
     var PW = 595, PH = 842, ML = 30, CW = PW - 60;
     var pages = [], ops = [];
     function n2(v){ return Math.round(v * 100) / 100; }
@@ -3550,8 +3563,16 @@
     txt("My Debit Diary", PW / 2, PH - 50, "F2", 17, "center");
     var headY = PH - 67;
     if(dispName){
-      fill(0.416, 0.122, 0.635);
-      txt(dispName, PW / 2, headY, "F2", 10.5, "center");
+      if(dispName === "Bakhshal"){
+        /* All Ledgers name: stylish red — bold, slanted (an italic
+           look) and a touch larger, with the built-in bold font. */
+        fill(0.85, 0.08, 0.1);
+        var bakhW = helvWidth(dispName, 12.5);
+        ops.push("BT /F2 12.5 Tf 1 0 0.26 1 " + n2(PW / 2 - bakhW / 2 - 1.5) + " " + n2(headY) + " Tm (" + pdfEscapeText(dispName) + ") Tj ET");
+      } else {
+        fill(0.416, 0.122, 0.635);
+        txt(dispName, PW / 2, headY, "F2", 10.5, "center");
+      }
       headY -= 13;
     }
     fill(0.13, 0.13, 0.13);
