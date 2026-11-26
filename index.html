@@ -360,6 +360,12 @@
   .pdf-table tr.balance-row td{background:#e0f2f1;color:#1565c0;font-weight:700;text-align:right;white-space:nowrap;font-size:10px;padding-right:5px}
   .pdf-table tr.pdf-cf-row td{color:#1c1c1c;font-weight:700;font-size:10px}
   .pdf-table tr.pdf-cf-row td.num{font-size:10px}
+  /* Notes chip — blank paper with the period's notes as plain text */
+  .pdf-notes{margin-top:14px;min-height:300px;text-align:left}
+  .pdf-note{margin-bottom:16px}
+  .pdf-note-date{font-size:12.5px;font-weight:700;color:#333;margin-bottom:3px}
+  .pdf-note-text{font-size:13.5px;line-height:1.55;color:#1c1c1c;white-space:pre-wrap;overflow-wrap:anywhere}
+  .pdf-notes-empty{font-size:13.5px;color:#777;margin:6px 0 0}
   .pdf-fabs{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:30;display:flex;gap:14px}
   .pdf-fab{width:56px;height:56px;min-height:56px;border-radius:50%;border:0;background:var(--mint-btn);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.45);padding:0}
   .pdf-fab:active{background:var(--mint)}
@@ -1958,7 +1964,6 @@
       if(account && account !== "All" && e.account !== account) return false;
       if(filter === "expense" && e.type !== "expense") return false;
       if(filter === "income" && e.type !== "income") return false;
-      if(filter === "notes" && !(e.remarks && String(e.remarks).trim())) return false;
       return true;
     }).sort(function(a,b){
       if(a.date !== b.date) return a.date < b.date ? -1 : 1;
@@ -1972,11 +1977,23 @@
     });
     totIn = Math.round(totIn*100)/100;
     totOut = Math.round(totOut*100)/100;
+    /* The Notes chip is not an entry filter: it shows the Notes tab's
+       notes for this period on a blank page instead of the table. */
+    var notesList = [];
+    if(filter === "notes"){
+      notesList = notes.filter(function(n){
+        return n.date >= from && n.date <= to;
+      }).sort(function(a,b){
+        if(a.date !== b.date) return a.date < b.date ? -1 : 1;
+        return (a.createdAt || 0) - (b.createdAt || 0);
+      });
+    }
     return {
       cf: cf, rows: rows, totIn: totIn, totOut: totOut,
       balance: Math.round((cf + totIn - totOut)*100)/100,
       empty: list.length === 0,
-      filter: filter
+      filter: filter,
+      notesList: notesList
     };
   }
   function pdfDateCell(key){
@@ -1994,34 +2011,80 @@
     return "Generated on: " + fmtDateKey(toKey(now)) + ", " + h12 + ":" + pad(now.getMinutes()) + " " + ampm;
   }
   function pdfPreviewHTML(model, heading, name, genStamp){
-    var rows = '<tr class="pdf-cf-row"><td colspan="4"></td>' +
-      '<td>C/F</td><td class="num">' + esc(fmt(model.cf)) + '</td></tr>';
-    if(model.empty){
-      rows += '<tr><td colspan="6" style="text-align:center;color:#777;padding:16px 4px">' + (model.filter === "notes" ? "No entries with notes in this period." : "No entries in this period.") + '</td></tr>';
-    }
-    model.rows.forEach(function(r){
-      if(r.kind === "entry"){
-        var e = r.e;
-        var amt = esc(fmtPlain(+e.amount));
-        rows += '<tr><td class="dt">' + pdfDateCell(e.date) + '</td>' +
-          '<td>' + esc(e.text) + '</td><td>' + esc(e.category || "") + '</td>' +
-          '<td>' + esc(e.account || "") + '</td>' +
-          (e.type === "income"
-            ? '<td class="num inc-g">' + amt + '</td><td class="num"></td></tr>'
-            : '<td class="num"></td><td class="num exp-r">' + amt + '</td></tr>');
-      }
-    });
-    rows += '<tr class="grand-total"><td colspan="3"></td>' +
-      '<td class="gt-label">Total</td>' +
-      '<td class="num inc-g">' + esc(fmtWhole(model.totIn)) + '</td>' +
-      '<td class="num exp-r">' + esc(fmtWhole(model.totOut)) + '</td></tr>';
-    rows += '<tr class="balance-row"><td colspan="6">Balance = ' + esc(curSym() + " " + fmtWhole(model.balance) + "/-") + '</td></tr>';
-    return '<div class="pdf-page"><h3>My Debit Diary</h3>' +
+    var head = '<div class="pdf-page"><h3>My Debit Diary</h3>' +
       '<div class="pp-name">' + esc(name != null ? name : profileName) + '</div>' +
       '<div class="pp-period">' + esc(heading) + '</div>' +
-      (genStamp ? '<div class="pp-generated">' + esc(genStamp) + '</div>' : '') +
-      '<table class="pdf-table"><colgroup><col style="width:16%"><col style="width:17%"><col style="width:20%"><col style="width:16%"><col style="width:15.5%"><col style="width:15.5%"></colgroup>' +
-      '<thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Account</th><th>Income</th><th>Expense</th></tr></thead>' +
+      (genStamp ? '<div class="pp-generated">' + esc(genStamp) + '</div>' : '');
+    /* Notes chip: no table — the page is a blank paper showing the
+       period's notes from the Notes tab, each with its date. */
+    if(model.filter === "notes"){
+      var nhtml = '<div class="pdf-notes">';
+      if(!model.notesList || !model.notesList.length){
+        nhtml += '<p class="pdf-notes-empty">No notes found.</p>';
+      } else {
+        model.notesList.forEach(function(n){
+          nhtml += '<div class="pdf-note"><div class="pdf-note-date">' + esc(fmtKeyLong(n.date)) + '</div>' +
+            '<div class="pdf-note-text">' + esc(n.text) + '</div></div>';
+        });
+      }
+      return head + nhtml + '</div></div>';
+    }
+    var single = model.filter === "expense" || model.filter === "income";
+    var isIncFilter = model.filter === "income";
+    var amtCls = isIncFilter ? "inc-g" : "exp-r";
+    var rows, colgroup, thead;
+    if(single){
+      /* One amount column only: the other type leaves the report. The
+         C/F label sits in the Account column, its amount in the single
+         amount column; the Total row shows only that total. */
+      rows = '<tr class="pdf-cf-row"><td colspan="3"></td>' +
+        '<td>C/F</td><td class="num">' + esc(fmt(model.cf)) + '</td></tr>';
+      if(model.empty){
+        rows += '<tr><td colspan="5" style="text-align:center;color:#777;padding:16px 4px">No entries in this period.</td></tr>';
+      }
+      model.rows.forEach(function(r){
+        if(r.kind === "entry"){
+          var e = r.e;
+          rows += '<tr><td class="dt">' + pdfDateCell(e.date) + '</td>' +
+            '<td>' + esc(e.text) + '</td><td>' + esc(e.category || "") + '</td>' +
+            '<td>' + esc(e.account || "") + '</td>' +
+            '<td class="num ' + amtCls + '">' + esc(fmtPlain(+e.amount)) + '</td></tr>';
+        }
+      });
+      rows += '<tr class="grand-total"><td colspan="3"></td>' +
+        '<td class="gt-label">Total</td>' +
+        '<td class="num ' + amtCls + '">' + esc(fmtWhole(isIncFilter ? model.totIn : model.totOut)) + '</td></tr>';
+      rows += '<tr class="balance-row"><td colspan="5">Balance = ' + esc(curSym() + " " + fmtWhole(model.balance) + "/-") + '</td></tr>';
+      colgroup = '<colgroup><col style="width:18%"><col style="width:20%"><col style="width:22%"><col style="width:18%"><col style="width:22%"></colgroup>';
+      thead = '<thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Account</th><th>' + (isIncFilter ? "Income" : "Expense") + '</th></tr></thead>';
+    } else {
+      rows = '<tr class="pdf-cf-row"><td colspan="4"></td>' +
+        '<td>C/F</td><td class="num">' + esc(fmt(model.cf)) + '</td></tr>';
+      if(model.empty){
+        rows += '<tr><td colspan="6" style="text-align:center;color:#777;padding:16px 4px">No entries in this period.</td></tr>';
+      }
+      model.rows.forEach(function(r){
+        if(r.kind === "entry"){
+          var e = r.e;
+          var amt = esc(fmtPlain(+e.amount));
+          rows += '<tr><td class="dt">' + pdfDateCell(e.date) + '</td>' +
+            '<td>' + esc(e.text) + '</td><td>' + esc(e.category || "") + '</td>' +
+            '<td>' + esc(e.account || "") + '</td>' +
+            (e.type === "income"
+              ? '<td class="num inc-g">' + amt + '</td><td class="num"></td></tr>'
+              : '<td class="num"></td><td class="num exp-r">' + amt + '</td></tr>');
+        }
+      });
+      rows += '<tr class="grand-total"><td colspan="3"></td>' +
+        '<td class="gt-label">Total</td>' +
+        '<td class="num inc-g">' + esc(fmtWhole(model.totIn)) + '</td>' +
+        '<td class="num exp-r">' + esc(fmtWhole(model.totOut)) + '</td></tr>';
+      rows += '<tr class="balance-row"><td colspan="6">Balance = ' + esc(curSym() + " " + fmtWhole(model.balance) + "/-") + '</td></tr>';
+      colgroup = '<colgroup><col style="width:16%"><col style="width:17%"><col style="width:20%"><col style="width:16%"><col style="width:15.5%"><col style="width:15.5%"></colgroup>';
+      thead = '<thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Account</th><th>Income</th><th>Expense</th></tr></thead>';
+    }
+    return head +
+      '<table class="pdf-table">' + colgroup + thead +
       '<tbody>' + rows + '</tbody></table></div>';
   }
   function pdfFabsHTML(){
@@ -2289,7 +2352,12 @@
   function buildStyledPDF(model, heading, name, genStamp){
     var dispName = name != null ? name : profileName;
     var PW = 595, PH = 842, ML = 30, CW = PW - 60;
-    var cols = [86, 91, 107, 86, 83, 82];
+    /* The table adapts to the filter chip: Expense or Income alone
+       drops the other amount column; Notes drops the table entirely. */
+    var notesMode = model.filter === "notes";
+    var singleMode = model.filter === "expense" || model.filter === "income";
+    var incMode = model.filter === "income";
+    var cols = singleMode ? [92, 98, 114, 92, 139] : [86, 91, 107, 86, 83, 82];
     var colX = [ML];
     for(var ci=0; ci<cols.length; ci++) colX.push(colX[ci] + cols[ci]);
     var pages = [], ops = [];
@@ -2313,10 +2381,54 @@
     function headerRow(top){
       fill(0, 0.592, 0.655); rectF(ML, top - 20, CW, 20);
       fill(1,1,1);
-      var labels = ["Date","Description","Category","Account","Income","Expense"];
+      var labels = singleMode
+        ? ["Date","Description","Category","Account", incMode ? "Income" : "Expense"]
+        : ["Date","Description","Category","Account","Income","Expense"];
       for(var i=0;i<labels.length;i++) txt(labels[i], colX[i] + cols[i]/2, top - 13.5, "F2", 8.6, "center");
       grid(top, top - 20);
       return top - 20;
+    }
+    /* Word-wrap plain text to a width in points (for the Notes page). */
+    function wrapText(str, maxW, size){
+      var lines = [];
+      String(str).split("\n").forEach(function(para){
+        var words = para.split(/\s+/).filter(function(w){ return w.length; });
+        if(!words.length){ lines.push(""); return; }
+        var line = "";
+        words.forEach(function(w){
+          var test = line ? line + " " + w : w;
+          if(helvWidth(test, size) <= maxW || !line) line = test;
+          else { lines.push(line); line = w; }
+        });
+        if(line) lines.push(line);
+      });
+      return lines;
+    }
+    /* Notes page: no table — the period's notes as plain text, each
+       headed by its date, flowing onto fresh blank pages as needed. */
+    function drawPdfNotes(startY){
+      var yy = startY;
+      function ensure(space){
+        if(yy - price < 42){ pages.push(ops.join("\n")); ops = []; yy = PH - 50; }
+      }
+      if(!model.notesList || !model.notesList.length){
+        fill(0.45, 0.45, 0.45);
+        txt("No notes found.", ML, yy, "F1", 10.5, "left");
+        return;
+      }
+      model.notesList.forEach(function(n, idx){
+        if(idx > 0) yy -= 10;
+        ensure(14);
+        fill(0.13, 0.13, 0.13);
+        txt(fmtKeyLong(n.date), ML, yy, "F2", 10.5, "left");
+        yy -= 14;
+        fill(0.11, 0.11, 0.11);
+        wrapText(n.text, CW, 10.5).forEach(function(line){
+          ensure(13);
+          if(line) txt(line, ML, yy, "F1", 10.5, "left");
+          yy -= 13.5;
+        });
+      });
     }
     function newPage(){
       pages.push(ops.join("\n")); ops = [];
@@ -2356,19 +2468,31 @@
       txt(genStamp, ML, headY - 13, "F1", 8.5, "left");
       tableTop = headY - 31;
     }
+    if(notesMode){
+      drawPdfNotes(genStamp ? headY - 36 : headY - 24);
+    } else {
     y = headerRow(tableTop);
-    /* C/F as a normal table row directly below the header (with grid
-       lines, like the entry rows): "C/F" in the Income column and its
-       amount in the Expense column. */
-    y = rowOut([
-      {text: "C/F", col: 4, font: "F2", color: DARK},
-      {text: fmt(model.cf), col: 5, font: "F2", color: DARK, align: "right"}
-    ], null, y);
+    if(singleMode){
+      /* C/F with its label in the Account column and its amount in the
+         single amount column; the Total row shows only that total. */
+      y = rowOut([
+        {text: "C/F", col: 3, font: "F2", color: DARK},
+        {text: fmt(model.cf), col: 4, font: "F2", color: DARK, align: "right"}
+      ], null, y);
+    } else {
+      /* C/F as a normal table row directly below the header (with grid
+         lines, like the entry rows): "C/F" in the Income column and its
+         amount in the Expense column. */
+      y = rowOut([
+        {text: "C/F", col: 4, font: "F2", color: DARK},
+        {text: fmt(model.cf), col: 5, font: "F2", color: DARK, align: "right"}
+      ], null, y);
+    }
     if(model.empty){
       if(y - 16 < 42) y = newPage();
       var eb = y - 16;
       fill(0.45, 0.45, 0.45);
-      txt(model.filter === "notes" ? "No entries with notes in this period." : "No entries in this period.", ML + CW/2, eb + 5.4, "F1", 9.3, "center");
+      txt("No entries in this period.", ML + CW/2, eb + 5.4, "F1", 9.3, "center");
       grid(y, eb);
       y = eb;
     }
@@ -2377,25 +2501,38 @@
         var e = r.e;
         var isInc = e.type === "income";
         var amtColor = isInc ? [0.118, 0.49, 0.196] : [0.753, 0.224, 0.169];
-        y = rowOut([
+        var cells = [
           {text: pdfDateCell(e.date), col: 0, font: "F1", color: DARK},
           {text: fitW(e.text, cols[1] - 8, 9.3), col: 1, font: "F1", color: DARK},
           {text: fitW(e.category || "", cols[2] - 8, 9.3), col: 2, font: "F1", color: DARK},
-          {text: fitW(e.account || "", cols[3] - 8, 9.3), col: 3, font: "F1", color: DARK},
-          {text: isInc ? fmtPlain(+e.amount) : "", col: 4, font: "F1", color: amtColor, align: "right"},
-          {text: isInc ? "" : fmtPlain(+e.amount), col: 5, font: "F1", color: amtColor, align: "right"}
-        ], null, y);
+          {text: fitW(e.account || "", cols[3] - 8, 9.3), col: 3, font: "F1", color: DARK}
+        ];
+        if(singleMode){
+          cells.push({text: fmtPlain(+e.amount), col: 4, font: "F1", color: amtColor, align: "right"});
+        } else {
+          cells.push({text: isInc ? fmtPlain(+e.amount) : "", col: 4, font: "F1", color: amtColor, align: "right"});
+          cells.push({text: isInc ? "" : fmtPlain(+e.amount), col: 5, font: "F1", color: amtColor, align: "right"});
+        }
+        y = rowOut(cells, null, y);
       }
     });
-    y = rowOut([
-      {text: "Total", col: 3, font: "F2", color: DARK, align: "right"},
-      {text: fmtWhole(model.totIn), col: 4, font: "F2", color: [0.118, 0.49, 0.196], align: "right"},
-      {text: fmtWhole(model.totOut), col: 5, font: "F2", color: [0.753, 0.224, 0.169], align: "right"}
-    ], {fillColor: [0.878, 0.949, 0.945]}, y);
+    if(singleMode){
+      y = rowOut([
+        {text: "Total", col: 3, font: "F2", color: DARK, align: "right"},
+        {text: fmtWhole(incMode ? model.totIn : model.totOut), col: 4, font: "F2", color: incMode ? [0.118, 0.49, 0.196] : [0.753, 0.224, 0.169], align: "right"}
+      ], {fillColor: [0.878, 0.949, 0.945]}, y);
+    } else {
+      y = rowOut([
+        {text: "Total", col: 3, font: "F2", color: DARK, align: "right"},
+        {text: fmtWhole(model.totIn), col: 4, font: "F2", color: [0.118, 0.49, 0.196], align: "right"},
+        {text: fmtWhole(model.totOut), col: 5, font: "F2", color: [0.753, 0.224, 0.169], align: "right"}
+      ], {fillColor: [0.878, 0.949, 0.945]}, y);
+    }
     /* Balance in its own row below the totals row, as the last table row. */
     y = rowOut([
-      {text: "Balance = " + curSym() + " " + fmtWhole(model.balance) + "/-", col: 0, span: 6, font: "F2", size: 10, color: [0.086, 0.4, 0.753], align: "right"}
-    ], {fillColor: [0.878, 0.949, 0.945], skipV: [1, 2, 3, 4, 5]}, y);
+      {text: "Balance = " + curSym() + " " + fmtWhole(model.balance) + "/-", col: 0, span: singleMode ? 5 : 6, font: "F2", size: 10, color: [0.086, 0.4, 0.753], align: "right"}
+    ], {fillColor: [0.878, 0.949, 0.945], skipV: singleMode ? [1, 2, 3, 4] : [1, 2, 3, 4, 5]}, y);
+    }
     pages.push(ops.join("\n"));
     var bytes = [], offsets = {};
     function pushStr(s){ var b = winAnsiBytes(s); for(var j=0;j<b.length;j++) bytes.push(b[j]); }
