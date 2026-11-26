@@ -2068,7 +2068,7 @@
     var person = state.pdfPerson || "";
     var model = pdfModel(state.pdfFrom, state.pdfTo, state.pdfAccount, state.pdfFilter, person);
     var dispName = person || profileName;
-    var html = '<div class="sub-head"><button class="back-btn" id="pdfBack" aria-label="Back">←</button><h2 class="pdf-title">PDF Report</h2></div>';
+    var html = '<div class="sub-head slim"><button class="back-btn" id="pdfBack" aria-label="Back">←</button></div>';
     html += pdfFilterChipsHTML(state.pdfFilter, "data-pdf-filter");
     html += pdfPreviewHTML(model, state.pdfHeading, dispName, state.pdfGenerated);
     html += pdfFabsHTML();
