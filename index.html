@@ -289,12 +289,12 @@
   .sub-head.slim .back-btn{height:24px;min-height:24px;width:30px;font-size:21px;padding:0;line-height:1}
 
   /* Charts */
-  .chart-top-row{display:flex;gap:10px;align-items:stretch;margin-bottom:14px}
+  .chart-top-row{display:flex;gap:8px;align-items:stretch;margin-bottom:6px}
   .alltime-btn{background:transparent;border:1.5px solid #39423c;border-radius:10px;color:var(--text);font-size:18px;font-weight:600;padding:8px 16px;min-height:52px}
   .alltime-btn.sel{background:var(--card);border-color:var(--card)}
-  .info-note{display:flex;gap:12px;align-items:flex-start;font-size:17.5px;line-height:1.4;color:#e6ede7;margin:4px 2px 16px}
-  .info-note .info-ic{flex:0 0 auto;width:30px;height:30px;border:2.5px solid var(--mint);border-radius:50%;color:var(--mint);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;margin-top:2px}
-  .chart-card{border:1.5px solid #39423c;border-radius:10px;padding:12px 12px;margin-bottom:12px}
+  .info-note{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;line-height:1.3;color:#e6ede7;margin:0 2px 8px}
+  .info-note .info-ic{flex:0 0 auto;width:21px;height:21px;border:2px solid var(--mint);border-radius:50%;color:var(--mint);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;margin-top:0}
+  .chart-card{border:1.5px solid #39423c;border-radius:10px;padding:9px 10px;margin-bottom:10px}
   .seg-toggle{display:flex;border:1.5px solid #93a698;border-radius:999px;overflow:hidden;margin-bottom:12px}
   .seg-toggle button{flex:1;background:transparent;border:0;padding:8px 4px;font-size:15.5px;font-weight:500;color:var(--text);min-height:40px}
   .seg-toggle button.sel{background:var(--card);font-weight:600}
@@ -304,11 +304,11 @@
   .donut-total{font-size:24px;font-weight:600;white-space:nowrap}
   .donut-label{font-size:16.5px;color:#e6ede7;margin-top:3px;line-height:1.3}
   .donut-svg{width:132px;height:132px;flex:0 0 auto}
-  .seg-bar{display:flex;height:10px;border-radius:999px;overflow:hidden;margin:12px 0 4px;background:#232a25}
+  .seg-bar{display:flex;height:10px;border-radius:999px;overflow:hidden;margin:8px 0 2px;background:#232a25}
   .seg-bar div{height:100%}
-  .acct-break{margin-top:6px}
-  .acct-break .ab-amt{font-size:16px}
-  .acct-break .ab-name{font-size:16.5px;font-weight:600;margin-top:1px}
+  .acct-break{margin-top:3px}
+  .acct-break .ab-amt{font-size:14px;line-height:1.25}
+  .acct-break .ab-name{font-size:14.5px;font-weight:600;margin-top:0;line-height:1.25}
   .collapse-head{display:flex;justify-content:space-between;align-items:center;width:100%;background:none;border:0;color:var(--text);font-size:15.5px;font-weight:700;letter-spacing:1px;padding:8px 2px;min-height:40px}
   .collapse-head .car{font-size:19px;color:#dfe7e0}
   .collapse-hint{text-align:center;font-size:15px;color:#e6ede7;margin:4px 0 8px}
@@ -324,6 +324,14 @@
   .bar-legend{display:flex;gap:22px;flex-wrap:wrap;font-size:14.5px;margin:8px 0 2px}
   .bar-legend .dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:7px;vertical-align:-1px}
   .bar-acct-row{display:flex;justify-content:flex-end;margin-top:10px}
+  /* Charts — smart/compact top row, header gap and toggle (this screen only) */
+  .sub-head.charts-head{padding-bottom:8px}
+  .chart-top-row .alltime-btn{font-size:15px;padding:5px 12px;min-height:38px;border-radius:9px}
+  .chart-top-row .period-nav{min-height:38px;padding:2px 4px;border-radius:9px}
+  .chart-top-row .period-nav .nav-arrow{width:30px;height:32px;min-height:32px;font-size:21px}
+  .chart-top-row .period-nav .period-label{font-size:16px}
+  .seg-toggle.charts-seg{margin-bottom:8px;border-width:1px}
+  .seg-toggle.charts-seg button{padding:5px 2px;font-size:14px;min-height:32px}
 
   /* Report */
   .report-chips{display:flex;gap:4px;flex-wrap:nowrap;margin-bottom:8px}
@@ -1928,8 +1936,8 @@
     var rangeOn = state.chartRangeActive && state.chartRangeFrom && state.chartRangeTo;
     var rangeLabel = rangeOn ? (keyToDisplay(state.chartRangeFrom) + " – " + keyToDisplay(state.chartRangeTo)) : (state.chartPeriod==="all" ? "All time" : "This month");
     var calSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/></svg>';
-    var html = '<div class="sub-head"><button class="back-btn" id="chartsBack" aria-label="Back">←</button><h2>Charts</h2></div>';
-    html += '<div class="chart-top-row" style="margin-bottom:8px">' +
+    var html = '<div class="sub-head charts-head"><button class="back-btn" id="chartsBack" aria-label="Back">←</button><h2>Charts</h2></div>';
+    html += '<div class="chart-top-row">' +
       '<button class="alltime-btn'+(state.chartPeriod==="all" && !rangeOn ?" sel":"")+'" id="allTimeBtn">All time</button>' +
       '<div class="period-nav filled" style="flex:1"><button class="nav-arrow" data-cnav="-1" aria-label="Previous month">‹</button>' +
       '<span class="period-label">'+MONTHS[m]+' '+y+'</span>' +
@@ -1939,7 +1947,7 @@
       (rangeOn ? '<button type="button" class="range-clear-btn" id="chartRangeClear" aria-label="Clear date range" title="Clear date range">✕</button>' : '') + '</div>';
     html += '<div class="info-note"><span class="info-ic">!</span><span>Fund transfers between the accounts are excluded from calculation</span></div>';
 
-    html += '<div class="chart-card"><div class="seg-toggle" role="group" aria-label="Chart type">' +
+    html += '<div class="chart-card"><div class="seg-toggle charts-seg" role="group" aria-label="Chart type">' +
       '<button data-ctype="income" class="'+(type==="income"?"sel":"")+'">Income (Credit)</button>' +
       '<button data-ctype="expense" class="'+(type==="expense"?"sel":"")+'">Expense (Debit)</button></div>';
     if(total <= 0){
@@ -1953,7 +1961,7 @@
       }).join("") + '</div>';
       html += '<div class="acct-break">' + Object.keys(byAcct).sort(function(a,b){ return byAcct[b]-byAcct[a]; }).map(function(a){
         var col = "#f28bb4";
-        return '<div style="margin-bottom:6px"><div class="ab-amt">'+esc(fmt(byAcct[a]))+'</div><div class="ab-name" style="color:'+col+'">'+esc(a)+'</div></div>';
+        return '<div style="margin-bottom:3px"><div class="ab-amt">'+esc(fmt(byAcct[a]))+'</div><div class="ab-name" style="color:'+col+'">'+esc(a)+'</div></div>';
       }).join("") + '</div>';
     }
     html += '</div>';
