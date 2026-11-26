@@ -1389,15 +1389,14 @@
     return h;
   }
   function entryItemHTML(e, showDate){
-    var sub = [];
-    if(showDate){ var d0 = parseKey(e.date); sub.push(DAYS_S[d0.getDay()]+", "+d0.getDate()+" "+MONTHS_S[d0.getMonth()]); }
-    if(e.category) sub.push(e.category);
-    sub.push(e.account || "Cash");
-    if(e.ledger) sub.push(e.ledger);
-    if(e.remarks) sub.push(e.remarks);
+    /* Daily view subtext shows ONLY the entry's Description (remarks) —
+       Category, Account and Ledger are no longer shown (user's request).
+       When there is no Description, no subtext line is rendered at all.
+       This helper is used only by the Daily view. */
+    var desc = (e.remarks || "").trim();
     return '<li><div class="entry-item" data-edit="'+e.id+'" role="button" tabindex="0">' +
       '<span class="entry-main"><span class="entry-text">'+esc(e.text)+demoBadgeHTML(e)+'</span>' +
-      '<span class="entry-sub">'+esc(sub.join(" • "))+'</span></span>' +
+      (desc ? '<span class="entry-sub">'+esc(desc)+'</span>' : '') + '</span>' +
       '<span class="entry-amt '+(e.type==="income"?"credit":"debit")+'">'+esc(fmt(+e.amount))+'</span>' +
       '</div></li>';
   }
