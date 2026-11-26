@@ -136,13 +136,16 @@
 
   /* Yearly */
   .year-table{width:100%}
-  .year-head,.year-row{display:grid;grid-template-columns:52px 1fr 1fr 1fr;gap:6px;align-items:center;padding:7px 4px}
-  .year-head{font-size:14.5px;font-weight:700;border-bottom:1px solid #39423c;line-height:1.25}
+  .year-head,.year-row{display:grid;grid-template-columns:46px 1fr 1fr 1fr;gap:5px;align-items:center;padding:3px 4px;line-height:1.2}
+  .year-head{font-size:13.5px;font-weight:700;border-bottom:1px solid #39423c;line-height:1.2;padding:4px 4px}
   .year-head span:not(:first-child),.year-row span:not(:first-child){text-align:right}
-  .year-row{border-bottom:1px solid #232a25;font-size:15px;width:100%;background:none;border-top:0;border-left:0;border-right:0;color:var(--text);text-align:left;min-height:0}
+  .year-row{border-bottom:1px solid #232a25;font-size:14px;width:100%;background:none;border-top:0;border-left:0;border-right:0;color:var(--text);text-align:left;min-height:0}
   button.year-row:active{background:#141a15}
-  .year-cf{display:grid;grid-template-columns:52px 1fr;gap:6px;padding:7px 4px;border-bottom:1px solid #232a25;font-size:15.5px}
-  .year-cf .cf-bal{text-align:right;color:var(--mint);font-weight:600}
+  .year-row .yr-inc{color:var(--inc-green);font-weight:600}
+  .year-row .yr-exp{color:var(--exp-red);font-weight:600}
+  .year-row .yr-bal{color:#5eb1ff;font-weight:600}
+  .year-cf{display:grid;grid-template-columns:46px 1fr;gap:5px;padding:3px 4px;border-bottom:1px solid #232a25;font-size:14px;line-height:1.2}
+  .year-cf .cf-bal{text-align:right;color:#5eb1ff;font-weight:600}
 
   /* Ledger */
   .acct-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;margin:4px 0 6px}
@@ -436,6 +439,7 @@
   body.light .top-menu-item:active{background:#eef2ee}
   body.light .date-line2,body.light .balance-label,body.light .summary-card .sc-label,body.light .day-balance .db-label{color:#43534a}
   body.light .day-balance .db-amt{color:#1565c0}
+  body.light .year-row .yr-bal,body.light .year-cf .cf-bal{color:#1565c0}
   body.light .day-col-head,body.light .info-note,body.light .donut-label,body.light .collapse-hint{color:#223028}
   body.light .collapse-head .car{color:#43534a}
   body.light .ledger-head{color:#223028}
@@ -1265,7 +1269,7 @@
       running += di - de;
       var label = MONTHS_S[mo.m] + (multiYear ? " " + mo.y : "");
       html += '<button class="year-row" data-goto-month="'+mk+'"><span>'+label+'</span>' +
-        '<span>'+esc(fmtPlain(di))+'</span><span>'+esc(fmtPlain(de))+'</span><span>'+esc(fmtPlain(running))+'</span></button>';
+        '<span class="yr-inc">'+esc(fmtPlain(di))+'</span><span class="yr-exp">'+esc(fmtPlain(de))+'</span><span class="yr-bal">'+esc(fmtPlain(running))+'</span></button>';
     });
     html += '</div>';
     if(rangeOn && !anyInRange) html += '<p class="empty-note">No entries in this date range.</p>';
