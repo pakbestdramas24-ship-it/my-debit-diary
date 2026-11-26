@@ -1726,10 +1726,13 @@
     model.rows.forEach(function(r){
       if(r.kind === "entry"){
         var e = r.e;
+        var amt = esc(fmtPlain(+e.amount));
         rows += '<tr><td class="dt">' + pdfDateCell(e.date) + '</td>' +
           '<td>' + esc(e.text) + '</td><td>' + esc(e.category || "") + '</td>' +
-          '<td class="num ' + (e.type === "income" ? "inc-g" : "exp-r") + '">' + esc(fmtPlain(+e.amount)) + '</td>' +
-          '<td class="num"></td><td class="num"></td></tr>';
+          '<td>' + esc(e.account || "") + '</td>' +
+          (e.type === "income"
+            ? '<td class="num inc-g">' + amt + '</td><td class="num"></td></tr>'
+            : '<td class="num"></td><td class="num exp-r">' + amt + '</td></tr>');
       }
     });
     rows += '<tr class="grand-total"><td colspan="4"></td>' +
@@ -1740,8 +1743,8 @@
       '<div class="pp-name">' + esc(name != null ? name : profileName) + '</div>' +
       '<div class="pp-period">' + esc(heading) + '</div>' +
       (genStamp ? '<div class="pp-generated">' + esc(genStamp) + '</div>' : '') +
-      '<table class="pdf-table"><colgroup><col style="width:17%"><col style="width:21%"><col style="width:17%"><col style="width:13%"><col style="width:16%"><col style="width:16%"></colgroup>' +
-      '<thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th>Income</th><th>Expense</th></tr></thead>' +
+      '<table class="pdf-table"><colgroup><col style="width:16%"><col style="width:21%"><col style="width:17%"><col style="width:12%"><col style="width:17%"><col style="width:17%"></colgroup>' +
+      '<thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Account</th><th>Income</th><th>Expense</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table></div>';
   }
   function pdfFabsHTML(){
@@ -1932,7 +1935,7 @@
   function buildStyledPDF(model, heading, name, genStamp){
     var dispName = name != null ? name : profileName;
     var PW = 595, PH = 842, ML = 30, CW = PW - 60;
-    var cols = [91, 112, 91, 69, 86, 86];
+    var cols = [86, 112, 91, 60, 93, 93];
     var colX = [ML];
     for(var ci=0; ci<cols.length; ci++) colX.push(colX[ci] + cols[ci]);
     var pages = [], ops = [];
@@ -1956,7 +1959,7 @@
     function headerRow(top){
       fill(0, 0.592, 0.655); rectF(ML, top - 20, CW, 20);
       fill(1,1,1);
-      var labels = ["Date","Description","Category","Amount","Income","Expense"];
+      var labels = ["Date","Description","Category","Account","Income","Expense"];
       for(var i=0;i<labels.length;i++) txt(labels[i], colX[i] + cols[i]/2, top - 13.5, "F2", 8.6, "center");
       grid(top, top - 20);
       return top - 20;
@@ -2018,11 +2021,15 @@
     model.rows.forEach(function(r){
       if(r.kind === "entry"){
         var e = r.e;
+        var isInc = e.type === "income";
+        var amtColor = isInc ? [0.118, 0.49, 0.196] : [0.753, 0.224, 0.169];
         y = rowOut([
           {text: pdfDateCell(e.date), col: 0, font: "F1", color: DARK},
           {text: fitW(e.text, cols[1] - 8, 9.3), col: 1, font: "F1", color: DARK},
           {text: fitW(e.category || "", cols[2] - 8, 9.3), col: 2, font: "F1", color: DARK},
-          {text: fmtPlain(+e.amount), col: 3, font: "F1", color: e.type === "income" ? [0.118, 0.49, 0.196] : [0.753, 0.224, 0.169], align: "right"}
+          {text: fitW(e.account || "", cols[3] - 8, 9.3), col: 3, font: "F1", color: DARK},
+          {text: isInc ? fmtPlain(+e.amount) : "", col: 4, font: "F1", color: amtColor, align: "right"},
+          {text: isInc ? "" : fmtPlain(+e.amount), col: 5, font: "F1", color: amtColor, align: "right"}
         ], null, y);
       }
     });
