@@ -2094,16 +2094,36 @@
       });
       yearSummary = {year: +String(from).slice(0,4), cf: cf, months: fullMonths};
     }
-    /* The Notes chip is not an entry filter: it shows the Notes tab's
-       notes for this period on a blank page instead of the table. */
+    /* The Notes chip is not an entry filter: it shows notes for this
+       period on a blank page instead of the table. Which notes depends
+       on whose report this is: when a person's ledger is open, ONLY
+       that person's own notes — the Descriptions (remarks) of their
+       entries in this period, each with its entry date — so a note
+       made in one ledger never shows in another's report. When no
+       person's ledger is open, it shows the Notes tab's notes for the
+       period, as before. */
     var notesList = [];
     if(filter === "notes"){
-      notesList = notes.filter(function(n){
-        return n.date >= from && n.date <= to;
-      }).sort(function(a,b){
-        if(a.date !== b.date) return a.date < b.date ? -1 : 1;
-        return (a.createdAt || 0) - (b.createdAt || 0);
-      });
+      if(person){
+        notesList = entries.filter(function(e){
+          if((e.ledger || "") !== person) return false;
+          if(e.date < from || e.date > to) return false;
+          if(account && account !== "All" && e.account !== account) return false;
+          return !!((e.remarks || "").trim());
+        }).map(function(e){
+          return {date: e.date, text: e.remarks, createdAt: e.createdAt || 0};
+        }).sort(function(a,b){
+          if(a.date !== b.date) return a.date < b.date ? -1 : 1;
+          return (a.createdAt || 0) - (b.createdAt || 0);
+        });
+      } else {
+        notesList = notes.filter(function(n){
+          return n.date >= from && n.date <= to;
+        }).sort(function(a,b){
+          if(a.date !== b.date) return a.date < b.date ? -1 : 1;
+          return (a.createdAt || 0) - (b.createdAt || 0);
+        });
+      }
     }
     return {
       cf: cf, rows: rows, totIn: totIn, totOut: totOut,
@@ -2136,7 +2156,8 @@
       '<div class="pp-period">' + esc(heading) + '</div>' +
       (genStamp ? '<div class="pp-generated">' + esc(genStamp) + '</div>' : '');
     /* Notes chip: no table — the page is a blank paper showing the
-       period's notes from the Notes tab, each with its date. */
+       model's notes for the period (the open person's entry
+       descriptions, or the Notes tab's notes), each with its date. */
     if(model.filter === "notes"){
       var nhtml = '<div class="pdf-notes">';
       if(!model.notesList || !model.notesList.length){
