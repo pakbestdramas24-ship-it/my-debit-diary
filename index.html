@@ -263,8 +263,8 @@
   .bar-acct-row{display:flex;justify-content:flex-end;margin-top:10px}
 
   /* Report */
-  .report-chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
-  .rep-chip{background:transparent;border:1.5px solid #39423c;border-radius:10px;color:var(--text);font-size:17.5px;font-weight:600;padding:10px 16px;min-height:50px}
+  .report-chips{display:flex;gap:6px;flex-wrap:nowrap;margin-bottom:8px}
+  .rep-chip{background:transparent;border:1.5px solid #39423c;border-radius:9px;color:var(--text);font-size:13px;font-weight:600;padding:7px 11px;min-height:38px;white-space:nowrap;flex:0 1 auto}
   .rep-chip.sel{background:var(--card);border-color:var(--mint)}
   .range-inputs{display:flex;gap:10px;margin-bottom:14px}
   .range-inputs label{flex:1;font-size:13.5px;color:var(--muted);display:block}
@@ -285,14 +285,16 @@
   .btn-ghost{background:transparent;border:1.5px solid #93a698;color:var(--text)}
 
   /* PDF preview page (Monthly / Yearly / Report) */
-  .pdf-page{background:#ffffff;color:#1c1c1c;border-radius:4px;padding:22px 14px 26px}
+  .pdf-page{background:#ffffff;color:#1c1c1c;border-radius:4px;padding:20px 10px 24px;margin:0 -8px}
   .pdf-page h3{margin:0;text-align:center;color:#0e8a75;font-size:19px;font-weight:700}
   .pdf-page .pp-name{text-align:center;color:#6a1fa2;font-size:16.5px;font-weight:600;margin-top:5px;min-height:22px}
   .pdf-page .pp-period{text-align:center;font-weight:700;font-size:14.5px;margin-top:8px;color:#222}
-  .pdf-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:11.5px;table-layout:fixed}
-  .pdf-table th{background:#0097a7;color:#fff;font-weight:700;text-align:center;padding:5px 2px;border:1px solid #00838f;font-size:10.5px}
-  .pdf-table td{border:1px solid #c3ced1;padding:4px 4px;vertical-align:top;overflow-wrap:anywhere}
-  .pdf-table td.num{text-align:right;white-space:nowrap}
+  .pdf-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:10.5px;table-layout:fixed}
+  .pdf-table th{background:#0097a7;color:#fff;font-weight:700;text-align:center;padding:5px 2px;border:1px solid #00838f;font-size:9.5px}
+  .pdf-table td{border:1px solid #c3ced1;padding:4px 3px;vertical-align:top;overflow-wrap:break-word}
+  .pdf-table td.dt{white-space:nowrap;font-size:10px;letter-spacing:-.3px}
+  .pdf-table td.num{text-align:right;white-space:nowrap;font-size:10px;letter-spacing:-.2px}
+  .pdf-table tr.grand-total td.num{font-size:9px;letter-spacing:-.3px}
   .pdf-table tr.day-total td{font-weight:700}
   .pdf-table tr.grand-total td{background:#e0f2f1;font-weight:700}
   .pdf-table .inc-g{color:#1e7d32}
@@ -1699,7 +1701,7 @@
     model.rows.forEach(function(r){
       if(r.kind === "entry"){
         var e = r.e;
-        rows += '<tr><td style="white-space:nowrap">' + pdfDateCell(e.date) + '</td>' +
+        rows += '<tr><td class="dt">' + pdfDateCell(e.date) + '</td>' +
           '<td>' + esc(e.text) + '</td><td>' + esc(e.category || "") + '</td><td>' + esc(e.account || "Cash") + '</td>' +
           '<td class="num">' + (e.type === "income" ? esc(fmtPlain(+e.amount)) : "") + '</td>' +
           '<td class="num">' + (e.type === "expense" ? esc(fmtPlain(+e.amount)) : "") + '</td></tr>';
@@ -1715,7 +1717,7 @@
     return '<div class="pdf-page"><h3>My Debit Diary</h3>' +
       '<div class="pp-name">' + esc(profileName) + '</div>' +
       '<div class="pp-period">' + esc(heading) + '</div>' +
-      '<table class="pdf-table"><colgroup><col style="width:13%"><col style="width:27%"><col style="width:15%"><col style="width:17%"><col style="width:14%"><col style="width:14%"></colgroup>' +
+      '<table class="pdf-table"><colgroup><col style="width:17%"><col style="width:20%"><col style="width:16%"><col style="width:13%"><col style="width:17%"><col style="width:17%"></colgroup>' +
       '<thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Account</th><th>Income (Credit)</th><th>Expense (Debit)</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table>' +
       '<div class="pdf-balance">Balance = ' + esc(fmt(model.balance)) + '</div></div>';
@@ -1899,7 +1901,7 @@
   }
   function buildStyledPDF(model, heading){
     var PW = 595, PH = 842, ML = 30, CW = PW - 60;
-    var cols = [62, 155, 82, 82, 77, 77];
+    var cols = [70, 130, 80, 75, 90, 90];
     var colX = [ML];
     for(var ci=0; ci<cols.length; ci++) colX.push(colX[ci] + cols[ci]);
     var pages = [], ops = [];
