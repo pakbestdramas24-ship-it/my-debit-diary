@@ -66,23 +66,23 @@
   .balance-label{font-size:13.5px;color:#d7e0d8}
   .balance-amt{font-size:14.5px;margin-top:2px;white-space:nowrap}
 
-  .cf-row{display:flex;justify-content:space-between;align-items:center;padding:11px 2px 8px;font-size:18px}
+  .cf-row{display:flex;justify-content:space-between;align-items:center;padding:7px 2px 5px;font-size:15.5px}
   .cf-row .amt{font-weight:500}
 
-  .section-head{background:var(--card-2);display:flex;justify-content:space-between;align-items:center;padding:7px 10px;margin:4px -2px 0}
-  .section-head h2{margin:0;font-size:16px;font-weight:700}
-  .section-head .total{font-size:16px;font-weight:700;white-space:nowrap}
-  .hint{color:var(--muted);font-size:14.5px;line-height:1.35;padding:10px 16px 4px;margin:0}
+  .section-head{background:var(--card-2);display:flex;justify-content:space-between;align-items:center;padding:5px 8px;margin:3px -2px 0}
+  .section-head h2{margin:0;font-size:14px;font-weight:700}
+  .section-head .total{font-size:14px;font-weight:700;white-space:nowrap}
+  .hint{color:var(--muted);font-size:13px;line-height:1.3;padding:7px 12px 2px;margin:0}
 
-  .entry-list{list-style:none;margin:4px 0 2px;padding:0}
-  .entry-item{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 6px;min-height:46px;color:var(--text);user-select:none;-webkit-user-select:none}
+  .entry-list{list-style:none;margin:2px 0 1px;padding:0}
+  .entry-item{display:flex;gap:8px;align-items:flex-start;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:6px 4px;min-height:38px;color:var(--text);user-select:none;-webkit-user-select:none}
   .entry-item:active{background:#141a15}
   .entry-main{flex:1;min-width:0}
-  .entry-text{font-size:15.5px;font-weight:500;overflow-wrap:anywhere}
-  .entry-sub{font-size:12.5px;color:var(--muted);margin-top:2px;overflow-wrap:anywhere;display:block}
+  .entry-text{font-size:13.5px;font-weight:500;overflow-wrap:anywhere}
+  .entry-sub{font-size:11.5px;color:var(--muted);margin-top:1px;overflow-wrap:anywhere;display:block}
   .demo-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;background:#a97b12;color:#fff;border-radius:999px;padding:1px 7px;margin-left:7px;vertical-align:2px;line-height:1.6;white-space:nowrap}
   .day-entry .demo-badge{font-size:9px;padding:0 5px;margin-left:4px;vertical-align:1px}
-  .entry-amt{font-size:15.5px;font-weight:600;white-space:nowrap}
+  .entry-amt{font-size:13.5px;font-weight:600;white-space:nowrap}
   .entry-amt.credit{color:var(--mint)}
   .entry-amt.debit{color:var(--danger)}
 
@@ -364,6 +364,30 @@
   /* PDF Report preview — Account + Ledger filter row (same compact setting as Monthly / Charts) */
   .pdf-filter-row{display:flex;gap:8px;margin-bottom:8px}
   .pdf-filter-row .acct-select{flex:1 1 0;min-width:0;max-width:none;min-height:34px;font-size:13.5px;padding:3px 5px;border-radius:8px}
+  /* Charts Report screen — Ledger dropdown row (same compact setting) */
+  .report-ledger-row{display:flex;gap:8px;margin-bottom:8px}
+  .report-ledger-row .acct-select{flex:1 1 0;min-width:0;max-width:none;min-height:38px;font-size:14.5px;padding:4px 8px;border-radius:8px}
+  /* Charts Report — chart page (white paper, replaces the entries table) */
+  .cr-sec{margin-top:16px}
+  .cr-sec-title{font-size:14.5px;font-weight:700;color:#075e52;margin:0 0 6px}
+  .cr-donut-row{display:flex;align-items:center;gap:10px}
+  .cr-total{font-size:21px;font-weight:700;color:#1c1c1c;white-space:nowrap}
+  .cr-total-label{font-size:13.5px;color:#444;margin-top:2px;line-height:1.3}
+  .cr-donut-svg{width:126px;height:126px;flex:0 0 auto;margin-left:auto}
+  .cr-seg-bar{display:flex;height:9px;border-radius:999px;overflow:hidden;margin:8px 0 2px;background:#e8ece8}
+  .cr-seg-bar div{height:100%}
+  .cr-cat-list{margin-top:2px}
+  .cr-cat-row{display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid #e3e8e3;font-size:12.5px;color:#222}
+  .cr-dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+  .cr-cat-nm{flex:1;min-width:0;overflow-wrap:anywhere}
+  .cr-pct{color:#666;white-space:nowrap}
+  .cr-am{font-weight:700;white-space:nowrap}
+  .cr-legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:#333;margin-top:4px}
+  .cr-legend .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+  .cr-empty{text-align:center;color:#777;font-size:13px;padding:16px 4px;margin:0}
+  /* View Balance sheet — Ledger dropdown at the top (smart/compact) */
+  .balance-ledger-row{margin-bottom:8px}
+  .balance-ledger-row .acct-select{width:100%;max-width:none;min-height:38px;font-size:14.5px;padding:4px 8px;border-radius:8px}
 
   /* Report */
   .report-chips{display:flex;gap:4px;flex-wrap:nowrap;margin-bottom:8px}
@@ -689,10 +713,10 @@
     .date-line2{font-size:12.5px}
     .balance-label{font-size:12.5px}
     .balance-amt{font-size:13.5px}
-    .section-head{padding:6px 8px}
-    .section-head h2{font-size:15px}
-    .section-head .total{font-size:15px}
-    .hint{font-size:13.5px;padding:8px 12px 2px}
+    .section-head{padding:4px 7px}
+    .section-head h2{font-size:13.5px}
+    .section-head .total{font-size:13.5px}
+    .hint{font-size:12.5px;padding:6px 10px 2px}
     .ledger-head{display:none}
     .ledger-row{grid-template-columns:1fr auto;grid-template-areas:"main amt" "main bal"}
     .ledger-row .d{display:none}
@@ -926,6 +950,7 @@
   <div class="sheet">
     <button class="sheet-close" id="closeBalanceBtn" aria-label="Close"><span>⌄</span></button>
     <h2 class="sheet-title">View Balance</h2>
+    <div class="balance-ledger-row"><select class="acct-select" id="balanceLedgerSel" aria-label="Ledger filter"></select></div>
     <div class="summary-box" id="balanceBox" style="margin-top:0"></div>
     <div class="sheet-actions">
       <button class="btn btn-primary" id="balanceOkBtn">OK</button>
@@ -1369,6 +1394,7 @@
     reportFrom: "",
     reportTo: "",
     reportFilter: "all",
+    reportLedger: "All",
     pdfFilter: "all",
     pdfPeriod: "month",
     pdfMonth: todayKey().slice(0,7),
@@ -2751,12 +2777,160 @@
     document.getElementById("pdfLedgerSel").addEventListener("change", function(ev){ state.pdfPerson = ev.target.value === "All" ? "" : ev.target.value; render(); });
     bindPdfFabs(model, rng.heading, dispName, state.pdfGenerated);
   }
+  /* ---------- CHARTS REPORT (the Report screen opened from Charts) ----------
+     This screen no longer shows the entries table at all. It shows the
+     CHART for the ledger picked in its Ledger dropdown: a donut per
+     type (Expense / Income, following the filter chips) and the Income
+     vs Expense bar chart, all for the selected year / custom date
+     range and that ledger only. The title block (My Debit Diary, name,
+     period, Generated on) stays at the top of the white page, and the
+     downloaded / shared PDF contains these same charts — not the table.
+     The Notes chip still shows the notes paper for the period. */
+  function reportLedgerSel(){
+    var led = state.reportLedger;
+    if(led !== "All" && ledgerNames.indexOf(led) === -1) led = "All";
+    return led;
+  }
+  function reportTypeList(from, to, person, type){
+    return entries.filter(function(e){
+      if(e.type !== type) return false;
+      if(e.date < from || e.date > to) return false;
+      if(person && (e.ledger || "") !== person) return false;
+      return true;
+    });
+  }
+  function reportDonutSVG(byCat, cats, total, type){
+    var cx = 100, cy = 100, r = 78, sw = 30;
+    var C = 2 * Math.PI * r;
+    if(!cats.length || total <= 0)
+      return '<svg class="cr-donut-svg" viewBox="0 0 200 200"><circle cx="100" cy="100" r="'+r+'" fill="none" stroke="#e3e8e3" stroke-width="'+sw+'"/></svg>';
+    var offset = C * 0.25, parts = "";
+    cats.forEach(function(c){
+      var frac = byCat[c] / total;
+      var len = Math.max(frac * C - 2, 0.5);
+      parts += '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+catInfo(type, c).color+'" stroke-width="'+sw+'" stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'" stroke-dashoffset="'+(-offset).toFixed(2)+'"/>';
+      offset += frac * C;
+    });
+    parts += '<g fill="#5c6c60"><path d="M100 82 l10 14 h-20 z"/><rect x="86" y="100" width="12" height="12"/><circle cx="108" cy="106" r="7"/></g>';
+    return '<svg class="cr-donut-svg" viewBox="0 0 200 200" role="img" aria-label="Donut chart">' + parts + '</svg>';
+  }
+  /* Bar-chart buckets for the report: one Income/Expense pair per month
+     for a whole year, or one pair per day for a custom date range. */
+  function reportBarData(from, to, person, filter){
+    function inLed(e){ return !person || (e.ledger || "") === person; }
+    var perDay = [], maxV = 0;
+    function pushBucket(label, list){
+      var di = sumType(list, "income"), de = sumType(list, "expense");
+      perDay.push({label: label, inc: di, exp: de});
+      if(filter !== "expense" && di > maxV) maxV = di;
+      if(filter !== "income" && de > maxV) maxV = de;
+    }
+    var monthly = !state.reportCustom;
+    if(monthly){
+      var yr = +String(from).slice(0, 4);
+      for(var mm = 0; mm < 12; mm++){
+        var mk = yr + "-" + pad(mm + 1);
+        pushBucket(MONTHS_S[mm], entries.filter(function(e){ return e.date.slice(0, 7) === mk && inLed(e); }));
+      }
+    } else {
+      var cur = parseKey(from), end = parseKey(to), guard = 0;
+      while(cur <= end && guard < 366){
+        var key = toKey(cur);
+        pushBucket(pad(cur.getDate()) + " " + MONTHS_S[cur.getMonth()], entries.filter(function(e){ return e.date === key && inLed(e); }));
+        cur.setDate(cur.getDate() + 1);
+        guard++;
+      }
+    }
+    return {perDay: perDay, maxV: maxV, monthly: monthly};
+  }
+  function reportBarSVG(from, to, person, filter){
+    var data = reportBarData(from, to, person, filter);
+    var perDay = data.perDay, maxV = data.maxV;
+    var n = perDay.length || 1;
+    var W = 660, H = 300, base = 252, top = 26, plotH = base - top;
+    var step = (W - 70) / n;
+    var bw = Math.max(Math.min(step * 0.32, 12), 2.5);
+    function yLab(v){
+      if(v >= 1000){ var k = v / 1000; return (k % 1 === 0 ? k : k.toFixed(1)) + "K"; }
+      return String(Math.round(v));
+    }
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto" role="img" aria-label="Income and expense bar chart">';
+    if(maxV <= 0){
+      svg += '<text x="' + (W / 2) + '" y="150" fill="#888888" font-size="17" text-anchor="middle">No entries in this period</text>';
+    } else {
+      var ticks = 5;
+      for(var t = 0; t <= ticks; t++){
+        var v = maxV * t / ticks;
+        var yy = base - plotH * t / ticks;
+        svg += '<line x1="64" y1="' + yy + '" x2="' + (W - 6) + '" y2="' + yy + '" stroke="#d8ded8" stroke-dasharray="5 5"/>' +
+               '<text x="58" y="' + (yy + 5) + '" fill="#44524a" font-size="14" text-anchor="end">' + yLab(v) + '</text>';
+      }
+      svg += '<line x1="64" y1="' + top + '" x2="64" y2="' + base + '" stroke="#9db3a4"/>';
+      svg += '<line x1="64" y1="' + base + '" x2="' + (W - 6) + '" y2="' + base + '" stroke="#9db3a4"/>';
+      var labelEvery = data.monthly ? 1 : (n > 20 ? 5 : (n > 10 ? 2 : 1));
+      perDay.forEach(function(pd, i){
+        var x = 70 + i * step + step / 2;
+        var ih = pd.inc / maxV * plotH, eh = pd.exp / maxV * plotH;
+        if(filter !== "expense" && pd.inc > 0) svg += '<rect x="' + (x - bw - 1) + '" y="' + (base - ih) + '" width="' + bw + '" height="' + ih + '" fill="#7ed491"/>';
+        if(filter !== "income" && pd.exp > 0) svg += '<rect x="' + (x + 1) + '" y="' + (base - eh) + '" width="' + bw + '" height="' + eh + '" fill="#f2766d"/>';
+        if(i % labelEvery === 0)
+          svg += '<text x="' + x + '" y="' + (base + 24) + '" fill="#44524a" font-size="13.5" text-anchor="middle">' + pd.label + '</text>';
+      });
+    }
+    svg += '</svg>';
+    return svg;
+  }
+  function chartReportHTML(from, to, heading, dispName, genStamp, filter, person){
+    var head = '<div class="pdf-page"><h3>My Debit Diary</h3>' +
+      '<div class="pp-name">' + esc(dispName || "") + '</div>' +
+      '<div class="pp-period">' + esc(heading) + '</div>' +
+      (genStamp ? '<div class="pp-generated">' + esc(genStamp) + '</div>' : '');
+    var types = filter === "all" ? ["expense", "income"] : [filter];
+    var body = "";
+    types.forEach(function(type){
+      var list = reportTypeList(from, to, person, type);
+      var byCat = {};
+      list.forEach(function(e){
+        var c = e.category || (type === "income" ? "Other" : "Misc");
+        byCat[c] = (byCat[c] || 0) + (+e.amount);
+      });
+      var total = list.reduce(function(t, e){ return t + (+e.amount); }, 0);
+      var catsDesc = Object.keys(byCat).sort(function(a, b){ return byCat[b] - byCat[a]; });
+      body += '<div class="cr-sec"><p class="cr-sec-title">' + (type === "expense" ? "Expense (Debit)" : "Income (Credit)") + '</p>';
+      if(total <= 0){
+        body += '<p class="cr-empty">No ' + (type === "expense" ? "expense" : "income") + ' entries in this period.</p>';
+      } else {
+        body += '<div class="cr-donut-row"><div class="donut-left"><div class="cr-total">' + esc(fmt(total)) + '</div>' +
+          '<div class="cr-total-label">Total ' + (type === "expense" ? "Expense<br>(Debit)" : "Income<br>(Credit)") + '</div></div>' +
+          reportDonutSVG(byCat, catsDesc, total, type) + '</div>';
+        body += '<div class="cr-seg-bar">' + catsDesc.map(function(c){
+          return '<div style="width:' + (byCat[c] / total * 100).toFixed(2) + '%;background:' + catInfo(type, c).color + '"></div>';
+        }).join("") + '</div>';
+        body += '<div class="cr-cat-list">' + catsDesc.map(function(c){
+          var pct = total ? (byCat[c] / total * 100) : 0;
+          return '<div class="cr-cat-row"><span class="cr-dot" style="background:' + catInfo(type, c).color + '"></span>' +
+            '<span class="cr-cat-nm">' + esc(c) + '</span><span class="cr-pct">' + pct.toFixed(1) + '%</span>' +
+            '<span class="cr-am">' + esc(fmtPlain(byCat[c])) + '</span></div>';
+        }).join("") + '</div>';
+      }
+      body += '</div>';
+    });
+    body += '<div class="cr-sec"><p class="cr-sec-title">Income vs Expense</p>' +
+      reportBarSVG(from, to, person, filter) +
+      '<div class="cr-legend">' +
+      (filter !== "expense" ? '<span><span class="dot" style="background:#7ed491"></span>Income (Credit)</span>' : '') +
+      (filter !== "income" ? '<span><span class="dot" style="background:#f2766d"></span>Expense (Debit)</span>' : '') +
+      '</div></div>';
+    return head + body + '</div>';
+  }
   function renderReport(){
     var r = reportRange();
-    var person = state.ledgerNameFilter || "";
-    var model = pdfModel(r.from, r.to, "All", state.reportFilter, person, !state.reportCustom);
+    var led = reportLedgerSel();
+    var person = led === "All" ? "" : led;
     var dispName = person || profileName;
     var heading = state.reportCustom ? (fmtKeyLong(r.from) + " – " + fmtKeyLong(r.to)) : String(state.reportYear);
+    var notesMode = state.reportFilter === "notes";
+    var notesModel = notesMode ? pdfModel(r.from, r.to, "All", "notes", person, false) : null;
     var html = '<div class="sub-head"><button class="back-btn" id="reportBack" aria-label="Back">Back</button><h2>Report</h2></div>';
     html += '<div class="period-row">' +
       '<div class="period-nav"><button class="nav-arrow" data-rnav="-1" aria-label="Previous year">‹</button>' +
@@ -2767,8 +2941,13 @@
       html += '<div class="range-inputs"><label>From<input type="date" id="repFrom" value="' + esc(state.reportFrom) + '"></label>' +
         '<label>To<input type="date" id="repTo" value="' + esc(state.reportTo) + '"></label></div>';
     }
+    /* Ledger dropdown — the chart below (and its PDF) is drawn for the
+       selected ledger only; "All Ledgers" covers every entry. */
+    html += '<div class="report-ledger-row">' +
+      '<select class="acct-select" id="reportLedgerSel" aria-label="Ledger filter">' + ledgerOptionsHTML(led) + '</select></div>';
     html += pdfFilterChipsHTML(state.reportFilter, "data-rep-filter");
-    html += pdfPreviewHTML(model, heading, dispName, state.reportGenerated);
+    if(notesMode) html += pdfPreviewHTML(notesModel, heading, dispName, state.reportGenerated);
+    else html += chartReportHTML(r.from, r.to, heading, dispName, state.reportGenerated, state.reportFilter, person);
     html += pdfFabsHTML();
     main.innerHTML = html;
     document.getElementById("reportBack").addEventListener("click", function(){ setTab("monthly"); });
@@ -2784,10 +2963,12 @@
       document.getElementById("repFrom").addEventListener("change", function(ev){ state.reportFrom = ev.target.value; render(); });
       document.getElementById("repTo").addEventListener("change", function(ev){ state.reportTo = ev.target.value; render(); });
     }
+    document.getElementById("reportLedgerSel").addEventListener("change", function(ev){ state.reportLedger = ev.target.value; render(); });
     main.querySelectorAll("[data-rep-filter]").forEach(function(b){
       b.addEventListener("click", function(){ state.reportFilter = b.getAttribute("data-rep-filter"); render(); });
     });
-    bindPdfFabs(model, heading, dispName, state.reportGenerated);
+    if(notesMode) bindPdfFabs(notesModel, heading, dispName, state.reportGenerated);
+    else bindChartPdfFabs(r.from, r.to, heading, dispName, state.reportGenerated, state.reportFilter, person);
   }
 
   /* ---------- PDF export ---------- */
@@ -3226,6 +3407,227 @@
     } else {
       toast("Sharing is not available here — tap Download instead");
     }
+  }
+
+  /* ---------- chart PDF (for the Charts Report screen) ----------
+     Draws the same charts the Report screen shows — the donut(s) for
+     the selected ledger and the Income vs Expense bar chart — as vector
+     graphics. No entries table is drawn. */
+  function buildChartPDF(from, to, heading, name, genStamp, filter, person){
+    var dispName = name != null ? name : profileName;
+    var PW = 595, PH = 842, ML = 30, CW = PW - 60;
+    var pages = [], ops = [];
+    function n2(v){ return Math.round(v * 100) / 100; }
+    function fill(r, g, b){ ops.push(n2(r) + " " + n2(g) + " " + n2(b) + " rg"); }
+    function strokeC(r, g, b){ ops.push(n2(r) + " " + n2(g) + " " + n2(b) + " RG"); }
+    function txt(str, x, y, font, size, align){
+      var w = helvWidth(str, size);
+      var xx = align === "right" ? x - w : (align === "center" ? x - w / 2 : x);
+      ops.push("BT /" + font + " " + size + " Tf 1 0 0 1 " + n2(xx) + " " + n2(y) + " Tm (" + pdfEscapeText(str) + ") Tj ET");
+    }
+    function rectF(x, y, w, h){ ops.push(n2(x) + " " + n2(y) + " " + n2(w) + " " + n2(h) + " re f"); }
+    function hexRgb(hex){
+      var m = /^#?([0-9a-f]{6})$/i.exec(String(hex || ""));
+      if(!m) return [0.5, 0.5, 0.5];
+      var v = parseInt(m[1], 16);
+      return [((v >> 16) & 255) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255];
+    }
+    /* Cubic-bezier arc path from angle a1 to a2 (degrees, PDF coords) */
+    function arcPath(cx, cy, r, a1, a2){
+      var s = "";
+      var steps = Math.max(1, Math.ceil(Math.abs(a2 - a1) / 80));
+      var d = (a2 - a1) / steps;
+      for(var i = 0; i < steps; i++){
+        var t1 = (a1 + d * i) * Math.PI / 180, t2 = (a1 + d * (i + 1)) * Math.PI / 180;
+        var f = 4 / 3 * Math.tan((t2 - t1) / 4);
+        var x0 = cx + r * Math.cos(t1), y0 = cy + r * Math.sin(t1);
+        if(i === 0) s += n2(x0) + " " + n2(y0) + " m ";
+        var x1 = cx + r * (Math.cos(t1) - f * Math.sin(t1)), y1 = cy + r * (Math.sin(t1) + f * Math.cos(t1));
+        var x3 = cx + r * Math.cos(t2), y3 = cy + r * Math.sin(t2);
+        var x2 = cx + r * (Math.cos(t2) + f * Math.sin(t2)), y2 = cy + r * (Math.sin(t2) - f * Math.cos(t2));
+        s += n2(x1) + " " + n2(y1) + " " + n2(x2) + " " + n2(y2) + " " + n2(x3) + " " + n2(y3) + " c ";
+      }
+      return s;
+    }
+    function drawDonut(cx, cy, byCat, cats, total, type){
+      var r = 52, lw = 21;
+      ops.push(lw + " w 0 J");
+      if(!cats.length || total <= 0){
+        strokeC(0.89, 0.91, 0.89);
+        ops.push(arcPath(cx, cy, r, 0, 360) + "S");
+        return;
+      }
+      var ang = 90;
+      cats.forEach(function(c){
+        var sweep = byCat[c] / total * 360;
+        var a1 = ang, a2 = ang - sweep;
+        if(cats.length > 1 && sweep > 3){ a1 -= 0.8; a2 += 0.8; }
+        var col = hexRgb(catInfo(type, c).color);
+        strokeC(col[0], col[1], col[2]);
+        ops.push(arcPath(cx, cy, r, a1, a2) + "S");
+        ang -= sweep;
+      });
+    }
+    var DARK = [0.11, 0.11, 0.11];
+    fill(0.055, 0.541, 0.459);
+    txt("My Debit Diary", PW / 2, PH - 50, "F2", 17, "center");
+    var headY = PH - 67;
+    if(dispName){
+      fill(0.416, 0.122, 0.635);
+      txt(dispName, PW / 2, headY, "F2", 10.5, "center");
+      headY -= 13;
+    }
+    fill(0.13, 0.13, 0.13);
+    txt(heading, PW / 2, headY, "F2", 12, "center");
+    var y = headY - 19;
+    if(genStamp){
+      fill(0.45, 0.45, 0.45);
+      txt(genStamp, ML, headY - 13, "F1", 8.5, "left");
+      y = headY - 31;
+    }
+    function newPage(){ pages.push(ops.join("\n")); ops = []; y = PH - 56; }
+    var types = filter === "all" ? ["expense", "income"] : [filter];
+    types.forEach(function(type){
+      var list = reportTypeList(from, to, person, type);
+      var byCat = {};
+      list.forEach(function(e){
+        var c = e.category || (type === "income" ? "Other" : "Misc");
+        byCat[c] = (byCat[c] || 0) + (+e.amount);
+      });
+      var total = list.reduce(function(t, e){ return t + (+e.amount); }, 0);
+      var catsDesc = Object.keys(byCat).sort(function(a, b){ return byCat[b] - byCat[a]; });
+      var need = total <= 0 ? 44 : Math.max(150, 62 + catsDesc.length * 15) + 30;
+      if(y - need < 42) newPage();
+      fill(0.03, 0.37, 0.32);
+      txt(type === "expense" ? "Expense (Debit)" : "Income (Credit)", ML, y, "F2", 12.5, "left");
+      y -= 10;
+      if(total <= 0){
+        fill(0.45, 0.45, 0.45);
+        txt("No " + (type === "expense" ? "expense" : "income") + " entries in this period.", ML + CW / 2, y - 14, "F1", 10, "center");
+        y -= 34;
+        return;
+      }
+      var cy = y - 62;
+      drawDonut(ML + 62, cy, byCat, catsDesc, total, type);
+      var rx = ML + 150;
+      fill(DARK[0], DARK[1], DARK[2]);
+      txt(fmt(total), rx, cy + 40, "F2", 15, "left");
+      fill(0.27, 0.27, 0.27);
+      txt("Total " + (type === "expense" ? "Expense" : "Income"), rx, cy + 24, "F1", 11, "left");
+      txt(type === "expense" ? "(Debit)" : "(Credit)", rx, cy + 11, "F1", 11, "left");
+      var ry = cy - 6;
+      catsDesc.forEach(function(c){
+        var col = hexRgb(catInfo(type, c).color);
+        fill(col[0], col[1], col[2]); rectF(rx, ry - 1, 8, 8);
+        fill(DARK[0], DARK[1], DARK[2]);
+        txt(fitW(c, 170, 10), rx + 13, ry, "F1", 10, "left");
+        var pct = total ? (byCat[c] / total * 100) : 0;
+        txt(pct.toFixed(1) + "%", rx + 250, ry, "F1", 10, "right");
+        txt(fmtPlain(byCat[c]), ML + CW, ry, "F1", 10, "right");
+        ry -= 15;
+      });
+      y = Math.min(cy - 80, ry + 6) - 12;
+    });
+    /* Income vs Expense bar chart */
+    var bdata = reportBarData(from, to, person, filter);
+    if(y - 240 < 42) newPage();
+    fill(0.03, 0.37, 0.32);
+    txt("Income vs Expense", ML, y, "F2", 12.5, "left");
+    var plotTop = y - 16, base = plotTop - 150, left = ML + 38, right = ML + CW, plotW = right - left, plotH = 150;
+    if(bdata.maxV <= 0){
+      fill(0.45, 0.45, 0.45);
+      txt("No entries in this period.", ML + CW / 2, plotTop - 70, "F1", 10, "center");
+      y = base - 20;
+    } else {
+      function yLab2(v){
+        if(v >= 1000){ var k = v / 1000; return (k % 1 === 0 ? k : k.toFixed(1)) + "K"; }
+        return String(Math.round(v));
+      }
+      var ti;
+      for(ti = 0; ti <= 5; ti++){
+        var vv = bdata.maxV * ti / 5;
+        var yy2 = base + plotH * ti / 5;
+        strokeC(0.85, 0.88, 0.85); ops.push("0.5 w [4 4] 0 d");
+        ops.push(n2(left) + " " + n2(yy2) + " m " + n2(right) + " " + n2(yy2) + " l S");
+        ops.push("[ ] 0 d");
+        fill(0.27, 0.32, 0.29);
+        txt(yLab2(vv), left - 5, yy2 - 3, "F1", 8, "right");
+      }
+      strokeC(0.62, 0.7, 0.64); ops.push("0.7 w");
+      ops.push(n2(left) + " " + n2(base) + " m " + n2(left) + " " + n2(plotTop) + " l S");
+      ops.push(n2(left) + " " + n2(base) + " m " + n2(right) + " " + n2(base) + " l S");
+      var n = bdata.perDay.length || 1;
+      var step = plotW / n;
+      var bw = Math.max(Math.min(step * 0.3, 10), 2);
+      var labelEvery = bdata.monthly ? 1 : (n > 20 ? 5 : (n > 10 ? 2 : 1));
+      bdata.perDay.forEach(function(pd, i){
+        var x = left + step * (i + 0.5);
+        if(filter !== "expense" && pd.inc > 0){ fill(0.49, 0.83, 0.57); rectF(x - bw - 1, base, bw, pd.inc / bdata.maxV * plotH); }
+        if(filter !== "income" && pd.exp > 0){ fill(0.95, 0.46, 0.43); rectF(x + 1, base, bw, pd.exp / bdata.maxV * plotH); }
+        if(i % labelEvery === 0){ fill(0.27, 0.32, 0.29); txt(pd.label, x, base - 13, "F1", 7.5, "center"); }
+      });
+      var ly = base - 30, lx = left;
+      if(filter !== "expense"){ fill(0.49, 0.83, 0.57); rectF(lx, ly - 1, 9, 9); fill(DARK[0], DARK[1], DARK[2]); txt("Income (Credit)", lx + 13, ly, "F1", 9.5, "left"); lx += 120; }
+      if(filter !== "income"){ fill(0.95, 0.46, 0.43); rectF(lx, ly - 1, 9, 9); fill(DARK[0], DARK[1], DARK[2]); txt("Expense (Debit)", lx + 13, ly, "F1", 9.5, "left"); }
+      y = ly - 18;
+    }
+    pages.push(ops.join("\n"));
+    var bytes = [], offsets = {};
+    function pushStr(s){ var b = winAnsiBytes(s); for(var j = 0; j < b.length; j++) bytes.push(b[j]); }
+    function beginObj(nn){ offsets[nn] = bytes.length; pushStr(nn + " 0 obj\n"); }
+    pushStr("%PDF-1.4\n");
+    beginObj(1); pushStr("<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+    var kids = [];
+    for(var p = 0; p < pages.length; p++) kids.push((5 + p * 2) + " 0 R");
+    beginObj(2); pushStr("<< /Type /Pages /Kids [" + kids.join(" ") + "] /Count " + pages.length + " >>\nendobj\n");
+    beginObj(3); pushStr("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\nendobj\n");
+    beginObj(4); pushStr("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>\nendobj\n");
+    for(var q = 0; q < pages.length; q++){
+      var pageObj = 5 + q * 2, contentObj = pageObj + 1;
+      beginObj(pageObj);
+      pushStr("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents " + contentObj + " 0 R >>\nendobj\n");
+      var streamBytes = winAnsiBytes(pages[q]);
+      beginObj(contentObj);
+      pushStr("<< /Length " + streamBytes.length + " >>\nstream\n");
+      for(var s2 = 0; s2 < streamBytes.length; s2++) bytes.push(streamBytes[s2]);
+      pushStr("\nendstream\nendobj\n");
+    }
+    var totalObjs = 4 + pages.length * 2;
+    var xrefPos = bytes.length;
+    pushStr("xref\n0 " + (totalObjs + 1) + "\n0000000000 65535 f \n");
+    for(var o = 1; o <= totalObjs; o++){
+      var off = String(offsets[o] || 0);
+      while(off.length < 10) off = "0" + off;
+      pushStr(off + " 00000 n \n");
+    }
+    pushStr("trailer\n<< /Size " + (totalObjs + 1) + " /Root 1 0 R >>\nstartxref\n" + xrefPos + "\n%%EOF");
+    return new Blob([new Uint8Array(bytes)], {type: "application/pdf"});
+  }
+  function downloadChartPDF(from, to, heading, name, genStamp, filter, person){
+    downloadBlob(pdfFileName(heading), buildChartPDF(from, to, heading, name, genStamp, filter, person));
+    toast("PDF downloaded ✓");
+  }
+  function shareChartPDF(from, to, heading, name, genStamp, filter, person){
+    var blob = buildChartPDF(from, to, heading, name, genStamp, filter, person);
+    var shared = false;
+    try{
+      var file = new File([blob], pdfFileName(heading), {type: "application/pdf"});
+      if(navigator.canShare && navigator.canShare({files: [file]})){
+        navigator.share({files: [file], title: "My Debit Diary"}).catch(function(){});
+        shared = true;
+      }
+    }catch(e){}
+    if(shared) return;
+    if(navigator.share){
+      try{ navigator.share({title: "My Debit Diary", text: "My Debit Diary — " + heading}); }
+      catch(e2){ toast("Sharing is not available on this device"); }
+    } else {
+      toast("Sharing is not available here — tap Download instead");
+    }
+  }
+  function bindChartPdfFabs(from, to, heading, name, genStamp, filter, person){
+    document.getElementById("pdfShareBtn").addEventListener("click", function(){ shareChartPDF(from, to, heading, name, genStamp, filter, person); });
+    document.getElementById("pdfDownloadBtn").addEventListener("click", function(){ downloadChartPDF(from, to, heading, name, genStamp, filter, person); });
   }
 
   /* ---------- render / tabs / FAB ---------- */
@@ -3971,27 +4373,57 @@
 
   /* ---------- View Balance sheet ---------- */
   var balanceOverlay = document.getElementById("balanceOverlay");
-  function openBalanceSheet(){
-    var totIn = sumType(entries,"income"), totOut = sumType(entries,"expense");
-    var html =
-      '<div class="summary-line"><span><strong>Balance</strong></span><span><strong>'+esc(fmt(totalBalance("All")))+'</strong></span></div>' +
-      '<div class="summary-line"><span>C/F</span><span>'+esc(fmt(opening))+'</span></div>' +
-      '<div class="summary-line"><span>Total Income (Credit)</span><span class="in">'+esc(fmt(totIn))+'</span></div>' +
-      '<div class="summary-line"><span>Total Expense (Debit)</span><span class="out">'+esc(fmt(totOut))+'</span></div>';
-    /* Per-ledger breakdown — each person's Balance is the same value as
-       in that person's ledger detail screen (money given minus money
-       received, via personBalance) and is shown WITHOUT a minus sign,
-       in the detail screen's format (curSym + fmtPlain). "General"
-       covers the entries that have no person/ledger, so the breakdown
-       covers all entries. */
-    html += '<div class="summary-line"><span><strong>Balance by Ledger</strong></span><span></span></div>';
-    ledgerNames.forEach(function(name){
-      html += '<div class="summary-line"><span>'+esc(name)+'</span><span>'+esc(curSym() + fmtPlain(personBalance(name)))+'</span></div>';
-    });
-    html += '<div class="summary-line"><span>General</span><span>'+esc(curSym() + fmtPlain(personBalance("")))+'</span></div>';
+  var balanceLedgerSelEl = document.getElementById("balanceLedgerSel");
+  /* The sheet's Ledger dropdown value: "All" = All Ledgers (overall
+     totals), "__general" = General (entries with no person), anything
+     else is that person's name. There is no per-ledger list anymore —
+     picking a ledger re-shows the four rows for that ledger only. */
+  var balanceLedger = "All";
+  function renderBalanceBox(){
+    var html;
+    if(balanceLedger === "All"){
+      var totIn = sumType(entries, "income"), totOut = sumType(entries, "expense");
+      html =
+        '<div class="summary-line"><span><strong>Balance</strong></span><span><strong>' + esc(fmt(totalBalance("All"))) + '</strong></span></div>' +
+        '<div class="summary-line"><span>C/F</span><span>' + esc(fmt(opening)) + '</span></div>' +
+        '<div class="summary-line"><span>Total Income (Credit)</span><span class="in">' + esc(fmt(totIn)) + '</span></div>' +
+        '<div class="summary-line"><span>Total Expense (Debit)</span><span class="out">' + esc(fmt(totOut)) + '</span></div>';
+    } else {
+      /* One ledger only: that person's entries (General = entries with
+         no person). C/F is 0 — the opening balance is not tied to a
+         ledger. The Balance is the same value as in that person's
+         ledger detail screen (money given minus money received, via
+         personBalance) and is shown WITHOUT a minus sign, in the
+         detail screen's format (curSym + fmtPlain). */
+      var personKey = balanceLedger === "__general" ? "" : balanceLedger;
+      var lIn = 0, lOut = 0;
+      entries.forEach(function(e){
+        if((e.ledger || "") !== personKey) return;
+        if(e.type === "income") lIn += +e.amount; else lOut += +e.amount;
+      });
+      html =
+        '<div class="summary-line"><span><strong>Balance</strong></span><span><strong>' + esc(curSym() + fmtPlain(personBalance(personKey))) + '</strong></span></div>' +
+        '<div class="summary-line"><span>C/F</span><span>' + esc(fmt(0)) + '</span></div>' +
+        '<div class="summary-line"><span>Total Income (Credit)</span><span class="in">' + esc(fmt(lIn)) + '</span></div>' +
+        '<div class="summary-line"><span>Total Expense (Debit)</span><span class="out">' + esc(fmt(lOut)) + '</span></div>';
+    }
     document.getElementById("balanceBox").innerHTML = html;
+  }
+  function openBalanceSheet(){
+    /* Rebuild the dropdown each time the sheet opens (people may have
+       been added since), keeping the current pick when it still exists. */
+    if(balanceLedger !== "All" && balanceLedger !== "__general" && ledgerNames.indexOf(balanceLedger) === -1) balanceLedger = "All";
+    var opts = '<option value="All"' + (balanceLedger === "All" ? " selected" : "") + '>All Ledgers</option>';
+    ledgerNames.forEach(function(name){
+      opts += '<option value="' + esc(name) + '"' + (balanceLedger === name ? " selected" : "") + '>' + esc(name) + '</option>';
+    });
+    opts += '<option value="__general"' + (balanceLedger === "__general" ? " selected" : "") + '>General</option>';
+    balanceLedgerSelEl.innerHTML = opts;
+    balanceLedgerSelEl.value = balanceLedger;
+    renderBalanceBox();
     balanceOverlay.classList.add("open");
   }
+  balanceLedgerSelEl.addEventListener("change", function(){ balanceLedger = balanceLedgerSelEl.value; renderBalanceBox(); });
   function closeBalanceSheet(){ balanceOverlay.classList.remove("open"); }
   document.getElementById("closeBalanceBtn").addEventListener("click", closeBalanceSheet);
   document.getElementById("balanceOkBtn").addEventListener("click", closeBalanceSheet);
