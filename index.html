@@ -406,7 +406,6 @@
   .entry-top-row{display:flex;gap:12px;align-items:flex-end;margin-bottom:6px}
   .cat-icon-btn{flex:0 0 auto;width:52px;height:52px;border-radius:12px;border:1.5px solid #93a698;background:var(--sheet-2);font-size:25px;display:flex;align-items:center;justify-content:center;min-height:52px}
   .entry-top-row .field{margin-bottom:0}
-  .save-fab{flex:0 0 auto;width:58px;height:58px;border-radius:50%;border:0;background:var(--mint-btn);color:#0d2b20;font-size:27px;font-weight:700;display:flex;align-items:center;justify-content:center}
   .from-label{font-size:16px;color:#c9d4cb;margin:14px 0 2px}
   .from-acct-btn{width:100%;background:none;border:0;color:var(--text);text-align:left;padding:4px 0 0;min-height:0}
   .from-acct-name{font-size:23px;font-weight:700}
@@ -423,6 +422,30 @@
   .date-box:active{background:#2c352f}
   .date-box .db-text{font-size:17px;letter-spacing:.2px;white-space:nowrap}
   .date-box svg{width:21px;height:21px;fill:var(--mint);flex:0 0 auto}
+
+  /* Entry sheet — smart/compact (category icon button and Description field intentionally untouched) */
+  .sheet.entry-sheet{padding:8px 18px calc(16px + env(safe-area-inset-bottom))}
+  .entry-sheet .sheet-close{width:44px;height:32px;margin-bottom:2px}
+  .entry-sheet .sheet-close span{width:28px;height:28px;font-size:16px}
+  .entry-sheet .toggle{margin:4px 0 12px}
+  .entry-sheet .toggle button{padding:8px 4px;font-size:15px;min-height:42px}
+  .entry-sheet .entry-top-row{gap:10px}
+  .entry-sheet .field{margin-bottom:12px}
+  .entry-sheet .entry-top-row .field{margin-bottom:0}
+  .entry-sheet .field label{font-size:13px;margin-bottom:4px}
+  .entry-sheet .field input,.entry-sheet .field select{font-size:16px;padding:7px 2px}
+  .entry-sheet .date-acct-row{gap:14px;margin-top:10px;margin-bottom:12px}
+  .entry-sheet .date-acct-row .from-label{font-size:13px;margin-bottom:4px}
+  .entry-sheet .date-acct-row .from-acct-btn{min-height:40px;padding-bottom:5px}
+  .entry-sheet .date-acct-row .from-acct-name{font-size:18px}
+  .entry-sheet .date-acct-row .from-type{font-size:13.5px}
+  .entry-sheet .date-box{min-height:42px;padding:6px 9px;border-radius:9px}
+  .entry-sheet .date-box .db-text{font-size:15.5px}
+  .entry-sheet .date-box svg{width:19px;height:19px}
+  .entry-sheet .desc-row .field{margin-bottom:16px}
+  .entry-sheet .desc-row .field label{font-size:14px;margin-bottom:6px}
+  .entry-sheet .sheet-actions{gap:8px;margin-top:4px}
+  .entry-sheet .sheet-actions .btn,.entry-sheet .sheet-actions .btn-danger{padding:9px 12px;font-size:15px;min-height:42px}
 
   /* Calendar popup */
   .cal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:none;align-items:center;justify-content:center;padding:18px}
@@ -581,7 +604,6 @@
   body.light .alltime-btn{border-color:#b9c8bc}
   body.light .seg-bar{background:#dfe5df}
   body.light .chart-card svg text{fill:#43534a}
-  body.light .save-fab{color:#ffffff}
   body.light .avatar-picker{background:rgba(0,0,0,.04)}
   body.light .avatar-picker svg{fill:#5c6c60}
   body.light button.set-row:active{background:#e4eae5}
@@ -654,7 +676,7 @@
 
 <!-- Entry sheet -->
 <div class="overlay" id="entryOverlay" role="dialog" aria-modal="true" aria-label="Entry form">
-  <div class="sheet">
+  <div class="sheet entry-sheet">
     <button class="sheet-close" id="closeSheetBtn" aria-label="Close"><span>⌄</span></button>
     <div class="error-msg" id="formError"></div>
     <div class="toggle" role="group" aria-label="Entry type">
@@ -670,9 +692,8 @@
       <div class="field" style="flex:1">
         <input type="number" id="fAmount" placeholder="Amount" inputmode="decimal" min="0" step="0.01" aria-label="Amount" />
       </div>
-      <button class="save-fab" id="quickSaveBtn" aria-label="Save entry">✓</button>
     </div>
-    <p style="margin:4px 0 0 64px;font-size:13.5px;color:#c9d4cb">Category: <strong id="catNameLabel">Misc</strong> — tap the icon to change</p>
+    <p style="margin:3px 0 0 64px;font-size:12.5px;color:#c9d4cb">Category: <strong id="catNameLabel">Misc</strong> — tap the icon to change</p>
 
     <div class="date-acct-row">
       <div class="field">
@@ -3231,7 +3252,6 @@
     closeSheet(); render();
   }
   document.getElementById("saveBtn").addEventListener("click", saveEntry);
-  document.getElementById("quickSaveBtn").addEventListener("click", saveEntry);
   document.getElementById("cancelBtn").addEventListener("click", closeSheet);
   document.getElementById("closeSheetBtn").addEventListener("click", closeSheet);
   overlay.addEventListener("click", function(ev){ if(ev.target===overlay) closeSheet(); });
