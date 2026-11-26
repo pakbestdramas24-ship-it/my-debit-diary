@@ -147,6 +147,12 @@
   .month-range-row.ledger-range .range-btn{min-height:32px;padding:4px 8px;font-size:13.5px}
   .month-range-row.ledger-range .range-clear-btn{width:32px;height:32px;min-height:32px}
   .empty-note.ledger-empty{font-size:14px;padding:10px 6px;line-height:1.35}
+  /* Ledger detail — PDF report button (opens this person's report) */
+  .ledger-pdf-row{display:flex;justify-content:flex-end;margin-bottom:8px}
+  .ledger-pdf-btn{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:5px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card-2);color:var(--mint);font-size:13.5px;font-weight:700;cursor:pointer}
+  .ledger-pdf-btn svg{width:16px;height:16px;fill:var(--mint);flex:none}
+  .ledger-pdf-btn:active{background:#22352b}
+  body.light .ledger-pdf-btn:active{background:#dce8df}
   .day-card{border:1.5px solid #39423c;border-radius:10px;padding:8px 10px 7px;margin-bottom:10px}
   .day-card-date{text-align:center;font-size:15.5px;font-weight:600;margin-bottom:6px}
   .day-cols{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px}
@@ -448,6 +454,9 @@
   .entry-sheet .desc-row .field label{font-size:14px;margin-bottom:6px}
   .entry-sheet .sheet-actions{gap:6px;margin-top:4px}
   .entry-sheet .sheet-actions .btn,.entry-sheet .sheet-actions .btn-danger{padding:7px 10px;font-size:14.5px;min-height:38px}
+  /* Add a Person sheet — smart/compact Cancel / Save buttons (this sheet only) */
+  .person-sheet .sheet-actions{gap:6px;margin-top:4px}
+  .person-sheet .sheet-actions .btn{padding:7px 10px;font-size:14.5px;min-height:38px}
 
   /* Calendar popup */
   .cal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:none;align-items:center;justify-content:center;padding:18px}
@@ -793,7 +802,7 @@
 
 <!-- Add person sheet (Ledger) -->
 <div class="overlay" id="personOverlay" role="dialog" aria-modal="true" aria-label="Add a person">
-  <div class="sheet">
+  <div class="sheet person-sheet">
     <button class="sheet-close" id="closePersonBtn" aria-label="Close"><span>⌄</span></button>
     <h2 class="sheet-title">Add a Person</h2>
     <div class="error-msg" id="personError"></div>
@@ -808,11 +817,6 @@
       </div>
     </div>
     <div class="field">
-      <label>Icon (optional)</label>
-      <div class="icon-grid" id="personIconGrid"></div>
-      <p style="color:#c9d4cb;font-size:13px;margin:6px 0 0">The icon shows in the person's circle when no photo is set.</p>
-    </div>
-    <div class="field">
       <label for="personNameInput">Person's Name</label>
       <input type="text" id="personNameInput" placeholder="e.g. Ahmed" autocomplete="off" />
     </div>
@@ -820,7 +824,6 @@
       <label for="personRemarksInput">Remarks (optional)</label>
       <input type="text" id="personRemarksInput" placeholder="Optional note about this person" autocomplete="off" />
     </div>
-    <p style="color:#c9d4cb;font-size:14.5px;line-height:1.5;margin:0 0 14px">Money you give this person is an Expense (Debit); money you receive back from them is an Income (Credit).</p>
     <div class="sheet-actions">
       <button class="btn btn-ghost" id="cancelPersonBtn">Cancel</button>
       <button class="btn btn-primary" id="savePersonBtn">Save</button>
@@ -1660,11 +1663,10 @@
     list.forEach(function(e){
       if(e.type==="income") totIn += +e.amount; else totOut += +e.amount;
       running += sel ? (e.type==="expense" ? +e.amount : -(+e.amount)) : signed(e);
-      var sub = [];
-      if(e.category) sub.push(e.category);
-      sub.push(e.account||"Cash");
-      if(e.ledger) sub.push(e.ledger);
-      if(e.remarks) sub.push(e.remarks);
+      /* Subtext shows ONLY the entry's Description (remarks) — the
+         Category • Account • Ledger parts were removed at the user's
+         request. No description → no subtext line at all. */
+      var subHtml = e.remarks ? '<span class="s">'+esc(e.remarks)+'</span>' : '';
       var mobileAmt = e.type==="income"
         ? '<span class="num credit cell-amt">+ '+esc(fmt(+e.amount))+'</span>'
         : '<span class="num debit cell-amt">− '+esc(fmt(+e.amount))+'</span>';
@@ -1672,7 +1674,7 @@
       var creditCell = e.type==="income" ? '<span class="num credit col-num">'+esc(fmt(+e.amount))+'</span>' : '<span class="num col-num">—</span>';
       rows += '<button class="ledger-row" data-edit="'+e.id+'">' +
         '<span class="d">'+esc(fmtDateKey(e.date))+'</span>' +
-        '<span class="cell-main"><span class="t">'+esc(e.text)+'</span><span class="s">'+esc(sub.join(" • "))+'</span></span>' +
+        '<span class="cell-main"><span class="t">'+esc(e.text)+'</span>'+subHtml+'</span>' +
         mobileAmt + debitCell + creditCell +
         '<span class="num cell-bal">'+esc(fmt(running))+'</span></button>';
     });
@@ -1723,6 +1725,11 @@
         '<span class="rb-label">Date range</span><span class="rb-value">'+esc(rangeLabelL)+'</span>' + calSvgL + '</button>' +
         (rangeOn ? '<button type="button" class="range-clear-btn" id="ledgerRangeClear" aria-label="Clear date range" title="Clear date range">✕</button>' : '') + '</div>';
     }
+    /* PDF button — opens the PDF Report for this ledger (this person's
+       name and only their entries) for the period selected above. */
+    html += '<div class="ledger-pdf-row"><button type="button" class="ledger-pdf-btn" id="ledgerPdfBtn" aria-label="Open PDF report for this ledger">' +
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>' +
+      'PDF Report</button></div>';
     if(list.length){
       html += '<div class="ledger-head"><span>Date</span><span>Entry</span><span>Debit</span><span>Credit</span><span>Balance</span></div><div>' + rows + '</div>';
     } else if(sel) {
@@ -1731,6 +1738,7 @@
       html += '<p class="empty-note ledger-empty">No entries in this period.</p>';
     }
     main.innerHTML = html;
+    document.getElementById("ledgerPdfBtn").addEventListener("click", function(){ openPdfPreview(ledgerPdfContext()); });
     document.getElementById("ledgerBackBtn").addEventListener("click", function(){
       state.ledgerView = "list";
       state.ledgerNameFilter = "";
@@ -2309,6 +2317,56 @@
       year: state.yearCursor,
       rangeFrom: rangeOn ? state.yearRangeFrom : "",
       rangeTo: rangeOn ? state.yearRangeTo : ""
+    };
+  }
+  /* The PDF context for the Ledger detail screen: the report covers the
+     period selected there (Month / Year / Date range) and, because a
+     person's ledger is open, openPdfPreview scopes it to that person.
+     The back button returns to the Ledger tab (the detail screen is
+     still open there). No account filter on this screen → "All". */
+  function ledgerPdfContext(){
+    var rangeOn = state.ledgerRangeActive && state.ledgerRangeFrom && state.ledgerRangeTo;
+    if(state.ledgerPeriod === "year"){
+      return {
+        from: state.ledgerYear + "-01-01",
+        to: state.ledgerYear + "-12-31",
+        heading: String(state.ledgerYear),
+        account: "All",
+        back: "ledger",
+        period: "year",
+        month: state.ledgerYear + "-01",
+        year: state.ledgerYear,
+        rangeFrom: "", rangeTo: ""
+      };
+    }
+    if(state.ledgerPeriod === "range" && rangeOn){
+      return {
+        from: state.ledgerRangeFrom,
+        to: state.ledgerRangeTo,
+        heading: fmtKeyLong(state.ledgerRangeFrom) + " – " + fmtKeyLong(state.ledgerRangeTo),
+        account: "All",
+        back: "ledger",
+        period: "range",
+        month: state.ledgerMonth,
+        year: state.ledgerYear,
+        rangeFrom: state.ledgerRangeFrom,
+        rangeTo: state.ledgerRangeTo
+      };
+    }
+    /* Month — also the fallback when "Date range" is picked but no
+       range has been set yet (the detail list then shows the month). */
+    var p = state.ledgerMonth.split("-");
+    var lastDay = toKey(new Date(+p[0], +p[1], 0));
+    return {
+      from: state.ledgerMonth + "-01",
+      to: lastDay,
+      heading: MONTHS[+p[1]-1] + " " + p[0],
+      account: "All",
+      back: "ledger",
+      period: "month",
+      month: state.ledgerMonth,
+      year: +p[0],
+      rangeFrom: "", rangeTo: ""
     };
   }
   function openPdfPreview(ctx){
@@ -3274,24 +3332,10 @@
   var CAMERA_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zM9 2L7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3.17L15 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>';
   var pendingPhoto = "";
   var pendingIcon = "";
-  function iconGridHTML(selectedId, noneLabel){
-    var h = '<button type="button" class="icon-pick'+(selectedId ? "" : " sel")+'" data-icon-pick=""><span class="ip-initial">'+esc(noneLabel || "—")+'</span><span class="ip-label">None</span></button>';
-    PERSON_ICONS.forEach(function(ic){
-      h += '<button type="button" class="icon-pick'+(selectedId === ic.id ? " sel" : "")+'" data-icon-pick="'+ic.id+'"><span class="ip-glyph">'+ic.glyph+'</span><span class="ip-label">'+ic.label+'</span></button>';
-    });
-    return h;
-  }
-  var personIconGrid = document.getElementById("personIconGrid");
-  function renderPersonIconGrid(){
-    personIconGrid.innerHTML = iconGridHTML(pendingIcon, "—");
-    personIconGrid.querySelectorAll("[data-icon-pick]").forEach(function(b){
-      b.addEventListener("click", function(){
-        pendingIcon = b.getAttribute("data-icon-pick");
-        renderPersonIconGrid();
-        syncPersonAvatarPicker();
-      });
-    });
-  }
+  /* The icon picker was removed from the Add a Person form at the user's
+     request: a new person is added with a photo or their initial letter
+     only. Icons people already have are kept (personIcons / PERSON_ICONS
+     still drive the glyph shown in their circle when no photo is set). */
   function syncPersonAvatarPicker(){
     if(pendingPhoto){
       personAvatarPreview.innerHTML = '<img src="'+pendingPhoto+'" alt="" />';
@@ -3314,7 +3358,7 @@
   function openPersonSheet(){
     personError.classList.remove("show"); personError.textContent = "";
     personNameInput.value = ""; personRemarksInput.value = "";
-    pendingPhoto = ""; pendingIcon = ""; renderPersonIconGrid(); syncPersonAvatarPicker();
+    pendingPhoto = ""; pendingIcon = ""; syncPersonAvatarPicker();
     personOverlay.classList.add("open");
     setTimeout(function(){ personNameInput.focus(); }, 60);
   }
