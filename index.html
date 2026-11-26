@@ -458,6 +458,21 @@
   .person-sheet .sheet-actions{gap:6px;margin-top:4px}
   .person-sheet .sheet-actions .btn{padding:7px 10px;font-size:14.5px;min-height:38px}
 
+  /* Calculator keypad for the Amount field (entry sheet) — smart/compact */
+  .calc-pad{display:none;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;background:var(--sheet-2);border:1.5px solid #4a574e;border-radius:12px;padding:8px}
+  .calc-pad.open{display:grid}
+  .calc-key{background:rgba(255,255,255,.06);border:1px solid #4a574e;border-radius:9px;min-height:44px;padding:5px 0;font-size:19px;font-weight:600;color:var(--text);display:flex;align-items:center;justify-content:center}
+  .calc-key:active{background:#22352b}
+  .calc-key.op{color:var(--mint);font-size:21px;font-weight:700}
+  .calc-key.wide{grid-column:span 2}
+  .calc-key.eq{background:var(--teal);border-color:var(--teal);color:#eafff6;font-size:21px}
+  .calc-key.eq:active{background:var(--teal-dark)}
+  .calc-key.done{color:var(--mint);font-size:16px}
+  body.light .calc-pad{background:#eef2ee;border-color:#c4d2c6}
+  body.light .calc-key{background:#ffffff;border-color:#c4d2c6}
+  body.light .calc-key:active{background:#dce8df}
+  body.light .calc-key.eq{background:var(--teal);color:#eafff6}
+
   /* Calendar popup */
   .cal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:none;align-items:center;justify-content:center;padding:18px}
   .cal-overlay.open{display:flex}
@@ -701,10 +716,31 @@
         <input type="text" id="fText" placeholder="Enter Text" autocomplete="off" aria-label="Enter Text" />
       </div>
       <div class="field" style="flex:1">
-        <input type="number" id="fAmount" placeholder="Amount" inputmode="decimal" min="0" step="0.01" aria-label="Amount" />
+        <input type="text" id="fAmount" placeholder="Amount" inputmode="none" readonly autocomplete="off" aria-label="Amount — tap to open the calculator keypad" />
       </div>
     </div>
     <p style="margin:3px 0 0 64px;font-size:12.5px;color:#c9d4cb">Category: <strong id="catNameLabel">Misc</strong> — tap the icon to change</p>
+
+    <div class="calc-pad" id="calcPad" aria-label="Calculator keypad">
+      <button type="button" class="calc-key" data-calc="7">7</button>
+      <button type="button" class="calc-key" data-calc="8">8</button>
+      <button type="button" class="calc-key" data-calc="9">9</button>
+      <button type="button" class="calc-key op" data-calc="÷" aria-label="Divide">÷</button>
+      <button type="button" class="calc-key" data-calc="4">4</button>
+      <button type="button" class="calc-key" data-calc="5">5</button>
+      <button type="button" class="calc-key" data-calc="6">6</button>
+      <button type="button" class="calc-key op" data-calc="×" aria-label="Multiply">×</button>
+      <button type="button" class="calc-key" data-calc="1">1</button>
+      <button type="button" class="calc-key" data-calc="2">2</button>
+      <button type="button" class="calc-key" data-calc="3">3</button>
+      <button type="button" class="calc-key op" data-calc="-" aria-label="Minus">-</button>
+      <button type="button" class="calc-key" data-calc="0">0</button>
+      <button type="button" class="calc-key" data-calc=".">.</button>
+      <button type="button" class="calc-key op" data-calc="back" aria-label="Backspace">⌫</button>
+      <button type="button" class="calc-key op" data-calc="+" aria-label="Plus">+</button>
+      <button type="button" class="calc-key eq wide" data-calc="=" aria-label="Equals">=</button>
+      <button type="button" class="calc-key done wide" data-calc="done">Done</button>
+    </div>
 
     <div class="date-acct-row">
       <div class="field">
@@ -1659,24 +1695,35 @@
       startCF = balanceBefore(startKey, "All");
     }
     var list = allList.filter(inPeriod);
-    var running = startCF, totIn = 0, totOut = 0, rows = "";
+    var running = startCF, totIn = 0, totOut = 0;
+    /* Entries are grouped by day into day cards like the Monthly view's
+       (user's request — the flat entries list was removed). Entries are in
+       date order, oldest first, so the running balance left after each
+       day's last entry is that day's closing Balance. */
+    var byDay = {}, dayOrder = [], dayEndBal = {};
     list.forEach(function(e){
       if(e.type==="income") totIn += +e.amount; else totOut += +e.amount;
       running += sel ? (e.type==="expense" ? +e.amount : -(+e.amount)) : signed(e);
-      /* Subtext shows ONLY the entry's Description (remarks) — the
-         Category • Account • Ledger parts were removed at the user's
-         request. No description → no subtext line at all. */
-      var subHtml = e.remarks ? '<span class="s">'+esc(e.remarks)+'</span>' : '';
-      var mobileAmt = e.type==="income"
-        ? '<span class="num credit cell-amt">+ '+esc(fmt(+e.amount))+'</span>'
-        : '<span class="num debit cell-amt">− '+esc(fmt(+e.amount))+'</span>';
-      var debitCell = e.type==="expense" ? '<span class="num debit col-num">'+esc(fmt(+e.amount))+'</span>' : '<span class="num col-num">—</span>';
-      var creditCell = e.type==="income" ? '<span class="num credit col-num">'+esc(fmt(+e.amount))+'</span>' : '<span class="num col-num">—</span>';
-      rows += '<button class="ledger-row" data-edit="'+e.id+'">' +
-        '<span class="d">'+esc(fmtDateKey(e.date))+'</span>' +
-        '<span class="cell-main"><span class="t">'+esc(e.text)+'</span>'+subHtml+'</span>' +
-        mobileAmt + debitCell + creditCell +
-        '<span class="num cell-bal">'+esc(fmt(running))+'</span></button>';
+      if(!byDay[e.date]){ byDay[e.date] = []; dayOrder.push(e.date); }
+      byDay[e.date].push(e);
+      dayEndBal[e.date] = running;
+    });
+    var cards = "";
+    dayOrder.slice().reverse().forEach(function(key){
+      var dList = byDay[key];
+      var dd = parseKey(key);
+      var dInc = dList.filter(function(e){ return e.type==="income"; });
+      var dExp = dList.filter(function(e){ return e.type==="expense"; });
+      var dIncT = sumType(dList,"income"), dExpT = sumType(dList,"expense");
+      cards += '<div class="day-card"><div class="day-card-date">'+DAYS_S[dd.getDay()]+', '+dd.getDate()+' '+MONTHS_S[dd.getMonth()]+' '+dd.getFullYear()+'</div>';
+      cards += '<div class="day-cols"><div class="day-col-head">Income (Credit)</div><div class="day-col-head right">Expense (Debit)</div>';
+      cards += '<div>' + dInc.map(function(e){
+        return '<button class="day-entry" data-edit="'+e.id+'"><span class="nm">'+esc(e.text)+demoBadgeHTML(e)+'</span><span class="am">'+esc(fmtPlain(+e.amount))+'</span></button>';
+      }).join("") + (dInc.length ? '<div class="day-total green">'+esc(fmt(dIncT))+'</div>' : '') + '</div>';
+      cards += '<div>' + dExp.map(function(e){
+        return '<button class="day-entry" data-edit="'+e.id+'"><span class="nm">'+esc(e.text)+demoBadgeHTML(e)+'</span><span class="am">'+esc(fmtPlain(+e.amount))+'</span></button>';
+      }).join("") + (dExp.length ? '<div class="day-total red">'+esc(fmt(dExpT))+'</div>' : '') + '</div>';
+      cards += '</div><div class="day-balance"><div class="db-label">Balance</div><div class="db-amt">'+esc(fmt(dayEndBal[key]))+'</div></div></div>';
     });
     /* Header chip — Excel-sample layout: photo on the left, name at the top
        next to the photo, and below the name four rows (C/F, Credit, Debit,
@@ -1686,7 +1733,10 @@
       '<div class="pd-row"><span class="pd-label">C/F</span><span class="pd-amt">'+esc(fmt(startCF))+'</span></div>' +
       '<div class="pd-row"><span class="pd-label">Credit</span><span class="pd-amt credit">'+esc(fmt(totIn))+'</span></div>' +
       '<div class="pd-row"><span class="pd-label">Debit</span><span class="pd-amt debit">'+esc(fmt(totOut))+'</span></div>' +
-      '<div class="pd-row"><span class="pd-label">Balance</span><span class="pd-amt balance">'+esc(fmt(running))+'</span></div></div>';
+      /* Header-card Balance is shown WITHOUT a minus sign (user's request);
+         the value and its blue colour are unchanged, and the running
+         balances in the entry list below keep their signs. */
+      '<div class="pd-row"><span class="pd-label">Balance</span><span class="pd-amt balance">'+esc(curSym() + fmtPlain(running))+'</span></div></div>';
     var html = '<div class="sub-head slim"><button class="back-btn" id="ledgerBackBtn" aria-label="Back to people list">←</button></div>';
     if(sel){
       html += '<div class="person-detail">' +
@@ -1731,7 +1781,7 @@
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>' +
       'PDF Report</button></div>';
     if(list.length){
-      html += '<div class="ledger-head"><span>Date</span><span>Entry</span><span>Debit</span><span>Credit</span><span>Balance</span></div><div>' + rows + '</div>';
+      html += cards;
     } else if(sel) {
       html += '<p class="empty-note ledger-empty">No entries for '+esc(sel)+' in this period. Tap the "+" button to add an entry for them.</p>';
     } else {
@@ -3071,6 +3121,90 @@
   function showError(msg){ formError.textContent = msg; formError.classList.add("show"); }
   function hideError(){ formError.classList.remove("show"); formError.textContent = ""; }
 
+  /* ---------- calculator keypad for the Amount field ----------
+     The Amount field is read-only with inputmode="none", so the phone's
+     system keyboard never opens for it; this in-app keypad is used instead.
+     It holds digits, ".", + - × ÷, backspace, "=" and Done. The field shows
+     the expression as typed (e.g. "45000+5000+2000"); "=" (or Done, or
+     saving the entry) evaluates it with normal maths precedence (× and ÷
+     before + and -) and replaces it with the numeric result. No eval() —
+     a small hand-written parser, so only numbers and the four operators
+     can ever be computed. */
+  var calcPad = document.getElementById("calcPad");
+  function openCalcPad(){ calcPad.classList.add("open"); }
+  function closeCalcPad(){ calcPad.classList.remove("open"); }
+  function evalAmountExpr(str){
+    var s = String(str == null ? "" : str).replace(/×/g, "*").replace(/÷/g, "/").replace(/−/g, "-").replace(/,/g, "").replace(/\s+/g, "");
+    if(!s || !/^[0-9.+\-*\/]+$/.test(s)) return NaN;
+    var tokens = [], num = "", expectNum = true, i, ch;
+    for(i = 0; i < s.length; i++){
+      ch = s.charAt(i);
+      if((ch >= "0" && ch <= "9") || ch === "."){
+        num += ch; expectNum = false;
+      } else {
+        if(num === "" || num === "-"){
+          if(ch === "-" && expectNum){ num = "-"; continue; }
+          if(ch === "+" && expectNum && num === ""){ continue; }
+          return NaN;
+        }
+        if(num.split(".").length > 2) return NaN;
+        tokens.push(parseFloat(num)); num = "";
+        tokens.push(ch); expectNum = true;
+      }
+    }
+    if(num !== "" && num !== "-"){
+      if(num.split(".").length > 2) return NaN;
+      tokens.push(parseFloat(num));
+    }
+    if(tokens.length && typeof tokens[tokens.length - 1] === "string") tokens.pop();
+    if(!tokens.length || typeof tokens[0] !== "number" || isNaN(tokens[0])) return NaN;
+    var pass = [tokens[0]], j, op, rhs;
+    for(j = 1; j < tokens.length; j += 2){
+      op = tokens[j]; rhs = tokens[j + 1];
+      if(typeof rhs !== "number" || isNaN(rhs)) return NaN;
+      if(op === "*"){ pass[pass.length - 1] = pass[pass.length - 1] * rhs; }
+      else if(op === "/"){ if(rhs === 0) return NaN; pass[pass.length - 1] = pass[pass.length - 1] / rhs; }
+      else { pass.push(op); pass.push(rhs); }
+    }
+    var result = pass[0];
+    for(var k = 1; k < pass.length; k += 2){
+      result = pass[k] === "+" ? result + pass[k + 1] : result - pass[k + 1];
+    }
+    return result;
+  }
+  function fmtCalcResult(v){ return String(Math.round(v * 100) / 100); }
+  function calcApplyEquals(){
+    var r = evalAmountExpr(fAmount.value);
+    if(!isNaN(r) && isFinite(r)) fAmount.value = fmtCalcResult(r);
+  }
+  function calcPress(key){
+    var v = fAmount.value || "";
+    if(key === "back"){ fAmount.value = v.slice(0, -1); return; }
+    if(key === "="){ calcApplyEquals(); return; }
+    if(key === "done"){ calcApplyEquals(); closeCalcPad(); return; }
+    if(key === "+" || key === "-" || key === "×" || key === "÷"){
+      if(!v) return;
+      var last = v.charAt(v.length - 1);
+      if(last === "+" || last === "-" || last === "×" || last === "÷" || last === ".") v = v.slice(0, -1);
+      fAmount.value = v + key;
+      return;
+    }
+    if(key === "."){
+      var seg = v.split(/[+\-×÷]/).pop();
+      if(seg.indexOf(".") !== -1) return;
+      fAmount.value = seg === "" ? v + "0." : v + ".";
+      return;
+    }
+    fAmount.value = v + key;
+  }
+  calcPad.querySelectorAll("[data-calc]").forEach(function(b){
+    b.addEventListener("click", function(){ calcPress(b.getAttribute("data-calc")); });
+  });
+  fAmount.addEventListener("click", openCalcPad);
+  fAmount.addEventListener("focus", openCalcPad);
+  fText.addEventListener("focus", closeCalcPad);
+  fRemarks.addEventListener("focus", closeCalcPad);
+
   function keyToDisplay(key){ return fmtDateKey(key); }
   /* ---------- date box + calendar popup ---------- */
   var formDateKey = todayKey();
@@ -3271,6 +3405,7 @@
 
   function openSheet(id){
     hideError();
+    closeCalcPad();
     editingId = id || null;
     if(id){
       var e = null;
@@ -3303,11 +3438,15 @@
     overlay.classList.add("open");
     setTimeout(function(){ fText.focus(); }, 60);
   }
-  function closeSheet(){ closeCalendar(); overlay.classList.remove("open"); editingId = null; }
+  function closeSheet(){ closeCalendar(); closeCalcPad(); overlay.classList.remove("open"); editingId = null; }
 
   function saveEntry(){
     var text = fText.value.trim();
-    var amount = parseFloat(fAmount.value);
+    /* The Amount field may hold an unfinished expression from the
+       calculator keypad (e.g. "45000+5000"); evaluate it on save and
+       store only the numeric result. A plain number works as before. */
+    var amount = evalAmountExpr(fAmount.value);
+    if(!isNaN(amount) && isFinite(amount)) fAmount.value = fmtCalcResult(amount);
     var date = formDateKey;
     if(!text){ showError("Please enter the entry name (Enter Text) first."); fText.focus(); return; }
     if(isNaN(amount) || amount <= 0){ showError("Enter a valid Amount — it must be greater than 0."); fAmount.focus(); return; }
