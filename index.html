@@ -296,7 +296,6 @@
   .pdf-table td.dt{white-space:nowrap;font-size:10px;letter-spacing:-.3px}
   .pdf-table td.num{text-align:right;white-space:nowrap;font-size:10px;letter-spacing:-.2px}
   .pdf-table tr.grand-total td.num{font-size:9px;letter-spacing:-.3px}
-  .pdf-table tr.day-total td{font-weight:700}
   .pdf-table tr.grand-total td{background:#e0f2f1;font-weight:700}
   .pdf-table .inc-g{color:#1e7d32}
   .pdf-table .exp-r{color:#c0392b}
@@ -1656,9 +1655,9 @@
     return {from: state.reportYear + "-01-01", to: state.reportYear + "-12-31"};
   }
   /* Report data shared by the on-screen preview and the downloaded PDF:
-     the C/F at the start of the period, the entries grouped by day (with a
-     subtotal row after any day that has more than one entry), the totals
-     and the closing balance. The filter keeps only one entry type. */
+     the C/F at the start of the period, the entries in date order, the
+     totals and the closing balance. The filter keeps only one entry
+     type. */
   function pdfModel(from, to, account, filter, person){
     var cf;
     if(person){
@@ -1683,19 +1682,12 @@
       if(a.date !== b.date) return a.date < b.date ? -1 : 1;
       return (a.createdAt || 0) - (b.createdAt || 0);
     });
-    var rows = [], totIn = 0, totOut = 0, i = 0;
-    while(i < list.length){
-      var day = list[i].date, dIn = 0, dOut = 0, dayRows = [];
-      while(i < list.length && list[i].date === day){
-        var e = list[i];
-        if(e.type === "income"){ dIn += +e.amount; totIn += +e.amount; }
-        else { dOut += +e.amount; totOut += +e.amount; }
-        dayRows.push({kind: "entry", e: e});
-        i++;
-      }
-      rows = rows.concat(dayRows);
-      if(dayRows.length > 1) rows.push({kind: "daytotal", inc: Math.round(dIn*100)/100, exp: Math.round(dOut*100)/100});
-    }
+    var rows = [], totIn = 0, totOut = 0;
+    list.forEach(function(e){
+      if(e.type === "income") totIn += +e.amount;
+      else totOut += +e.amount;
+      rows.push({kind: "entry", e: e});
+    });
     totIn = Math.round(totIn*100)/100;
     totOut = Math.round(totOut*100)/100;
     return {
@@ -1731,10 +1723,6 @@
           '<td>' + esc(e.text) + '</td><td>' + esc(e.category || "") + '</td>' +
           '<td class="num ' + (e.type === "income" ? "inc-g" : "exp-r") + '">' + esc(fmtPlain(+e.amount)) + '</td>' +
           '<td class="num"></td><td class="num"></td></tr>';
-      } else {
-        rows += '<tr class="day-total"><td colspan="4"></td>' +
-          '<td class="num">' + (r.inc ? esc(fmtPlain(r.inc)) : "") + '</td>' +
-          '<td class="num">' + (r.exp ? esc(fmtPlain(r.exp)) : "") + '</td></tr>';
       }
     });
     rows += '<tr class="grand-total"><td colspan="4"></td>' +
@@ -1745,7 +1733,7 @@
       '<div class="pp-name">' + esc(name != null ? name : profileName) + '</div>' +
       '<div class="pp-period">' + esc(heading) + '</div>' +
       (genStamp ? '<div class="pp-generated">' + esc(genStamp) + '</div>' : '') +
-      '<table class="pdf-table"><colgroup><col style="width:14%"><col style="width:30%"><col style="width:15%"><col style="width:13%"><col style="width:14%"><col style="width:14%"></colgroup>' +
+      '<table class="pdf-table"><colgroup><col style="width:17%"><col style="width:21%"><col style="width:17%"><col style="width:13%"><col style="width:16%"><col style="width:16%"></colgroup>' +
       '<thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th>Income</th><th>Expense</th></tr></thead>' +
       '<tbody>' + rows + '</tbody></table></div>';
   }
@@ -1937,7 +1925,7 @@
   function buildStyledPDF(model, heading, name, genStamp){
     var dispName = name != null ? name : profileName;
     var PW = 595, PH = 842, ML = 30, CW = PW - 60;
-    var cols = [70, 150, 85, 75, 77, 78];
+    var cols = [91, 112, 91, 69, 86, 86];
     var colX = [ML];
     for(var ci=0; ci<cols.length; ci++) colX.push(colX[ci] + cols[ci]);
     var pages = [], ops = [];
@@ -2028,11 +2016,6 @@
           {text: fitW(e.text, cols[1] - 8, 9.3), col: 1, font: "F1", color: DARK},
           {text: fitW(e.category || "", cols[2] - 8, 9.3), col: 2, font: "F1", color: DARK},
           {text: fmtPlain(+e.amount), col: 3, font: "F1", color: e.type === "income" ? [0.118, 0.49, 0.196] : [0.753, 0.224, 0.169], align: "right"}
-        ], null, y);
-      } else {
-        y = rowOut([
-          {text: r.inc ? fmtPlain(r.inc) : "", col: 4, font: "F2", color: DARK, align: "right"},
-          {text: r.exp ? fmtPlain(r.exp) : "", col: 5, font: "F2", color: DARK, align: "right"}
         ], null, y);
       }
     });
