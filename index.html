@@ -1720,7 +1720,7 @@
       cards += '<div>' + dExp.map(function(e){
         return '<button class="day-entry" data-edit="'+e.id+'"><span class="nm">'+esc(e.text)+demoBadgeHTML(e)+'</span><span class="am">'+esc(fmtPlain(+e.amount))+'</span></button>';
       }).join("") + (dExp.length ? '<div class="day-total red">'+esc(fmt(dExpT))+'</div>' : '') + '</div>';
-      cards += '</div><div class="day-balance"><div class="db-label">Balance</div><div class="db-amt">'+esc(fmt(dayEndBal[key]))+'</div></div></div>';
+      cards += '</div><div class="day-balance"><div class="db-label">Balance</div><div class="db-amt">'+esc(curSym() + fmtPlain(dayEndBal[key]))+'</div></div></div>';
     });
     /* Header chip — Excel-sample layout: photo on the left, name at the top
        next to the photo, and below the name four rows (C/F, Credit, Debit,
@@ -1731,8 +1731,8 @@
       '<div class="pd-row"><span class="pd-label">Credit</span><span class="pd-amt credit">'+esc(fmt(totIn))+'</span></div>' +
       '<div class="pd-row"><span class="pd-label">Debit</span><span class="pd-amt debit">'+esc(fmt(totOut))+'</span></div>' +
       /* Header-card Balance is shown WITHOUT a minus sign (user's request);
-         the value and its blue colour are unchanged, and the running
-         balances in the entry list below keep their signs. */
+         the value and its blue colour are unchanged. The day-card Balances
+         in the entries below use the same no-minus format. */
       '<div class="pd-row"><span class="pd-label">Balance</span><span class="pd-amt balance">'+esc(curSym() + fmtPlain(running))+'</span></div></div>';
     var html = '<div class="sub-head slim"><button class="back-btn" id="ledgerBackBtn" aria-label="Back to people list">←</button></div>';
     if(sel){
