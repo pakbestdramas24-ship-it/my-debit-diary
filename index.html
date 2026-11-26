@@ -117,12 +117,14 @@
   .range-fields .rf-box svg{width:17px;height:17px;fill:var(--mint);flex:0 0 auto}
 
   /* Monthly */
-  .summary-card{background:var(--card);border-radius:8px;padding:10px 12px 9px;display:grid;grid-template-columns:1fr 1fr;gap:7px 10px;margin-bottom:12px}
-  .summary-card .sc-label{font-size:13.5px;line-height:1.25;color:#d7e0d8}
-  .summary-card .sc-amt{font-size:16.5px;font-weight:700;margin-top:2px;line-height:1.2}
+  .summary-card{background:var(--card);border-radius:8px;padding:7px 10px 6px;display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;margin-bottom:10px}
+  .summary-card>div{min-width:0}
+  .summary-card .sc-label{font-size:12px;line-height:1.2;color:#d7e0d8;white-space:nowrap}
+  .summary-card .sc-amt{font-size:15px;font-weight:700;margin-top:1px;line-height:1.15;white-space:nowrap}
   .summary-card .right{text-align:right}
   .summary-card .sc-amt.credit{color:var(--mint)}
   .summary-card .sc-amt.debit{color:var(--danger)}
+  .summary-card .sc-amt.balance{color:#5eb1ff}
   /* Ledger detail — Excel-sample header: photo left, name top, then 4 rows (label left, amount right) */
   .pd-right{flex:1;min-width:0;display:flex;flex-direction:column}
   .pd-name-row{display:flex;align-items:baseline;gap:8px;min-width:0}
@@ -1403,10 +1405,10 @@
       '<span class="rb-label">Date range</span><span class="rb-value">'+esc(rangeLabel)+'</span>' + calSvg + '</button>' +
       (rangeOn ? '<button type="button" class="range-clear-btn" id="monthRangeClear" aria-label="Clear date range" title="Clear date range">✕</button>' : '') + '</div>';
     html += '<div class="summary-card">' +
-      '<div><div class="sc-label">Total Income (Credit)</div><div class="sc-amt">'+esc(fmt(incTotal))+'</div></div>' +
-      '<div class="right"><div class="sc-label">Total Expense (Debit)</div><div class="sc-amt">'+esc(fmt(expTotal))+'</div></div>' +
+      '<div><div class="sc-label">Total Income (Credit)</div><div class="sc-amt credit">'+esc(fmt(incTotal))+'</div></div>' +
+      '<div class="right"><div class="sc-label">Total Expense (Debit)</div><div class="sc-amt debit">'+esc(fmt(expTotal))+'</div></div>' +
       '<div><div class="sc-label">C/F</div><div class="sc-amt">'+esc(fmt(cf))+'</div></div>' +
-      '<div class="right"><div class="sc-label">Balance</div><div class="sc-amt">'+esc(fmt(balance))+'</div></div></div>';
+      '<div class="right"><div class="sc-label">Balance</div><div class="sc-amt balance">'+esc(fmt(balance))+'</div></div></div>';
 
     var byDay = {};
     monthEntries.forEach(function(e){ (byDay[e.date] = byDay[e.date] || []).push(e); });
