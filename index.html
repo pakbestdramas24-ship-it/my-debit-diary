@@ -284,6 +284,27 @@
   .btn-primary{background:var(--teal);color:#eafff6}
   .btn-ghost{background:transparent;border:1.5px solid #93a698;color:var(--text)}
 
+  /* PDF preview page (Monthly / Yearly / Report) */
+  .pdf-page{background:#ffffff;color:#1c1c1c;border-radius:4px;padding:22px 14px 26px}
+  .pdf-page h3{margin:0;text-align:center;color:#0e8a75;font-size:19px;font-weight:700}
+  .pdf-page .pp-name{text-align:center;color:#6a1fa2;font-size:16.5px;font-weight:600;margin-top:5px;min-height:22px}
+  .pdf-page .pp-period{text-align:center;font-weight:700;font-size:14.5px;margin-top:8px;color:#222}
+  .pdf-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:11.5px;table-layout:fixed}
+  .pdf-table th{background:#0097a7;color:#fff;font-weight:700;text-align:center;padding:5px 2px;border:1px solid #00838f;font-size:10.5px}
+  .pdf-table td{border:1px solid #c3ced1;padding:4px 4px;vertical-align:top;overflow-wrap:anywhere}
+  .pdf-table td.num{text-align:right;white-space:nowrap}
+  .pdf-table tr.day-total td{font-weight:700}
+  .pdf-table tr.grand-total td{background:#e0f2f1;font-weight:700}
+  .pdf-table .inc-g{color:#1e7d32}
+  .pdf-table .exp-r{color:#c0392b}
+  .pdf-balance{text-align:right;color:#1565c0;font-weight:700;margin-top:8px;font-size:13.5px}
+  .pdf-fabs{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:30;display:flex;gap:14px}
+  .pdf-fab{width:56px;height:56px;min-height:56px;border-radius:50%;border:0;background:var(--mint-btn);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.45);padding:0}
+  .pdf-fab:active{background:var(--mint)}
+  .pdf-fab svg{width:24px;height:24px;fill:#0d2b20}
+  body.light .pdf-fab svg{fill:#eafff6}
+  @media (min-width:700px){.pdf-fabs{right:calc(50% - 322px)}}
+
   /* Sheets */
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40;display:none;align-items:flex-end;justify-content:center}
   .overlay.open{display:flex}
@@ -1043,9 +1064,13 @@
     reportCustom: false,
     reportFrom: "",
     reportTo: "",
-    reportShowExpense: true,
-    reportShowIncome: true,
-    reportShowNotes: true,
+    reportFilter: "all",
+    pdfFilter: "all",
+    pdfFrom: "",
+    pdfTo: "",
+    pdfHeading: "",
+    pdfAccount: "All",
+    pdfBack: "monthly",
     prevTab: "daily",
     settingsScreen: "main",
     helpFrom: "menu"
@@ -1613,66 +1638,163 @@
     document.getElementById("chartAcctSel").addEventListener("change", function(ev){ state.chartAccount = ev.target.value; render(); });
   }
 
-  /* ---------- REPORT ---------- */
-  function reportEntries(){
-    var from, to;
-    if(state.reportCustom && state.reportFrom && state.reportTo){ from = state.reportFrom; to = state.reportTo; }
-    else { from = state.reportYear + "-01-01"; to = state.reportYear + "-12-31"; }
-    return entries.filter(function(e){
+  /* ---------- REPORT / PDF PREVIEW ---------- */
+  function fmtKeyLong(key){
+    var d = parseKey(key);
+    return pad(d.getDate()) + " " + MONTHS_S[d.getMonth()] + " " + d.getFullYear();
+  }
+  function reportRange(){
+    if(state.reportCustom && state.reportFrom && state.reportTo) return {from: state.reportFrom, to: state.reportTo};
+    return {from: state.reportYear + "-01-01", to: state.reportYear + "-12-31"};
+  }
+  /* Report data shared by the on-screen preview and the downloaded PDF:
+     the C/F at the start of the period, the entries grouped by day (with a
+     subtotal row after any day that has more than one entry), the totals
+     and the closing balance. The filter keeps only one entry type. */
+  function pdfModel(from, to, account, filter){
+    var cf = balanceBefore(from, account);
+    var list = entries.filter(function(e){
       if(e.date < from || e.date > to) return false;
-      if(e.type === "expense" && !state.reportShowExpense) return false;
-      if(e.type === "income" && !state.reportShowIncome) return false;
+      if(account && account !== "All" && e.account !== account) return false;
+      if(filter === "expense" && e.type !== "expense") return false;
+      if(filter === "income" && e.type !== "income") return false;
       return true;
-    }).sort(function(a,b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
+    }).sort(function(a,b){
+      if(a.date !== b.date) return a.date < b.date ? -1 : 1;
+      return (a.createdAt || 0) - (b.createdAt || 0);
+    });
+    var rows = [], totIn = 0, totOut = 0, i = 0;
+    while(i < list.length){
+      var day = list[i].date, dIn = 0, dOut = 0, dayRows = [];
+      while(i < list.length && list[i].date === day){
+        var e = list[i];
+        if(e.type === "income"){ dIn += +e.amount; totIn += +e.amount; }
+        else { dOut += +e.amount; totOut += +e.amount; }
+        dayRows.push({kind: "entry", e: e});
+        i++;
+      }
+      rows = rows.concat(dayRows);
+      if(dayRows.length > 1) rows.push({kind: "daytotal", inc: Math.round(dIn*100)/100, exp: Math.round(dOut*100)/100});
+    }
+    totIn = Math.round(totIn*100)/100;
+    totOut = Math.round(totOut*100)/100;
+    return {
+      cf: cf, rows: rows, totIn: totIn, totOut: totOut,
+      balance: Math.round((cf + totIn - totOut)*100)/100,
+      empty: list.length === 0
+    };
+  }
+  function pdfDateCell(key){
+    var d = parseKey(key);
+    return pad(d.getDate()) + "-" + pad(d.getMonth()+1) + "-" + d.getFullYear();
+  }
+  function pdfPreviewHTML(model, heading){
+    var rows = "";
+    rows += '<tr><td>C/F</td><td></td><td></td><td></td>' +
+      '<td class="num">' + (model.cf >= 0 ? esc(fmt(model.cf)) : "") + '</td>' +
+      '<td class="num">' + (model.cf < 0 ? esc(fmt(-model.cf)) : "") + '</td></tr>';
+    if(model.empty){
+      rows += '<tr><td colspan="6" style="text-align:center;color:#777;padding:16px 4px">No entries in this period.</td></tr>';
+    }
+    model.rows.forEach(function(r){
+      if(r.kind === "entry"){
+        var e = r.e;
+        rows += '<tr><td style="white-space:nowrap">' + pdfDateCell(e.date) + '</td>' +
+          '<td>' + esc(e.text) + '</td><td>' + esc(e.category || "") + '</td><td>' + esc(e.account || "Cash") + '</td>' +
+          '<td class="num">' + (e.type === "income" ? esc(fmtPlain(+e.amount)) : "") + '</td>' +
+          '<td class="num">' + (e.type === "expense" ? esc(fmtPlain(+e.amount)) : "") + '</td></tr>';
+      } else {
+        rows += '<tr class="day-total"><td colspan="4"></td>' +
+          '<td class="num">' + (r.inc ? esc(fmtPlain(r.inc)) : "") + '</td>' +
+          '<td class="num">' + (r.exp ? esc(fmtPlain(r.exp)) : "") + '</td></tr>';
+      }
+    });
+    rows += '<tr class="grand-total"><td colspan="4"></td>' +
+      '<td class="num inc-g">' + esc(fmt(model.totIn)) + '</td>' +
+      '<td class="num exp-r">' + esc(fmt(model.totOut)) + '</td></tr>';
+    return '<div class="pdf-page"><h3>My Debit Diary</h3>' +
+      '<div class="pp-name">' + esc(profileName) + '</div>' +
+      '<div class="pp-period">' + esc(heading) + '</div>' +
+      '<table class="pdf-table"><colgroup><col style="width:13%"><col style="width:27%"><col style="width:15%"><col style="width:17%"><col style="width:14%"><col style="width:14%"></colgroup>' +
+      '<thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Account</th><th>Income (Credit)</th><th>Expense (Debit)</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table>' +
+      '<div class="pdf-balance">Balance = ' + esc(fmt(model.balance)) + '</div></div>';
+  }
+  function pdfFabsHTML(){
+    return '<div class="pdf-fabs">' +
+      '<button type="button" class="pdf-fab" id="pdfShareBtn" aria-label="Share PDF" title="Share PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg></button>' +
+      '<button type="button" class="pdf-fab" id="pdfDownloadBtn" aria-label="Download PDF" title="Download PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></button></div>';
+  }
+  function bindPdfFabs(model, heading){
+    document.getElementById("pdfShareBtn").addEventListener("click", function(){ shareStyledPDF(model, heading); });
+    document.getElementById("pdfDownloadBtn").addEventListener("click", function(){ downloadStyledPDF(model, heading); });
+  }
+  function pdfFilterChipsHTML(current, attr){
+    return '<div class="report-chips">' +
+      '<button class="rep-chip' + (current === "all" ? " sel" : "") + '" ' + attr + '="all">All</button>' +
+      '<button class="rep-chip' + (current === "expense" ? " sel" : "") + '" ' + attr + '="expense">Expense (Debit)</button>' +
+      '<button class="rep-chip' + (current === "income" ? " sel" : "") + '" ' + attr + '="income">Income (Credit)</button></div>';
+  }
+  function monthPdfContext(){
+    var rangeOn = state.monthRangeActive && state.monthRangeFrom && state.monthRangeTo;
+    var p = state.monthCursor.split("-");
+    var lastDay = toKey(new Date(+p[0], +p[1], 0));
+    return {
+      from: rangeOn ? state.monthRangeFrom : state.monthCursor + "-01",
+      to: rangeOn ? state.monthRangeTo : lastDay,
+      heading: rangeOn ? (fmtKeyLong(state.monthRangeFrom) + " – " + fmtKeyLong(state.monthRangeTo)) : (MONTHS[+p[1]-1] + " " + p[0]),
+      account: state.monthAccount,
+      back: "monthly"
+    };
+  }
+  function yearPdfContext(){
+    var rangeOn = state.yearRangeActive && state.yearRangeFrom && state.yearRangeTo;
+    return {
+      from: rangeOn ? state.yearRangeFrom : state.yearCursor + "-01-01",
+      to: rangeOn ? state.yearRangeTo : state.yearCursor + "-12-31",
+      heading: rangeOn ? (fmtKeyLong(state.yearRangeFrom) + " – " + fmtKeyLong(state.yearRangeTo)) : String(state.yearCursor),
+      account: state.yearAccount,
+      back: "yearly"
+    };
+  }
+  function openPdfPreview(ctx){
+    state.pdfFrom = ctx.from; state.pdfTo = ctx.to; state.pdfHeading = ctx.heading;
+    state.pdfAccount = ctx.account; state.pdfBack = ctx.back; state.pdfFilter = "all";
+    state.tab = "pdfpreview";
+    render(); window.scrollTo(0,0);
+  }
+  function renderPdfPreview(){
+    var model = pdfModel(state.pdfFrom, state.pdfTo, state.pdfAccount, state.pdfFilter);
+    var html = '<div class="sub-head"><button class="back-btn" id="pdfBack" aria-label="Back">←</button><h2>PDF Report</h2></div>';
+    html += pdfFilterChipsHTML(state.pdfFilter, "data-pdf-filter");
+    html += pdfPreviewHTML(model, state.pdfHeading);
+    html += pdfFabsHTML();
+    main.innerHTML = html;
+    document.getElementById("pdfBack").addEventListener("click", function(){ setTab(state.pdfBack || "monthly"); });
+    main.querySelectorAll("[data-pdf-filter]").forEach(function(b){
+      b.addEventListener("click", function(){ state.pdfFilter = b.getAttribute("data-pdf-filter"); render(); });
+    });
+    bindPdfFabs(model, state.pdfHeading);
   }
   function renderReport(){
-    var list = reportEntries();
-    var totIn = sumType(list,"income"), totOut = sumType(list,"expense");
-    var rangeLabel = (state.reportCustom && state.reportFrom && state.reportTo)
-      ? state.reportFrom + " to " + state.reportTo : "Year " + state.reportYear;
+    var r = reportRange();
+    var model = pdfModel(r.from, r.to, "All", state.reportFilter);
+    var heading = state.reportCustom ? (fmtKeyLong(r.from) + " – " + fmtKeyLong(r.to)) : String(state.reportYear);
     var html = '<div class="sub-head"><button class="back-btn" id="reportBack" aria-label="Back">←</button><h2>Report</h2></div>';
     html += '<div class="period-row">' +
       '<div class="period-nav"><button class="nav-arrow" data-rnav="-1" aria-label="Previous year">‹</button>' +
-      '<span class="period-label">'+state.reportYear+'</span>' +
+      '<span class="period-label">' + state.reportYear + '</span>' +
       '<button class="nav-arrow" data-rnav="1" aria-label="Next year">›</button></div>' +
-      '<button class="rep-chip'+(state.reportCustom?" sel":"")+'" id="customRangeBtn" style="flex:1">Custom date range</button></div>';
+      '<button class="rep-chip' + (state.reportCustom ? " sel" : "") + '" id="customRangeBtn" style="flex:1">Custom date range</button></div>';
     if(state.reportCustom){
-      html += '<div class="range-inputs"><label>From<input type="date" id="repFrom" value="'+esc(state.reportFrom)+'"></label>' +
-        '<label>To<input type="date" id="repTo" value="'+esc(state.reportTo)+'"></label></div>';
+      html += '<div class="range-inputs"><label>From<input type="date" id="repFrom" value="' + esc(state.reportFrom) + '"></label>' +
+        '<label>To<input type="date" id="repTo" value="' + esc(state.reportTo) + '"></label></div>';
     }
-    html += '<div class="report-chips">' +
-      '<button class="rep-chip'+(state.reportShowExpense?" sel":"")+'" data-rep-toggle="expense">Expense (Debit)</button>' +
-      '<button class="rep-chip'+(state.reportShowIncome?" sel":"")+'" data-rep-toggle="income">Income (Credit)</button>' +
-      '<button class="rep-chip'+(state.reportShowNotes?" sel":"")+'" data-rep-toggle="notes">Notes</button></div>';
-
-    var rows = "";
-    var running = opening;
-    // running balance from start of range: recompute balance before first entry date
-    if(list.length) running = balanceBefore(list[0].date);
-    list.forEach(function(e){
-      running += signed(e);
-      var dd = parseKey(e.date);
-      rows += '<tr><td style="white-space:nowrap">'+pad(dd.getDate())+' '+MONTHS_S[dd.getMonth()]+' '+dd.getFullYear()+'</td>' +
-        '<td>'+esc(e.text) + (state.reportShowNotes && e.remarks ? '<div class="pp-note">'+esc(e.remarks)+'</div>' : '') +
-        '<div class="pp-note">'+esc(e.category||"")+' • '+esc(e.account||"Cash")+(e.ledger ? ' • '+esc(e.ledger) : '')+'</div></td>' +
-        '<td class="num">'+(e.type==="expense" ? esc(fmtPlain(+e.amount)) : "—")+'</td>' +
-        '<td class="num">'+(e.type==="income" ? esc(fmtPlain(+e.amount)) : "—")+'</td>' +
-        '<td class="num">'+esc(fmtPlain(running))+'</td></tr>';
-    });
-    if(!list.length) rows = '<tr><td colspan="5" style="text-align:center;color:#777;padding:18px 4px">No entries in this period.</td></tr>';
-    html += '<div class="preview-page"><h3>My Debit Diary</h3>' +
-      '<div class="pp-name">'+esc(profileName)+'</div>' +
-      '<div class="pp-meta">'+esc(rangeLabel)+' • Amounts in '+esc(currency)+'</div>' +
-      '<table><thead><tr><th>Date</th><th>Entry</th><th class="num">Debit</th><th class="num">Credit</th><th class="num">Balance</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-      '<div class="pp-totals">Total Income (Credit): <strong>'+esc(fmt(totIn))+'</strong><br>' +
-      'Total Expense (Debit): <strong>'+esc(fmt(totOut))+'</strong><br>' +
-      'Balance: <strong>'+esc(fmt(opening + sumType(entries,"income") - sumType(entries,"expense")))+'</strong></div></div>';
-    html += '<div class="report-actions"><button class="btn btn-ghost" id="repBackBtn">Back</button>' +
-      '<button class="btn btn-primary" id="repDownloadBtn">Download PDF</button></div>';
+    html += pdfFilterChipsHTML(state.reportFilter, "data-rep-filter");
+    html += pdfPreviewHTML(model, heading);
+    html += pdfFabsHTML();
     main.innerHTML = html;
     document.getElementById("reportBack").addEventListener("click", function(){ setTab("monthly"); });
-    document.getElementById("repBackBtn").addEventListener("click", function(){ setTab("monthly"); });
-    document.getElementById("repDownloadBtn").addEventListener("click", exportPDF);
     main.querySelectorAll("[data-rnav]").forEach(function(b){
       b.addEventListener("click", function(){ state.reportYear += +b.getAttribute("data-rnav"); state.reportCustom = false; render(); });
     });
@@ -1685,15 +1807,10 @@
       document.getElementById("repFrom").addEventListener("change", function(ev){ state.reportFrom = ev.target.value; render(); });
       document.getElementById("repTo").addEventListener("change", function(ev){ state.reportTo = ev.target.value; render(); });
     }
-    main.querySelectorAll("[data-rep-toggle]").forEach(function(b){
-      b.addEventListener("click", function(){
-        var k = b.getAttribute("data-rep-toggle");
-        if(k==="expense") state.reportShowExpense = !state.reportShowExpense;
-        if(k==="income") state.reportShowIncome = !state.reportShowIncome;
-        if(k==="notes") state.reportShowNotes = !state.reportShowNotes;
-        render();
-      });
+    main.querySelectorAll("[data-rep-filter]").forEach(function(b){
+      b.addEventListener("click", function(){ state.reportFilter = b.getAttribute("data-rep-filter"); render(); });
     });
+    bindPdfFabs(model, heading);
   }
 
   /* ---------- PDF export ---------- */
@@ -1758,41 +1875,187 @@
   }
   function padR(s, n){ s = String(s); while(s.length < n) s += " "; return s.slice(0, n); }
   function padL(s, n){ s = String(s); while(s.length < n) s = " " + s; return s.length > n ? s.slice(s.length - n) : s; }
-  function exportPDF(){
-    var list = reportEntries();
-    var totIn = sumType(list,"income"), totOut = sumType(list,"expense");
-    var running = list.length ? balanceBefore(list[0].date) : opening;
-    var lines = [];
-    lines.push("My Debit Diary");
-    if(profileName) lines.push(profileName);
-    lines.push("");
-    lines.push(padR("Date", 13) + padR("Entry", 26) + padL("Debit", 13) + padL("Credit", 13) + padL("Balance", 14));
-    lines.push("-------------------------------------------------------------------------------");
-    list.forEach(function(e){
-      running += signed(e);
-      var dd = parseKey(e.date);
-      lines.push(
-        padR(pad(dd.getDate()) + " " + MONTHS_S[dd.getMonth()] + " " + dd.getFullYear(), 13) +
-        padR(e.text, 26) +
-        padL(e.type==="expense" ? fmtPlain(+e.amount) : "-", 13) +
-        padL(e.type==="income" ? fmtPlain(+e.amount) : "-", 13) +
-        padL(fmtPlain(running), 14)
-      );
-      if(state.reportShowNotes && e.remarks) lines.push(padR("", 13) + "Note: " + e.remarks);
+  /* ---------- styled PDF (drawn to match the on-screen preview) ---------- */
+  var HELV_W = [278,278,355,556,556,889,667,222,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,222,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
+  function helvWidth(str, size){
+    var special = {"•":350, "—":1000, "–":556, "€":556, "£":556};
+    var w = 0;
+    str = String(str);
+    for(var i=0;i<str.length;i++){
+      var ch = str.charAt(i);
+      if(special.hasOwnProperty(ch)) w += special[ch];
+      else {
+        var c = str.charCodeAt(i);
+        w += (c >= 32 && c <= 126) ? HELV_W[c-32] : 556;
+      }
+    }
+    return w * size / 1000;
+  }
+  function fitW(str, maxW, size){
+    str = String(str);
+    if(helvWidth(str, size) <= maxW) return str;
+    while(str.length && helvWidth(str + "...", size) > maxW) str = str.slice(0, -1);
+    return str + "...";
+  }
+  function buildStyledPDF(model, heading){
+    var PW = 595, PH = 842, ML = 30, CW = PW - 60;
+    var cols = [62, 155, 82, 82, 77, 77];
+    var colX = [ML];
+    for(var ci=0; ci<cols.length; ci++) colX.push(colX[ci] + cols[ci]);
+    var pages = [], ops = [];
+    function n2(v){ return Math.round(v*100)/100; }
+    function fill(r,g,b){ ops.push(n2(r) + " " + n2(g) + " " + n2(b) + " rg"); }
+    function strokeC(r,g,b){ ops.push(n2(r) + " " + n2(g) + " " + n2(b) + " RG"); }
+    function txt(str, x, y, font, size, align){
+      var w = helvWidth(str, size);
+      var xx = align === "right" ? x - w : (align === "center" ? x - w/2 : x);
+      ops.push("BT /" + font + " " + size + " Tf 1 0 0 1 " + n2(xx) + " " + n2(y) + " Tm (" + pdfEscapeText(str) + ") Tj ET");
+    }
+    function rectF(x, y, w, h){ ops.push(n2(x) + " " + n2(y) + " " + n2(w) + " " + n2(h) + " re f"); }
+    function grid(top, bottom){
+      strokeC(0.72, 0.78, 0.8); ops.push("0.6 w");
+      ops.push(n2(ML) + " " + n2(bottom) + " m " + n2(ML+CW) + " " + n2(bottom) + " l S");
+      for(var i=0;i<colX.length;i++) ops.push(n2(colX[i]) + " " + n2(bottom) + " m " + n2(colX[i]) + " " + n2(top) + " l S");
+    }
+    function headerRow(top){
+      fill(0, 0.592, 0.655); rectF(ML, top - 20, CW, 20);
+      fill(1,1,1);
+      var labels = ["Date","Description","Category","Account","Income (Credit)","Expense (Debit)"];
+      for(var i=0;i<labels.length;i++) txt(labels[i], colX[i] + cols[i]/2, top - 13.5, "F2", 8.6, "center");
+      grid(top, top - 20);
+      return top - 20;
+    }
+    function newPage(){
+      pages.push(ops.join("\n")); ops = [];
+      return headerRow(PH - 40);
+    }
+    function rowOut(cells, opts, y){
+      if(y - 16 < 42) y = newPage();
+      var bottom = y - 16;
+      if(opts && opts.fillColor){ fill(opts.fillColor[0], opts.fillColor[1], opts.fillColor[2]); rectF(ML, bottom, CW, 16); }
+      cells.forEach(function(c){
+        if(!c.text) return;
+        fill(c.color[0], c.color[1], c.color[2]);
+        if(c.align === "right") txt(c.text, colX[c.col] + cols[c.col] - 4, bottom + 5.4, c.font, 9.3, "right");
+        else txt(c.text, colX[c.col] + 4, bottom + 5.4, c.font, 9.3, "left");
+      });
+      grid(y, bottom);
+      return bottom;
+    }
+    var DARK = [0.11, 0.11, 0.11];
+    var y;
+    fill(0.055, 0.541, 0.459);
+    txt("My Debit Diary", PW/2, PH - 52, "F2", 17, "center");
+    var headY = PH - 74;
+    if(profileName){
+      fill(0.416, 0.122, 0.635);
+      txt(profileName, PW/2, headY, "F2", 13, "center");
+      headY -= 20;
+    }
+    fill(0.13, 0.13, 0.13);
+    txt(heading, PW/2, headY, "F2", 12, "center");
+    y = headerRow(headY - 14);
+    y = rowOut([
+      {text: "C/F", col: 0, font: "F1", color: DARK},
+      {text: model.cf >= 0 ? fmt(model.cf) : "", col: 4, font: "F1", color: DARK, align: "right"},
+      {text: model.cf < 0 ? fmt(-model.cf) : "", col: 5, font: "F1", color: DARK, align: "right"}
+    ], null, y);
+    if(model.empty){
+      if(y - 16 < 42) y = newPage();
+      var eb = y - 16;
+      fill(0.45, 0.45, 0.45);
+      txt("No entries in this period.", ML + CW/2, eb + 5.4, "F1", 9.3, "center");
+      grid(y, eb);
+      y = eb;
+    }
+    model.rows.forEach(function(r){
+      if(r.kind === "entry"){
+        var e = r.e;
+        y = rowOut([
+          {text: pdfDateCell(e.date), col: 0, font: "F1", color: DARK},
+          {text: fitW(e.text, cols[1] - 8, 9.3), col: 1, font: "F1", color: DARK},
+          {text: fitW(e.category || "", cols[2] - 8, 9.3), col: 2, font: "F1", color: DARK},
+          {text: fitW(e.account || "Cash", cols[3] - 8, 9.3), col: 3, font: "F1", color: DARK},
+          {text: e.type === "income" ? fmtPlain(+e.amount) : "", col: 4, font: "F1", color: DARK, align: "right"},
+          {text: e.type === "expense" ? fmtPlain(+e.amount) : "", col: 5, font: "F1", color: DARK, align: "right"}
+        ], null, y);
+      } else {
+        y = rowOut([
+          {text: r.inc ? fmtPlain(r.inc) : "", col: 4, font: "F2", color: DARK, align: "right"},
+          {text: r.exp ? fmtPlain(r.exp) : "", col: 5, font: "F2", color: DARK, align: "right"}
+        ], null, y);
+      }
     });
-    if(!list.length) lines.push("No entries in this period.");
-    lines.push("-------------------------------------------------------------------------------");
-    lines.push("");
-    lines.push("Total Income (Credit): " + fmt(totIn));
-    lines.push("Total Expense (Debit): " + fmt(totOut));
-    lines.push("Balance: " + fmt(running));
-    downloadBlob("my-debit-diary-report.pdf", makePDF(lines));
-    toast("PDF report downloaded ✓");
+    y = rowOut([
+      {text: fmt(model.totIn), col: 4, font: "F2", color: [0.118, 0.49, 0.196], align: "right"},
+      {text: fmt(model.totOut), col: 5, font: "F2", color: [0.753, 0.224, 0.169], align: "right"}
+    ], {fillColor: [0.878, 0.949, 0.945]}, y);
+    y -= 20;
+    if(y < 42){ pages.push(ops.join("\n")); ops = []; y = PH - 60; }
+    fill(0.086, 0.4, 0.753);
+    txt("Balance = " + fmt(model.balance), ML + CW, y, "F2", 11, "right");
+    pages.push(ops.join("\n"));
+    var bytes = [], offsets = {};
+    function pushStr(s){ var b = winAnsiBytes(s); for(var j=0;j<b.length;j++) bytes.push(b[j]); }
+    function beginObj(n){ offsets[n] = bytes.length; pushStr(n + " 0 obj\n"); }
+    pushStr("%PDF-1.4\n");
+    beginObj(1); pushStr("<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+    var kids = [];
+    for(var p=0;p<pages.length;p++) kids.push((5 + p*2) + " 0 R");
+    beginObj(2); pushStr("<< /Type /Pages /Kids [" + kids.join(" ") + "] /Count " + pages.length + " >>\nendobj\n");
+    beginObj(3); pushStr("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\nendobj\n");
+    beginObj(4); pushStr("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>\nendobj\n");
+    for(var q=0;q<pages.length;q++){
+      var pageObj = 5 + q*2, contentObj = pageObj + 1;
+      beginObj(pageObj);
+      pushStr("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents " + contentObj + " 0 R >>\nendobj\n");
+      var streamBytes = winAnsiBytes(pages[q]);
+      beginObj(contentObj);
+      pushStr("<< /Length " + streamBytes.length + " >>\nstream\n");
+      for(var s2=0;s2<streamBytes.length;s2++) bytes.push(streamBytes[s2]);
+      pushStr("\nendstream\nendobj\n");
+    }
+    var totalObjs = 4 + pages.length*2;
+    var xrefPos = bytes.length;
+    pushStr("xref\n0 " + (totalObjs+1) + "\n0000000000 65535 f \n");
+    for(var o=1;o<=totalObjs;o++){
+      var off = String(offsets[o] || 0);
+      while(off.length < 10) off = "0" + off;
+      pushStr(off + " 00000 n \n");
+    }
+    pushStr("trailer\n<< /Size " + (totalObjs+1) + " /Root 1 0 R >>\nstartxref\n" + xrefPos + "\n%%EOF");
+    return new Blob([new Uint8Array(bytes)], {type: "application/pdf"});
+  }
+  function pdfFileName(heading){
+    var slug = String(heading || "report").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    return "my-debit-diary-" + (slug || "report") + ".pdf";
+  }
+  function downloadStyledPDF(model, heading){
+    downloadBlob(pdfFileName(heading), buildStyledPDF(model, heading));
+    toast("PDF downloaded ✓");
+  }
+  function shareStyledPDF(model, heading){
+    var blob = buildStyledPDF(model, heading);
+    var shared = false;
+    try{
+      var file = new File([blob], pdfFileName(heading), {type: "application/pdf"});
+      if(navigator.canShare && navigator.canShare({files: [file]})){
+        navigator.share({files: [file], title: "My Debit Diary"}).catch(function(){});
+        shared = true;
+      }
+    }catch(e){}
+    if(shared) return;
+    if(navigator.share){
+      try{ navigator.share({title: "My Debit Diary", text: "My Debit Diary — " + heading}); }
+      catch(e2){ toast("Sharing is not available on this device"); }
+    } else {
+      toast("Sharing is not available here — tap Download instead");
+    }
   }
 
   /* ---------- render / tabs / FAB ---------- */
   function updateFab(){
-    if(state.tab === "report" || state.tab === "settings" || state.tab === "help"){ fab.classList.add("hidden"); return; }
+    if(state.tab === "report" || state.tab === "pdfpreview" || state.tab === "settings" || state.tab === "help"){ fab.classList.add("hidden"); return; }
     if(state.tab === "notes" && state.noteMode === "edit"){ fab.classList.add("hidden"); return; }
     fab.classList.remove("hidden");
     if(state.tab === "notes"){
@@ -1810,7 +2073,7 @@
     }
   }
   function render(){
-    topbar.classList.toggle("hidden", state.tab === "charts" || state.tab === "report" || state.tab === "settings" || state.tab === "help");
+    topbar.classList.toggle("hidden", state.tab === "charts" || state.tab === "report" || state.tab === "pdfpreview" || state.tab === "settings" || state.tab === "help");
     document.querySelectorAll(".tab").forEach(function(t){
       t.classList.toggle("active", t.getAttribute("data-tab") === state.tab);
     });
@@ -1821,6 +2084,7 @@
     else if(state.tab === "ledger") renderLedger();
     else if(state.tab === "charts") renderCharts();
     else if(state.tab === "report") renderReport();
+    else if(state.tab === "pdfpreview") renderPdfPreview();
     else if(state.tab === "settings") renderSettings();
     else if(state.tab === "help") renderHelp();
     updateFab();
@@ -1831,7 +2095,9 @@
   });
   fab.addEventListener("click", function(){
     if(state.tab === "notes"){ openNoteEditor(null); return; }
-    if(state.tab === "monthly" || state.tab === "yearly" || state.tab === "charts") setTab("report");
+    if(state.tab === "monthly"){ openPdfPreview(monthPdfContext()); return; }
+    if(state.tab === "yearly"){ openPdfPreview(yearPdfContext()); return; }
+    if(state.tab === "charts") setTab("report");
     else if(state.tab === "ledger" && !state.ledgerNameFilter) openPersonSheet();
     else openSheet(null);
   });
