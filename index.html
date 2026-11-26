@@ -349,6 +349,18 @@
   .month-range-row.charts-range .range-clear-btn{width:32px;height:32px;min-height:32px}
   .chart-filter-row{display:flex;gap:8px;margin-bottom:8px}
   .chart-filter-row .acct-select{flex:1 1 0;min-width:0;max-width:none;min-height:34px;font-size:13.5px;padding:3px 5px;border-radius:8px}
+  /* Monthly — Month / Year / Date range tabs and the Account + Ledger filter row (same compact setting as Charts) */
+  .seg-toggle.month-mode-seg{margin-bottom:7px;border-width:1px}
+  .seg-toggle.month-mode-seg button{padding:5px 2px;font-size:14px;min-height:32px}
+  .period-row.month-period{margin-bottom:7px}
+  .period-row.month-period .period-nav{min-height:34px;padding:1px 2px}
+  .period-row.month-period .period-nav .nav-arrow{width:28px;height:28px;min-height:28px;font-size:19px}
+  .period-row.month-period .period-nav .period-label{font-size:15px}
+  .month-range-row.month-range{margin-bottom:7px}
+  .month-range-row.month-range .range-btn{min-height:32px;padding:4px 8px;font-size:13.5px}
+  .month-range-row.month-range .range-clear-btn{width:32px;height:32px;min-height:32px}
+  .month-filter-row{display:flex;gap:8px;margin-bottom:8px}
+  .month-filter-row .acct-select{flex:1 1 0;min-width:0;max-width:none;min-height:34px;font-size:13.5px;padding:3px 5px;border-radius:8px}
 
   /* Report */
   .report-chips{display:flex;gap:4px;flex-wrap:nowrap;margin-bottom:8px}
@@ -1312,6 +1324,9 @@
     monthCursor: todayKey().slice(0,7),
     yearCursor: new Date().getFullYear(),
     monthAccount: "All",
+    monthMode: "month",
+    monthYear: new Date().getFullYear(),
+    monthLedger: "All",
     monthRangeFrom: "",
     monthRangeTo: "",
     monthRangeActive: false,
@@ -1375,6 +1390,17 @@
     var total = (account && account !== "All") ? 0 : opening;
     entries.forEach(function(e){
       if(e.date < key && (!account || account==="All" || e.account===account)) total += signed(e);
+    });
+    return total;
+  }
+  /* C/F for the Monthly view when a person's ledger is selected: only
+     that person's entries count, and the opening balance is not included
+     (it is not tied to a person — same rule as the Yearly ledger filter). */
+  function monthBalanceBefore(key, account, ledger){
+    if(!ledger || ledger === "All") return balanceBefore(key, account);
+    var total = 0;
+    entries.forEach(function(e){
+      if(e.date < key && (e.ledger||"") === ledger && (!account || account === "All" || e.account === account)) total += signed(e);
     });
     return total;
   }
@@ -1475,30 +1501,65 @@
   }
 
   /* ---------- MONTHLY ---------- */
+  function monthLedgerSel(){
+    var led = state.monthLedger;
+    if(led !== "All" && ledgerNames.indexOf(led) === -1) led = "All";
+    return led;
+  }
   function renderMonthly(){
     var parts = state.monthCursor.split("-");
     var y = +parts[0], m = +parts[1]-1;
     var acct = state.monthAccount;
-    var rangeOn = state.monthRangeActive && state.monthRangeFrom && state.monthRangeTo;
-    var firstKey = rangeOn ? state.monthRangeFrom : (state.monthCursor + "-01");
-    var cf = balanceBefore(firstKey, acct);
+    var led = monthLedgerSel();
+    var mode = state.monthMode;
+    var rangeOn = mode === "range" && state.monthRangeActive && state.monthRangeFrom && state.monthRangeTo;
+    /* The period the whole view follows (summary card, day cards, C/F):
+       the selected month, the selected year, or the picked date range.
+       In Date range mode with no range picked yet, all entries show —
+       the same behaviour as the Charts screen's Date range tab. */
+    var firstKey, emptyMsg;
+    if(mode === "year"){ firstKey = state.monthYear + "-01-01"; emptyMsg = "No entries this year."; }
+    else if(mode === "range"){ firstKey = rangeOn ? state.monthRangeFrom : ""; emptyMsg = rangeOn ? "No entries in this date range." : "No entries yet."; }
+    else { firstKey = state.monthCursor + "-01"; emptyMsg = "No entries this month."; }
+    var cf = monthBalanceBefore(firstKey, acct, led);
     var monthEntries = entries.filter(function(e){
-      if(acct!=="All" && e.account!==acct) return false;
-      if(rangeOn) return e.date >= state.monthRangeFrom && e.date <= state.monthRangeTo;
-      return e.date.slice(0,7)===state.monthCursor;
+      if(acct !== "All" && e.account !== acct) return false;
+      if(led !== "All" && (e.ledger || "") !== led) return false;
+      if(mode === "year") return e.date.slice(0,4) === String(state.monthYear);
+      if(mode === "range") return rangeOn ? (e.date >= state.monthRangeFrom && e.date <= state.monthRangeTo) : true;
+      return e.date.slice(0,7) === state.monthCursor;
     });
     var incTotal = sumType(monthEntries,"income"), expTotal = sumType(monthEntries,"expense");
     var balance = cf + incTotal - expTotal;
-    var rangeLabel = rangeOn ? (keyToDisplay(state.monthRangeFrom) + " – " + keyToDisplay(state.monthRangeTo)) : "Full month";
+    var rangeLabel = rangeOn ? (keyToDisplay(state.monthRangeFrom) + " – " + keyToDisplay(state.monthRangeTo)) : "All entries";
     var calSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/></svg>';
-    var html = '<div class="period-row monthly-compact">' +
-      '<div class="period-nav"><button class="nav-arrow" data-mnav="-1" aria-label="Previous month">‹</button>' +
-      '<span class="period-label">'+MONTHS[m]+' '+y+'</span>' +
-      '<button class="nav-arrow" data-mnav="1" aria-label="Next month">›</button></div>' +
-      '<select class="acct-select" id="monthAcctSel" aria-label="Account filter">'+accountOptionsHTML(acct)+'</select></div>';
-    html += '<div class="month-range-row"><button type="button" class="range-btn'+(rangeOn?" active":"")+'" id="monthRangeBtn" aria-label="Pick a date range">' +
-      '<span class="rb-label">Date range</span><span class="rb-value">'+esc(rangeLabel)+'</span>' + calSvg + '</button>' +
-      (rangeOn ? '<button type="button" class="range-clear-btn" id="monthRangeClear" aria-label="Clear date range" title="Clear date range">✕</button>' : '') + '</div>';
+    /* Period tabs — Month / Year / Date range segmented pill with the
+       matching selector below it (the same setting as the Charts screen;
+       it replaces the old month + account row and the Date range bar). */
+    var html = '<div class="seg-toggle month-mode-seg" role="tablist" aria-label="Monthly period">' +
+      '<button type="button" data-mmode="month"'+(mode==="month"?' class="sel"':"")+'>Month</button>' +
+      '<button type="button" data-mmode="year"'+(mode==="year"?' class="sel"':"")+'>Year</button>' +
+      '<button type="button" data-mmode="range"'+(mode==="range"?' class="sel"':"")+'>Date range</button></div>';
+    if(mode === "month"){
+      html += '<div class="period-row monthly-compact month-period"><div class="period-nav">' +
+        '<button class="nav-arrow" data-mnav="-1" aria-label="Previous month">‹</button>' +
+        '<span class="period-label">'+MONTHS[m]+' '+y+'</span>' +
+        '<button class="nav-arrow" data-mnav="1" aria-label="Next month">›</button></div></div>';
+    } else if(mode === "year"){
+      html += '<div class="period-row yearly-compact month-period"><div class="period-nav">' +
+        '<button class="nav-arrow" data-mynav="-1" aria-label="Previous year">‹</button>' +
+        '<span class="period-label">'+state.monthYear+'</span>' +
+        '<button class="nav-arrow" data-mynav="1" aria-label="Next year">›</button></div></div>';
+    } else {
+      html += '<div class="month-range-row month-range"><button type="button" class="range-btn'+(rangeOn?" active":"")+'" id="monthRangeBtn" aria-label="Pick a date range">' +
+        '<span class="rb-label">Date range</span><span class="rb-value">'+esc(rangeLabel)+'</span>' + calSvg + '</button>' +
+        (rangeOn ? '<button type="button" class="range-clear-btn" id="monthRangeClear" aria-label="Clear date range" title="Clear date range">✕</button>' : '') + '</div>';
+    }
+    /* Account + Ledger dropdowns, side by side — both filter the whole
+       Monthly view (summary card, day cards and C/F). */
+    html += '<div class="month-filter-row">' +
+      '<select class="acct-select" id="monthAcctSel" aria-label="Account filter">'+accountOptionsHTML(acct)+'</select>' +
+      '<select class="acct-select" id="monthLedgerSel" aria-label="Ledger filter">'+ledgerOptionsHTML(led)+'</select></div>';
     html += '<div class="summary-card">' +
       '<div><div class="sc-label">Total Income (Credit)</div><div class="sc-amt credit">'+esc(fmt(incTotal))+'</div></div>' +
       '<div class="right"><div class="sc-label">Total Expense (Debit)</div><div class="sc-amt debit">'+esc(fmt(expTotal))+'</div></div>' +
@@ -1508,17 +1569,16 @@
     var byDay = {};
     monthEntries.forEach(function(e){ (byDay[e.date] = byDay[e.date] || []).push(e); });
     var days = Object.keys(byDay).sort().reverse();
-    if(!days.length) html += '<p class="empty-note">'+(rangeOn ? "No entries in this date range." : "No entries this month.")+'</p>';
+    if(!days.length) html += '<p class="empty-note">'+emptyMsg+'</p>';
     days.forEach(function(key){
       var list = byDay[key];
       var dd = parseKey(key);
       var dInc = list.filter(function(e){ return e.type==="income"; });
       var dExp = list.filter(function(e){ return e.type==="expense"; });
       var dIncT = sumType(list,"income"), dExpT = sumType(list,"expense");
-      var endBal = balanceBefore(key, acct) + dIncT - dExpT + (acct==="All" ? 0 : 0);
-      // balanceBefore(key) is balance at start of that day; end of day:
-      endBal = balanceBefore(key, acct) + dIncT - dExpT;
-      // note: balanceBefore already excludes that day's entries, so add them:
+      // balanceBefore(key) is the balance at the start of that day
+      // (excluding that day's entries), so the day-end Balance adds them:
+      var endBal = monthBalanceBefore(key, acct, led) + dIncT - dExpT;
       html += '<div class="day-card"><div class="day-card-date">'+DAYS_S[dd.getDay()]+', '+dd.getDate()+' '+MONTHS_S[dd.getMonth()]+' '+dd.getFullYear()+'</div>';
       html += '<div class="day-cols"><div class="day-col-head">Income (Credit)</div><div class="day-col-head right">Expense (Debit)</div>';
       html += '<div>' + dInc.map(function(e){
@@ -1530,16 +1590,23 @@
       html += '</div><div class="day-balance"><div class="db-label">Balance</div><div class="db-amt">'+esc(fmt(endBal))+'</div></div></div>';
     });
     main.innerHTML = html;
+    main.querySelectorAll("[data-mmode]").forEach(function(b){
+      b.addEventListener("click", function(){ state.monthMode = b.getAttribute("data-mmode"); render(); });
+    });
     main.querySelectorAll("[data-mnav]").forEach(function(b){
       b.addEventListener("click", function(){
         var nd = new Date(y, m + (+b.getAttribute("data-mnav")), 1);
         state.monthCursor = nd.getFullYear()+"-"+pad(nd.getMonth()+1);
-        state.monthRangeActive = false; state.monthRangeFrom = ""; state.monthRangeTo = "";
         render();
       });
     });
+    main.querySelectorAll("[data-mynav]").forEach(function(b){
+      b.addEventListener("click", function(){ state.monthYear += +b.getAttribute("data-mynav"); render(); });
+    });
     document.getElementById("monthAcctSel").addEventListener("change", function(ev){ state.monthAccount = ev.target.value; render(); });
-    document.getElementById("monthRangeBtn").addEventListener("click", function(){ openRangeCalendar(); });
+    document.getElementById("monthLedgerSel").addEventListener("change", function(ev){ state.monthLedger = ev.target.value; render(); });
+    var rangeBtn = document.getElementById("monthRangeBtn");
+    if(rangeBtn) rangeBtn.addEventListener("click", function(){ openRangeCalendar(); });
     var clearBtn = document.getElementById("monthRangeClear");
     if(clearBtn) clearBtn.addEventListener("click", function(){
       state.monthRangeActive = false; state.monthRangeFrom = ""; state.monthRangeTo = ""; render();
@@ -2455,20 +2522,57 @@
       '<button class="rep-chip' + (current === "notes" ? " sel" : "") + '" ' + attr + '="notes">Notes</button></div>';
   }
   function monthPdfContext(){
-    var rangeOn = state.monthRangeActive && state.monthRangeFrom && state.monthRangeTo;
+    /* The report follows the Monthly view's current setting: the period
+       tab (Month / Year / Date range), the Account dropdown and the
+       Ledger dropdown (a selected person scopes the report to them). */
+    var led = monthLedgerSel();
+    var person = led === "All" ? "" : led;
+    var rangeOn = state.monthMode === "range" && state.monthRangeActive && state.monthRangeFrom && state.monthRangeTo;
     var p = state.monthCursor.split("-");
+    if(state.monthMode === "year"){
+      return {
+        from: state.monthYear + "-01-01",
+        to: state.monthYear + "-12-31",
+        heading: String(state.monthYear),
+        account: state.monthAccount,
+        back: "monthly",
+        period: "year",
+        month: state.monthYear + "-01",
+        year: state.monthYear,
+        rangeFrom: "",
+        rangeTo: "",
+        person: person
+      };
+    }
+    if(rangeOn){
+      return {
+        from: state.monthRangeFrom,
+        to: state.monthRangeTo,
+        heading: fmtKeyLong(state.monthRangeFrom) + " – " + fmtKeyLong(state.monthRangeTo),
+        account: state.monthAccount,
+        back: "monthly",
+        period: "range",
+        month: state.monthCursor,
+        year: +p[0],
+        rangeFrom: state.monthRangeFrom,
+        rangeTo: state.monthRangeTo,
+        person: person
+      };
+    }
+    /* Month — also the fallback for Date range mode before a range is picked */
     var lastDay = toKey(new Date(+p[0], +p[1], 0));
     return {
-      from: rangeOn ? state.monthRangeFrom : state.monthCursor + "-01",
-      to: rangeOn ? state.monthRangeTo : lastDay,
-      heading: rangeOn ? (fmtKeyLong(state.monthRangeFrom) + " – " + fmtKeyLong(state.monthRangeTo)) : (MONTHS[+p[1]-1] + " " + p[0]),
+      from: state.monthCursor + "-01",
+      to: lastDay,
+      heading: MONTHS[+p[1]-1] + " " + p[0],
       account: state.monthAccount,
       back: "monthly",
-      period: rangeOn ? "range" : "month",
+      period: "month",
       month: state.monthCursor,
       year: +p[0],
-      rangeFrom: rangeOn ? state.monthRangeFrom : "",
-      rangeTo: rangeOn ? state.monthRangeTo : ""
+      rangeFrom: "",
+      rangeTo: "",
+      person: person
     };
   }
   function yearPdfContext(){
@@ -2544,9 +2648,10 @@
     if(ctx.year) state.pdfYear = ctx.year;
     state.pdfRangeFrom = ctx.rangeFrom || "";
     state.pdfRangeTo = ctx.rangeTo || "";
-    /* If a person's ledger is open on the Ledger tab, the report is for
+    /* If the context names a person (the Monthly view's Ledger dropdown,
+       or a person's ledger open on the Ledger tab), the report is for
        that person only; otherwise it is the general report. */
-    state.pdfPerson = state.ledgerNameFilter || "";
+    state.pdfPerson = ctx.person !== undefined ? ctx.person : (state.ledgerNameFilter || "");
     state.pdfGenerated = makeGenStamp();
     state.tab = "pdfpreview";
     render(); window.scrollTo(0,0);
@@ -4331,6 +4436,7 @@
          month is one tap away; November (the user's real month) is not
          touched. */
       state.monthCursor = "2026-10";
+      state.monthMode = "month";
       state.chartMonth = "2026-10";
       state.chartMode = "month";
       state.chartRangeActive = false; state.chartRangeFrom = ""; state.chartRangeTo = "";
