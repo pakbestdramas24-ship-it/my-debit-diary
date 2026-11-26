@@ -118,15 +118,22 @@
 
   /* Monthly */
   .summary-card{background:var(--card);border-radius:8px;padding:10px 12px 9px;display:grid;grid-template-columns:1fr 1fr;gap:7px 10px;margin-bottom:12px}
-  .summary-card .sc-label,.pd-summary .sc-label{font-size:13.5px;line-height:1.25;color:#d7e0d8}
-  .summary-card .sc-amt,.pd-summary .sc-amt{font-size:16.5px;font-weight:700;margin-top:2px;line-height:1.2}
-  .summary-card .right,.pd-summary .right{text-align:right}
-  .summary-card .sc-amt.credit,.pd-summary .sc-amt.credit{color:var(--mint)}
-  .summary-card .sc-amt.debit,.pd-summary .sc-amt.debit{color:var(--danger)}
-  /* Ledger detail — the period summary lives inside the header chip */
-  .pd-summary{display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;flex:1 1 100%;margin-top:2px}
-  .pd-summary .sc-label{font-size:12px;line-height:1.1}
-  .pd-summary .sc-amt{font-size:14.5px;margin-top:0;line-height:1.1}
+  .summary-card .sc-label{font-size:13.5px;line-height:1.25;color:#d7e0d8}
+  .summary-card .sc-amt{font-size:16.5px;font-weight:700;margin-top:2px;line-height:1.2}
+  .summary-card .right{text-align:right}
+  .summary-card .sc-amt.credit{color:var(--mint)}
+  .summary-card .sc-amt.debit{color:var(--danger)}
+  /* Ledger detail — Excel-sample header: photo left, name top, then 4 rows (label left, amount right) */
+  .pd-right{flex:1;min-width:0;display:flex;flex-direction:column}
+  .pd-name-row{display:flex;align-items:baseline;gap:8px;min-width:0}
+  .pd-rows{display:flex;flex-direction:column;margin-top:4px}
+  .pd-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:3px 0 3px;border-bottom:1px solid rgba(255,255,255,.16);line-height:1.15}
+  .pd-row:last-child{border-bottom:1px solid rgba(255,255,255,.16)}
+  .pd-label{font-size:13.5px;color:#d7e0d8;font-weight:500;white-space:nowrap}
+  .pd-amt{font-size:14.5px;font-weight:700;text-align:right;white-space:nowrap;color:var(--text)}
+  .pd-amt.credit{color:var(--inc-green)}
+  .pd-amt.debit{color:var(--exp-red)}
+  .pd-amt.balance{color:#5eb1ff}
   /* Ledger detail — smart, compact period controls (this screen only) */
   .seg-toggle.ledger-seg{margin-bottom:7px;border-width:1px}
   .seg-toggle.ledger-seg button{padding:5px 2px;font-size:14px;min-height:32px}
@@ -236,12 +243,12 @@
   .icon-pick .ip-initial{font-size:20px;font-weight:700;line-height:1.15}
   [data-avatar-edit]{cursor:pointer;border-radius:50%;flex:0 0 auto}
   [data-avatar-edit]:active{opacity:.75}
-  .person-detail{display:flex;align-items:center;flex-wrap:wrap;gap:3px 9px;background:var(--card);border-radius:8px;padding:5px 10px 6px;margin:0 0 8px}
-  .person-detail .person-name{font-size:16.5px;line-height:1.2}
-  .person-detail .person-sub{font-size:12.5px;margin-top:1px;line-height:1.25}
-  .person-detail .person-avatar.large{width:48px;height:48px;font-size:20px}
-  .person-detail .person-avatar.large svg{width:26px;height:26px}
-  .person-detail .person-avatar.large .avatar-glyph{font-size:24px}
+  .person-detail{display:flex;align-items:flex-start;gap:10px;background:var(--card);border-radius:8px;padding:8px 10px 8px;margin:0 0 8px}
+  .person-detail .person-name{font-size:17px;line-height:1.2;font-weight:700}
+  .person-detail .person-sub{font-size:12.5px;margin-top:1px;line-height:1.25;color:var(--muted)}
+  .person-detail .person-avatar.large{width:52px;height:52px;font-size:21px}
+  .person-detail .person-avatar.large svg{width:28px;height:28px}
+  .person-detail .person-avatar.large .avatar-glyph{font-size:26px}
   .person-detail .tile-pencil{width:22px;height:22px;min-height:22px;font-size:11px;right:-5px;bottom:-3px;border-width:1.5px}
   .person-photo-row{display:flex;align-items:center;gap:14px;margin-bottom:18px}
   .avatar-picker{width:76px;height:76px;min-height:76px;border-radius:50%;border:2px dashed #93a698;background:rgba(255,255,255,.05);color:#c9d4cb;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0;flex:0 0 auto}
@@ -513,7 +520,12 @@
   body.light .tab-icon.active svg{fill:var(--text)}
   body.light .top-menu{background:#ffffff;border-color:#d3dcd4}
   body.light .top-menu-item:active{background:#eef2ee}
-  body.light .date-line2,body.light .balance-label,body.light .summary-card .sc-label,body.light .pd-summary .sc-label,body.light .day-balance .db-label{color:#43534a}
+  body.light .date-line2,body.light .balance-label,body.light .summary-card .sc-label,body.light .pd-label,body.light .day-balance .db-label{color:#43534a}
+  body.light .pd-row{border-bottom-color:rgba(0,0,0,.14)}
+  body.light .pd-row:last-child{border-bottom-color:rgba(0,0,0,.14)}
+  body.light .pd-amt.balance{color:#1565c0}
+  body.light .pd-amt.credit{color:#1e7d32}
+  body.light .pd-amt.debit{color:#c0392b}
   body.light .day-balance .db-amt{color:#1565c0}
   body.light .year-row .yr-bal,body.light .year-cf .cf-bal{color:#1565c0}
   body.light .day-col-head,body.light .info-note,body.light .donut-label,body.light .collapse-hint{color:#223028}
@@ -1617,27 +1629,28 @@
         mobileAmt + debitCell + creditCell +
         '<span class="num cell-bal">'+esc(fmt(running))+'</span></button>';
     });
-    /* Header chip — ONE card holding the compact back-arrow bar above it and,
-       inside the chip, the person's circle (with pencil badge), their name,
-       and the period summary (C/F, Credit, Debit, Balance) in a 2x2 grid */
-    var pdSummary = '<div class="pd-summary">' +
-      '<div><div class="sc-label">C/F</div><div class="sc-amt">'+esc(fmt(startCF))+'</div></div>' +
-      '<div class="right"><div class="sc-label">Credit</div><div class="sc-amt credit">'+esc(fmt(totIn))+'</div></div>' +
-      '<div><div class="sc-label">Debit</div><div class="sc-amt debit">'+esc(fmt(totOut))+'</div></div>' +
-      '<div class="right"><div class="sc-label">Balance</div><div class="sc-amt">'+esc(fmt(running))+'</div></div></div>';
+    /* Header chip — Excel-sample layout: photo on the left, name at the top
+       next to the photo, and below the name four rows (C/F, Credit, Debit,
+       Balance) with the label on the left and the amount on the right.
+       Amounts are the person's real computed values for the selected period. */
+    var pdSummary = '<div class="pd-rows">' +
+      '<div class="pd-row"><span class="pd-label">C/F</span><span class="pd-amt">'+esc(fmt(startCF))+'</span></div>' +
+      '<div class="pd-row"><span class="pd-label">Credit</span><span class="pd-amt credit">'+esc(fmt(totIn))+'</span></div>' +
+      '<div class="pd-row"><span class="pd-label">Debit</span><span class="pd-amt debit">'+esc(fmt(totOut))+'</span></div>' +
+      '<div class="pd-row"><span class="pd-label">Balance</span><span class="pd-amt balance">'+esc(fmt(running))+'</span></div></div>';
     var html = '<div class="sub-head slim"><button class="back-btn" id="ledgerBackBtn" aria-label="Back to people list">←</button></div>';
     if(sel){
       html += '<div class="person-detail">' +
         '<span class="tile-avatar-wrap"><span data-avatar-edit="'+esc(sel)+'" role="button" aria-label="Change photo for '+esc(sel)+'" title="Change photo">'+avatarHTML(sel, "large")+'</span>' +
         '<button type="button" class="tile-pencil" data-avatar-edit="'+esc(sel)+'" aria-label="Change photo for '+esc(sel)+'" title="Change photo">✎</button></span>' +
-        '<span class="person-main"><span class="person-name">'+esc(sel)+'</span>' +
-        (selRem ? '<span class="person-sub">'+esc(selRem)+'</span>' : '') + '</span>' +
-        pdSummary + '</div>';
+        '<div class="pd-right"><div class="pd-name-row"><span class="person-name">'+esc(sel)+'</span>' +
+        (selRem ? '<span class="person-sub">'+esc(selRem)+'</span>' : '') + '</div>' +
+        pdSummary + '</div></div>';
     } else {
       html += '<div class="person-detail">' + GROUP_AVATAR_HTML +
-        '<span class="person-main"><span class="person-name">All</span>' +
-        '<span class="person-sub">'+ledgerNames.length+(ledgerNames.length===1 ? " person" : " people")+'</span></span>' +
-        pdSummary + '</div>';
+        '<div class="pd-right"><div class="pd-name-row"><span class="person-name">All</span>' +
+        '<span class="person-sub">'+ledgerNames.length+(ledgerNames.length===1 ? " person" : " people")+'</span></div>' +
+        pdSummary + '</div></div>';
     }
     /* Period tabs */
     html += '<div class="seg-toggle ledger-seg" role="tablist" aria-label="Ledger period">' +
