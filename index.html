@@ -187,6 +187,17 @@
   .person-bal{font-size:16.5px;font-weight:700;white-space:nowrap}
   .person-bal.pos{color:var(--mint)}
   .person-bal.neg{color:var(--danger)}
+  /* Ledger — people icon grid (circle on top, name and balance below) */
+  .people-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px;margin-bottom:4px}
+  .person-tile{display:flex;flex-direction:column;align-items:center;background:var(--card-2);border-radius:12px;padding:14px 6px 12px;color:var(--text);cursor:pointer;user-select:none;-webkit-user-select:none}
+  .person-tile:active{background:#1a211c}
+  .tile-avatar-wrap{position:relative;display:inline-flex;flex:0 0 auto}
+  .tile-pencil{position:absolute;right:-7px;bottom:-5px;width:27px;height:27px;min-height:27px;border-radius:50%;border:2px solid var(--card-2);background:var(--teal);color:#eafff6;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;z-index:2}
+  .tile-pencil:active{background:var(--teal-dark)}
+  .tile-name{margin-top:9px;font-size:15.5px;font-weight:700;text-align:center;line-height:1.25;overflow-wrap:anywhere}
+  .tile-bal{margin-top:3px;font-size:13px;font-weight:600;text-align:center;white-space:nowrap}
+  .tile-bal.pos{color:var(--mint)}
+  .tile-bal.neg{color:var(--danger)}
   /* Person photos (avatars) */
   .person-avatar{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;overflow:hidden;flex:0 0 auto;background:#3c5a4a;color:#eafff6;font-size:19px;font-weight:700;line-height:1}
   .person-avatar img{width:100%;height:100%;object-fit:cover;display:block}
@@ -495,6 +506,7 @@
   body.light .cat-row{border-bottom-color:#d3dcd4}
   body.light .entry-item:active,body.light .ledger-row:active{background:#e4eae5}
   body.light .person-row:active{background:#e4eae5}
+  body.light .person-tile:active{background:#e4eae5}
   body.light .person-row.selected,body.light .acct-card.selected,body.light .ledger-name-chip.selected{background:#dce8df}
   body.light .field label,body.light .from-label,body.light .from-type{color:#43534a}
   body.light .field textarea{background:rgba(0,0,0,.03)}
@@ -1493,50 +1505,44 @@
   }
   function renderLedger(){
     if(state.ledgerView === "detail"){ renderLedgerDetail(); return; }
-    var sel = state.ledgerNameFilter;
     var html = "";
-    /* People list — one row per person, with what they still owe / are owed */
+    /* People grid — one icon tile per person (circle on top, name and
+       balance below). There is no "All" tile: tapping a tile opens that
+       person's own ledger detail screen, and the small pencil badge on
+       the circle opens the photo / icon picker for that person. */
     html += '<div class="people-head"><span class="people-title">People</span>' +
       '<button type="button" class="add-person-btn" id="addPersonBtn">+ Add person</button></div>';
     if(!ledgerNames.length){
       html += '<p class="empty-note" style="padding-top:2px">No ledgers yet. Tap + to add a person.</p>';
     } else {
-      var allBal = 0;
-      ledgerNames.forEach(function(n){ allBal += personBalance(n); });
-      allBal = Math.round(allBal*100)/100;
-      html += '<div class="person-list">';
-      html += '<button type="button" class="person-row'+(sel===""?" selected":"")+'" data-person="">' +
-        GROUP_AVATAR_HTML +
-        '<span class="person-main"><span class="person-name">All</span>' +
-        '<span class="person-sub">'+ledgerNames.length+(ledgerNames.length===1 ? " person" : " people")+'</span></span>' +
-        '<span class="person-bal'+(allBal>0?" pos":(allBal<0?" neg":""))+'">'+esc(fmt(allBal))+'</span></button>';
+      html += '<div class="people-grid">';
       ledgerNames.forEach(function(name){
         var bal = personBalance(name);
-        var rem = personNotes[name] || "";
-        html += '<button type="button" class="person-row'+(sel===name?" selected":"")+'" data-person="'+esc(name)+'">' +
-          '<span data-avatar-edit="'+esc(name)+'" role="button" aria-label="Photo for '+esc(name)+'" title="Photo">'+avatarHTML(name)+'</span>' +
-          '<span class="person-main"><span class="person-name">'+esc(name)+'</span>' +
-          (rem ? '<span class="person-sub">'+esc(rem)+'</span>' : '') + '</span>' +
-          '<span class="person-bal'+(bal>0?" pos":(bal<0?" neg":""))+'">'+esc(fmt(bal))+'</span></button>';
+        html += '<div class="person-tile" data-person="'+esc(name)+'" role="button" tabindex="0" aria-label="Open the ledger for '+esc(name)+'">' +
+          '<span class="tile-avatar-wrap">' + avatarHTML(name, "large") +
+          '<button type="button" class="tile-pencil" data-tile-edit="'+esc(name)+'" aria-label="Change photo or icon for '+esc(name)+'" title="Change photo or icon">✎</button></span>' +
+          '<span class="tile-name">'+esc(name)+'</span>' +
+          '<span class="tile-bal'+(bal>0?" pos":(bal<0?" neg":""))+'">'+esc(fmt(bal))+'</span></div>';
       });
       html += '</div>';
     }
-    /* The Ledger tab itself shows ONLY the people list — no C/F and no
-       entries below it. Tapping a person (or All) opens that ledger's
-       own detail screen. */
     main.innerHTML = html;
     document.getElementById("addPersonBtn").addEventListener("click", openPersonSheet);
-    main.querySelectorAll("[data-person]").forEach(function(b){
-      b.addEventListener("click", function(){
-        state.ledgerNameFilter = b.getAttribute("data-person");
+    main.querySelectorAll("[data-person]").forEach(function(t){
+      function openTile(){
+        state.ledgerNameFilter = t.getAttribute("data-person");
         state.ledgerView = "detail";
         render(); window.scrollTo(0,0);
+      }
+      t.addEventListener("click", openTile);
+      t.addEventListener("keydown", function(ev){
+        if(ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); openTile(); }
       });
     });
-    main.querySelectorAll("[data-avatar-edit]").forEach(function(el){
+    main.querySelectorAll("[data-tile-edit]").forEach(function(el){
       el.addEventListener("click", function(ev){
         ev.stopPropagation();
-        openPhotoSheet(el.getAttribute("data-avatar-edit"));
+        openPhotoSheet(el.getAttribute("data-tile-edit"));
       });
     });
   }
