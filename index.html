@@ -289,10 +289,10 @@
   .sub-head{display:flex;align-items:center;gap:8px;padding:6px 0 14px}
   .sub-head h2{margin:0;font-size:27px;font-weight:600}
   .sub-head h2.pdf-title{font-size:20px}
-  .back-btn{background:none;border:0;color:var(--text);font-size:28px;width:44px;height:48px;display:flex;align-items:center;justify-content:center}
-  /* Ledger detail — compact top bar, only as tall as the back arrow itself */
+  .back-btn{background:none;border:0;color:var(--text);font-size:15px;font-weight:600;width:auto;min-width:44px;height:40px;padding:0 8px 0 2px;display:flex;align-items:center;justify-content:center}
+  /* Ledger detail — compact top bar, only as tall as the Back button itself */
   .sub-head.slim{padding:0;margin:-8px 0 0}
-  .sub-head.slim .back-btn{height:24px;min-height:24px;width:30px;font-size:21px;padding:0;line-height:1}
+  .sub-head.slim .back-btn{height:26px;min-height:26px;width:auto;min-width:0;font-size:14px;padding:0 4px 0 0;line-height:1}
 
   /* Charts */
   .chart-top-row{display:flex;gap:8px;align-items:stretch;margin-bottom:6px}
@@ -339,6 +339,18 @@
   .chart-top-row .period-nav .period-label{font-size:16px}
   .seg-toggle.charts-seg{margin-bottom:8px;border-width:1px}
   .seg-toggle.charts-seg button{padding:5px 2px;font-size:14px;min-height:32px}
+  /* Charts — Month / Year / Date range tabs and the Ledger + Account filter row */
+  .seg-toggle.charts-mode-seg{margin-bottom:7px;border-width:1px}
+  .seg-toggle.charts-mode-seg button{padding:5px 2px;font-size:14px;min-height:32px}
+  .period-row.charts-period{margin-bottom:7px}
+  .period-row.charts-period .period-nav{min-height:34px;padding:1px 2px}
+  .period-row.charts-period .period-nav .nav-arrow{width:28px;height:28px;min-height:28px;font-size:19px}
+  .period-row.charts-period .period-nav .period-label{font-size:15px}
+  .month-range-row.charts-range{margin-bottom:7px}
+  .month-range-row.charts-range .range-btn{min-height:32px;padding:4px 8px;font-size:13.5px}
+  .month-range-row.charts-range .range-clear-btn{width:32px;height:32px;min-height:32px}
+  .chart-filter-row{display:flex;gap:8px;margin-bottom:8px}
+  .chart-filter-row .acct-select{flex:1 1 0;min-width:0;max-width:none;min-height:34px;font-size:13.5px;padding:3px 5px;border-radius:8px}
 
   /* Report */
   .report-chips{display:flex;gap:4px;flex-wrap:nowrap;margin-bottom:8px}
@@ -1326,7 +1338,9 @@
     noteEditDate: todayKey(),
     noteDraft: "",
     chartType: "expense",
-    chartPeriod: "month",
+    chartMode: "month",
+    chartYear: new Date().getFullYear(),
+    chartLedger: "All",
     chartMonth: todayKey().slice(0,7),
     chartRangeFrom: "",
     chartRangeTo: "",
@@ -1771,7 +1785,7 @@
          the value and its blue colour are unchanged. The day-card Balances
          in the entries below use the same no-minus format. */
       '<div class="pd-row"><span class="pd-label">Balance</span><span class="pd-amt balance">'+esc(curSym() + fmtPlain(running))+'</span></div></div>';
-    var html = '<div class="sub-head slim"><button class="back-btn" id="ledgerBackBtn" aria-label="Back to people list">←</button></div>';
+    var html = '<div class="sub-head slim"><button class="back-btn" id="ledgerBackBtn" aria-label="Back to people list">Back</button></div>';
     if(sel){
       html += '<div class="person-detail">' +
         '<span class="tile-avatar-wrap"><span data-avatar-edit="'+esc(sel)+'" role="button" aria-label="Change photo for '+esc(sel)+'" title="Change photo">'+avatarHTML(sel, "large")+'</span>' +
@@ -1858,13 +1872,26 @@
   }
 
   /* ---------- CHARTS ---------- */
+  function chartLedgerSel(){
+    var led = state.chartLedger;
+    if(led !== "All" && ledgerNames.indexOf(led) === -1) led = "All";
+    return led;
+  }
+  function chartRangeOn(){
+    return state.chartMode === "range" && state.chartRangeActive && state.chartRangeFrom && state.chartRangeTo;
+  }
   function chartEntries(){
     var type = state.chartType;
-    var rangeOn = state.chartRangeActive && state.chartRangeFrom && state.chartRangeTo;
+    var led = chartLedgerSel();
+    var acct = state.chartAccount;
+    var rangeOn = chartRangeOn();
     return entries.filter(function(e){
       if(e.type !== type) return false;
+      if(led !== "All" && (e.ledger || "") !== led) return false;
+      if(acct !== "All" && e.account !== acct) return false;
       if(rangeOn) return e.date >= state.chartRangeFrom && e.date <= state.chartRangeTo;
-      if(state.chartPeriod === "month" && e.date.slice(0,7) !== state.chartMonth) return false;
+      if(state.chartMode === "year") return e.date.slice(0,4) === String(state.chartYear);
+      if(state.chartMode === "month") return e.date.slice(0,7) === state.chartMonth;
       return true;
     });
   }
@@ -1884,15 +1911,20 @@
     return '<svg class="donut-svg" viewBox="0 0 200 200" role="img" aria-label="Donut chart">' + parts + '</svg>';
   }
   function barChartSVG(){
-    var rangeOn = state.chartRangeActive && state.chartRangeFrom && state.chartRangeTo;
+    var rangeOn = chartRangeOn();
+    var yearMode = state.chartMode === "year";
     var acct = state.chartAccount;
+    var led = chartLedgerSel();
+    function acctLed(e){
+      return (acct==="All" || e.account===acct) && (led==="All" || (e.ledger||"")===led);
+    }
     var perDay = [];
     var maxV = 0;
     if(rangeOn){
       var cur = parseKey(state.chartRangeFrom), end = parseKey(state.chartRangeTo), guard = 0;
       while(cur <= end && guard < 366){
         var key = toKey(cur);
-        var list = entries.filter(function(e){ return e.date===key && (acct==="All" || e.account===acct); });
+        var list = entries.filter(function(e){ return e.date===key && acctLed(e); });
         var di = sumType(list,"income"), de = sumType(list,"expense");
         perDay.push({d:cur.getDate(), label:pad(cur.getDate())+" "+MONTHS_S[cur.getMonth()], inc:di, exp:de});
         if(di > maxV) maxV = di;
@@ -1900,13 +1932,23 @@
         cur.setDate(cur.getDate()+1);
         guard++;
       }
+    } else if(yearMode){
+      /* Year mode: one income/expense bar pair per month of the year */
+      for(var mm=0; mm<12; mm++){
+        var mk = state.chartYear + "-" + pad(mm+1);
+        var list3 = entries.filter(function(e){ return e.date.slice(0,7)===mk && acctLed(e); });
+        var di3 = sumType(list3,"income"), de3 = sumType(list3,"expense");
+        perDay.push({d:mm+1, label:MONTHS_S[mm], inc:di3, exp:de3});
+        if(di3 > maxV) maxV = di3;
+        if(de3 > maxV) maxV = de3;
+      }
     } else {
       var parts = state.chartMonth.split("-");
       var y = +parts[0], m = +parts[1]-1;
       var daysInMonth = new Date(y, m+1, 0).getDate();
       for(var d=1; d<=daysInMonth; d++){
         var key2 = state.chartMonth + "-" + pad(d);
-        var list2 = entries.filter(function(e){ return e.date===key2 && (acct==="All" || e.account===acct); });
+        var list2 = entries.filter(function(e){ return e.date===key2 && acctLed(e); });
         var di2 = sumType(list2,"income"), de2 = sumType(list2,"expense");
         perDay.push({d:d, label:pad(d)+" "+MONTHS_S[m], inc:di2, exp:de2});
         if(di2 > maxV) maxV = di2;
@@ -1923,7 +1965,7 @@
     }
     var svg = '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto" role="img" aria-label="Daily income and expense bar chart">';
     if(maxV <= 0){
-      svg += '<text x="'+(W/2)+'" y="150" fill="#a7b3aa" font-size="17" text-anchor="middle">'+(rangeOn ? "No entries in this date range" : "No entries this month")+'</text>';
+      svg += '<text x="'+(W/2)+'" y="150" fill="#a7b3aa" font-size="17" text-anchor="middle">'+(rangeOn ? "No entries in this date range" : (yearMode ? "No entries this year" : "No entries this month"))+'</text>';
     } else {
       var ticks = 5;
       for(var t=0; t<=ticks; t++){
@@ -1934,13 +1976,13 @@
       }
       svg += '<line x1="64" y1="'+top+'" x2="64" y2="'+base+'" stroke="#5b6f61"/>';
       svg += '<line x1="64" y1="'+base+'" x2="'+(W-6)+'" y2="'+base+'" stroke="#5b6f61"/>';
-      var labelEvery = daysInMonth > 20 ? 5 : (daysInMonth > 10 ? 2 : 1);
+      var labelEvery = yearMode ? 1 : (daysInMonth > 20 ? 5 : (daysInMonth > 10 ? 2 : 1));
       perDay.forEach(function(pd, i){
         var x = 70 + i * step + step/2;
         var ih = pd.inc / maxV * plotH, eh = pd.exp / maxV * plotH;
         if(pd.inc > 0) svg += '<rect x="'+(x-bw-1)+'" y="'+(base-ih)+'" width="'+bw+'" height="'+ih+'" fill="#7ed491"/>';
         if(pd.exp > 0) svg += '<rect x="'+(x+1)+'" y="'+(base-eh)+'" width="'+bw+'" height="'+eh+'" fill="#f2766d"/>';
-        if(i === 0 || (rangeOn ? (i % labelEvery === 0) : (pd.d === 1 || pd.d % labelEvery === 0)))
+        if(i === 0 || ((rangeOn || yearMode) ? (i % labelEvery === 0) : (pd.d === 1 || pd.d % labelEvery === 0)))
           svg += '<text x="'+x+'" y="'+(base+24)+'" fill="#dfe7e0" font-size="13.5" text-anchor="middle">'+pd.label+'</text>';
       });
     }
@@ -1962,18 +2004,39 @@
     var catsDesc = Object.keys(byCat).sort(function(a,b){ return byCat[b]-byCat[a]; });
     var catsAsc = Object.keys(byCat).sort(function(a,b){ return byCat[a]-byCat[b]; });
 
-    var rangeOn = state.chartRangeActive && state.chartRangeFrom && state.chartRangeTo;
-    var rangeLabel = rangeOn ? (keyToDisplay(state.chartRangeFrom) + " – " + keyToDisplay(state.chartRangeTo)) : (state.chartPeriod==="all" ? "All time" : "This month");
+    var rangeOn = chartRangeOn();
+    var mode = state.chartMode;
+    var led = chartLedgerSel();
+    var rangeLabel = rangeOn ? (keyToDisplay(state.chartRangeFrom) + " – " + keyToDisplay(state.chartRangeTo)) : "All entries";
     var calSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/></svg>';
-    var html = '<div class="sub-head charts-head"><button class="back-btn" id="chartsBack" aria-label="Back">←</button><h2>Charts</h2></div>';
-    html += '<div class="chart-top-row">' +
-      '<button class="alltime-btn'+(state.chartPeriod==="all" && !rangeOn ?" sel":"")+'" id="allTimeBtn">All time</button>' +
-      '<div class="period-nav filled" style="flex:1"><button class="nav-arrow" data-cnav="-1" aria-label="Previous month">‹</button>' +
-      '<span class="period-label">'+MONTHS[m]+' '+y+'</span>' +
-      '<button class="nav-arrow" data-cnav="1" aria-label="Next month">›</button></div></div>';
-    html += '<div class="month-range-row"><button type="button" class="range-btn'+(rangeOn?" active":"")+'" id="chartRangeBtn" aria-label="Pick a date range">' +
-      '<span class="rb-label">Date range</span><span class="rb-value">'+esc(rangeLabel)+'</span>' + calSvg + '</button>' +
-      (rangeOn ? '<button type="button" class="range-clear-btn" id="chartRangeClear" aria-label="Clear date range" title="Clear date range">✕</button>' : '') + '</div>';
+    var html = '<div class="sub-head charts-head"><button class="back-btn" id="chartsBack" aria-label="Back">Back</button><h2>Charts</h2></div>';
+    /* Period tabs — Month / Year / Date range segmented pill, with the
+       matching selector below it (replaces the old "All time" + month
+       row and the separate Date range row). */
+    html += '<div class="seg-toggle charts-mode-seg" role="tablist" aria-label="Chart period">' +
+      '<button type="button" data-cmode="month"'+(mode==="month"?' class="sel"':"")+'>Month</button>' +
+      '<button type="button" data-cmode="year"'+(mode==="year"?' class="sel"':"")+'>Year</button>' +
+      '<button type="button" data-cmode="range"'+(mode==="range"?' class="sel"':"")+'>Date range</button></div>';
+    if(mode === "month"){
+      html += '<div class="period-row monthly-compact charts-period"><div class="period-nav">' +
+        '<button class="nav-arrow" data-cnav="-1" aria-label="Previous month">‹</button>' +
+        '<span class="period-label">'+MONTHS[m]+' '+y+'</span>' +
+        '<button class="nav-arrow" data-cnav="1" aria-label="Next month">›</button></div></div>';
+    } else if(mode === "year"){
+      html += '<div class="period-row yearly-compact charts-period"><div class="period-nav">' +
+        '<button class="nav-arrow" data-cynav="-1" aria-label="Previous year">‹</button>' +
+        '<span class="period-label">'+state.chartYear+'</span>' +
+        '<button class="nav-arrow" data-cynav="1" aria-label="Next year">›</button></div></div>';
+    } else {
+      html += '<div class="month-range-row charts-range"><button type="button" class="range-btn'+(rangeOn?" active":"")+'" id="chartRangeBtn" aria-label="Pick a date range">' +
+        '<span class="rb-label">Date range</span><span class="rb-value">'+esc(rangeLabel)+'</span>' + calSvg + '</button>' +
+        (rangeOn ? '<button type="button" class="range-clear-btn" id="chartRangeClear" aria-label="Clear date range" title="Clear date range">✕</button>' : '') + '</div>';
+    }
+    /* Ledger + Account dropdowns, side by side — both filter every chart
+       on this screen (donut, breakdown, category list and bar chart). */
+    html += '<div class="chart-filter-row">' +
+      '<select class="acct-select" id="chartLedgerSel" aria-label="Ledger filter">'+ledgerOptionsHTML(led)+'</select>' +
+      '<select class="acct-select" id="chartAcctTopSel" aria-label="Account filter">'+accountOptionsHTML(state.chartAccount)+'</select></div>';
     html += '<div class="info-note"><span class="info-ic">!</span><span>Fund transfers between the accounts are excluded from calculation</span></div>';
 
     html += '<div class="chart-card"><div class="seg-toggle charts-seg" role="group" aria-label="Chart type">' +
@@ -2026,12 +2089,11 @@
 
     main.innerHTML = html;
     document.getElementById("chartsBack").addEventListener("click", function(){ setTab("daily"); });
-    document.getElementById("allTimeBtn").addEventListener("click", function(){
-      state.chartPeriod = state.chartPeriod === "all" ? "month" : "all";
-      state.chartRangeActive = false; state.chartRangeFrom = ""; state.chartRangeTo = "";
-      render();
+    main.querySelectorAll("[data-cmode]").forEach(function(b){
+      b.addEventListener("click", function(){ state.chartMode = b.getAttribute("data-cmode"); render(); });
     });
-    document.getElementById("chartRangeBtn").addEventListener("click", function(){ openRangeCalendar("chart"); });
+    var chartRangeBtn = document.getElementById("chartRangeBtn");
+    if(chartRangeBtn) chartRangeBtn.addEventListener("click", function(){ openRangeCalendar("chart"); });
     var chartClearBtn = document.getElementById("chartRangeClear");
     if(chartClearBtn) chartClearBtn.addEventListener("click", function(){
       state.chartRangeActive = false; state.chartRangeFrom = ""; state.chartRangeTo = ""; render();
@@ -2040,11 +2102,14 @@
       b.addEventListener("click", function(){
         var nd = new Date(y, m + (+b.getAttribute("data-cnav")), 1);
         state.chartMonth = nd.getFullYear()+"-"+pad(nd.getMonth()+1);
-        state.chartPeriod = "month";
-        state.chartRangeActive = false; state.chartRangeFrom = ""; state.chartRangeTo = "";
         render();
       });
     });
+    main.querySelectorAll("[data-cynav]").forEach(function(b){
+      b.addEventListener("click", function(){ state.chartYear += +b.getAttribute("data-cynav"); render(); });
+    });
+    document.getElementById("chartLedgerSel").addEventListener("change", function(ev){ state.chartLedger = ev.target.value; render(); });
+    document.getElementById("chartAcctTopSel").addEventListener("change", function(ev){ state.chartAccount = ev.target.value; render(); });
     main.querySelectorAll("[data-ctype]").forEach(function(b){
       b.addEventListener("click", function(){ state.chartType = b.getAttribute("data-ctype"); state.chartExpandedCat = ""; render(); });
     });
@@ -2516,7 +2581,7 @@
     state.pdfFrom = rng.from; state.pdfTo = rng.to; state.pdfHeading = rng.heading;
     var model = pdfModel(rng.from, rng.to, state.pdfAccount, state.pdfFilter, person, state.pdfPeriod === "year");
     var dispName = person || profileName;
-    var html = '<div class="sub-head slim"><button class="back-btn" id="pdfBack" aria-label="Back">←</button></div>';
+    var html = '<div class="sub-head slim"><button class="back-btn" id="pdfBack" aria-label="Back">Back</button></div>';
     /* Period tabs — Month | Year | Date Range (Excel sample layout) */
     html += '<div class="seg-toggle ledger-seg" role="tablist" aria-label="Report period">' +
       '<button type="button" data-pdf-period="month"' + (state.pdfPeriod === "month" ? ' class="sel"' : "") + '>Month</button>' +
@@ -2571,7 +2636,7 @@
     var model = pdfModel(r.from, r.to, "All", state.reportFilter, person, !state.reportCustom);
     var dispName = person || profileName;
     var heading = state.reportCustom ? (fmtKeyLong(r.from) + " – " + fmtKeyLong(r.to)) : String(state.reportYear);
-    var html = '<div class="sub-head"><button class="back-btn" id="reportBack" aria-label="Back">←</button><h2>Report</h2></div>';
+    var html = '<div class="sub-head"><button class="back-btn" id="reportBack" aria-label="Back">Back</button><h2>Report</h2></div>';
     html += '<div class="period-row">' +
       '<div class="period-nav"><button class="nav-arrow" data-rnav="-1" aria-label="Previous year">‹</button>' +
       '<span class="period-label">' + state.reportYear + '</span>' +
@@ -4052,7 +4117,7 @@
     render(); window.scrollTo(0,0);
   }
   function setHeadHTML(title){
-    return '<div class="sub-head"><button class="back-btn" id="setBackBtn" aria-label="Back">←</button><h2>'+esc(title)+'</h2></div>';
+    return '<div class="sub-head"><button class="back-btn" id="setBackBtn" aria-label="Back">Back</button><h2>'+esc(title)+'</h2></div>';
   }
   function bindSetBack(){ document.getElementById("setBackBtn").addEventListener("click", settingsBack); }
   function setRowHTML(id, icon, title, sub){
@@ -4258,7 +4323,7 @@
          touched. */
       state.monthCursor = "2026-10";
       state.chartMonth = "2026-10";
-      state.chartPeriod = "month";
+      state.chartMode = "month";
       state.chartRangeActive = false; state.chartRangeFrom = ""; state.chartRangeTo = "";
       render();
       toast(already ? "Demo entries reloaded for October 2026 ✓" : "Demo entries loaded — October 2026 ✓");
@@ -4299,7 +4364,7 @@
 
   /* ---------- Help screen ---------- */
   function renderHelp(){
-    var html = '<div class="sub-head"><button class="back-btn" id="helpBackBtn" aria-label="Back">←</button><h2>Help and Feedback</h2></div>';
+    var html = '<div class="sub-head"><button class="back-btn" id="helpBackBtn" aria-label="Back">Back</button><h2>Help and Feedback</h2></div>';
     html += '<h3 class="help-h" style="margin-top:2px">Adding an entry</h3>' +
       '<p class="help-p">Tap the + button, choose Income (Credit) or Expense (Debit), write the name and amount, pick a category and account, and tap Save. In the entry form you can also choose a person in the Ledger field to link the entry to that person.</p>';
     html += '<h3 class="help-h">Editing or deleting an entry</h3>' +
