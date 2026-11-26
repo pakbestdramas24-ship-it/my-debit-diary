@@ -320,8 +320,12 @@
   .bar-acct-row{display:flex;justify-content:flex-end;margin-top:10px}
 
   /* Report */
-  .report-chips{display:flex;gap:5px;flex-wrap:nowrap;margin-bottom:8px}
-  .rep-chip{background:transparent;border:1.5px solid #39423c;border-radius:9px;color:var(--text);font-size:12px;font-weight:600;padding:7px 4px;min-height:36px;white-space:nowrap;flex:1 1 0;min-width:0;text-align:center;letter-spacing:-.2px}
+  .report-chips{display:flex;gap:4px;flex-wrap:nowrap;margin-bottom:8px}
+  .rep-chip{background:transparent;border:1.5px solid #39423c;border-radius:9px;color:var(--text);font-size:10.5px;font-weight:600;padding:6px 1px;min-height:34px;white-space:nowrap;flex:1 1 0;min-width:0;text-align:center;letter-spacing:-.3px}
+  .report-chips .rep-chip:nth-child(1){flex:.55 1 0}
+  .report-chips .rep-chip:nth-child(2){flex:1.32 1 0}
+  .report-chips .rep-chip:nth-child(3){flex:1.32 1 0}
+  .report-chips .rep-chip:nth-child(4){flex:.78 1 0}
   .rep-chip.sel{background:var(--card);border-color:var(--mint)}
   .range-inputs{display:flex;gap:10px;margin-bottom:14px}
   .range-inputs label{flex:1;font-size:13.5px;color:var(--muted);display:block}
@@ -342,24 +346,28 @@
   .btn-ghost{background:transparent;border:1.5px solid #93a698;color:var(--text)}
 
   /* PDF preview page (Monthly / Yearly / Report) */
-  .pdf-page{background:#ffffff;color:#1c1c1c;border-radius:4px;padding:16px 10px 24px;margin:0 -8px}
+  .pdf-page{background:#ffffff;color:#1c1c1c;border-radius:4px;padding:16px 8px 24px;margin:0 -8px}
   .pdf-page h3{margin:0;text-align:center;color:#0e8a75;font-size:19px;font-weight:700;line-height:1.15}
   .pdf-page .pp-name{text-align:center;color:#6a1fa2;font-size:13px;font-weight:600;margin-top:1px;line-height:1.2}
   .pdf-page .pp-period{text-align:center;font-weight:700;font-size:14.5px;margin-top:2px;line-height:1.2;color:#222}
   .pdf-page .pp-generated{text-align:left;color:#777;font-size:11px;margin-top:5px;line-height:1.25}
-  .pdf-table{width:100%;border-collapse:collapse;margin-top:9px;font-size:10px;table-layout:fixed}
-  .pdf-table th{background:#0097a7;color:#fff;font-weight:700;text-align:center;padding:5px 2px;border:1px solid #00838f;font-size:9.5px}
-  .pdf-table td{border:1px solid #c3ced1;padding:4px 3px;vertical-align:top;overflow-wrap:normal;word-break:normal}
+  .pdf-table{width:100%;border-collapse:collapse;margin-top:9px;font-size:9.5px;table-layout:fixed}
+  .pdf-table th{background:#0097a7;color:#fff;font-weight:700;text-align:center;padding:5px 1px;border:1px solid #00838f;font-size:9px}
+  .pdf-table td{border:1px solid #c3ced1;padding:4px 2px;vertical-align:top;overflow-wrap:normal;word-break:normal}
   .pdf-table tr.grand-total td.gt-label{text-align:right}
-  .pdf-table td.dt{white-space:nowrap;font-size:10px;letter-spacing:-.3px}
-  .pdf-table td.num{text-align:right;white-space:nowrap;font-size:10px;letter-spacing:-.2px}
-  .pdf-table tr.grand-total td.num{font-size:9px;letter-spacing:-.3px}
+  .pdf-table td.dt{white-space:nowrap;font-size:9px;letter-spacing:-.4px;padding-left:2px;padding-right:1px}
+  .pdf-table td.num{text-align:right;white-space:nowrap;font-size:8.7px;letter-spacing:-.4px;padding-left:1px;padding-right:2px}
+  .pdf-table tr.grand-total td.num{font-size:8.7px;letter-spacing:-.4px}
   .pdf-table tr.grand-total td{background:#e0f2f1;font-weight:700}
   .pdf-table .inc-g{color:#1e7d32}
   .pdf-table .exp-r{color:#c0392b}
-  .pdf-table tr.balance-row td{background:#e0f2f1;color:#1565c0;font-weight:700;text-align:right;white-space:nowrap;font-size:10px;padding-right:5px}
-  .pdf-table tr.pdf-cf-row td{color:#1c1c1c;font-weight:700;font-size:10px}
-  .pdf-table tr.pdf-cf-row td.num{font-size:10px}
+  .pdf-table tr.balance-row td{background:#e0f2f1;color:#1565c0;font-weight:700;text-align:right;white-space:nowrap;font-size:9.5px;padding-right:4px}
+  .pdf-table tr.pdf-cf-row td{color:#1c1c1c;font-weight:700;font-size:9px}
+  .pdf-table tr.pdf-cf-row td.num{font-size:8.7px;letter-spacing:-.4px}
+  .pdf-table tr.pdf-month-head td{background:#cfe7e3;color:#075e52;font-weight:700;font-size:9.5px;text-align:left;padding:5px 4px}
+  .pdf-table tr.month-total td{background:#eef6f4;font-weight:700}
+  .pdf-table tr.month-total td.gt-label{text-align:right}
+  .pdf-table tr.month-total td.num{font-size:8.7px;letter-spacing:-.4px}
   /* Notes chip — blank paper with the period's notes as plain text */
   .pdf-notes{margin-top:14px;min-height:300px;text-align:left}
   .pdf-note{margin-bottom:16px}
@@ -1943,9 +1951,12 @@
   }
   /* Report data shared by the on-screen preview and the downloaded PDF:
      the C/F at the start of the period, the entries in date order, the
-     totals and the closing balance. The filter keeps only one entry
-     type. */
-  function pdfModel(from, to, account, filter, person){
+     totals and the closing balance. The filter chip only controls which
+     rows and columns are displayed — it must NOT change the totals used
+     for the Balance. Balance is ALWAYS C/F + full Income - full Expense
+     for the whole period (respecting only the period, the account and
+     the open person's ledger, never the chip). */
+  function pdfModel(from, to, account, filter, person, groupByMonth){
     var cf;
     if(person){
       /* A person's ledger: only their entries, and the C/F is what their
@@ -1958,6 +1969,18 @@
     } else {
       cf = balanceBefore(from, account);
     }
+    /* Full period totals — every entry in the period, regardless of the
+       filter chip. These are the totals the Balance is built from. */
+    var fullIn = 0, fullOut = 0;
+    entries.forEach(function(e){
+      if(e.date < from || e.date > to) return;
+      if(person && (e.ledger || "") !== person) return;
+      if(account && account !== "All" && e.account !== account) return;
+      if(e.type === "income") fullIn += +e.amount;
+      else fullOut += +e.amount;
+    });
+    fullIn = Math.round(fullIn*100)/100;
+    fullOut = Math.round(fullOut*100)/100;
     var list = entries.filter(function(e){
       if(e.date < from || e.date > to) return false;
       if(person && (e.ledger || "") !== person) return false;
@@ -1969,14 +1992,34 @@
       if(a.date !== b.date) return a.date < b.date ? -1 : 1;
       return (a.createdAt || 0) - (b.createdAt || 0);
     });
-    var rows = [], totIn = 0, totOut = 0;
+    var rows = [];
     list.forEach(function(e){
-      if(e.type === "income") totIn += +e.amount;
-      else totOut += +e.amount;
       rows.push({kind: "entry", e: e});
     });
-    totIn = Math.round(totIn*100)/100;
-    totOut = Math.round(totOut*100)/100;
+    var totIn = fullIn, totOut = fullOut;
+    /* Year mode only: group the displayed entries by calendar month
+       (only months that have displayed entries, in calendar order).
+       Each group carries that month's own income/expense totals, taken
+       from its displayed entries — in All mode that is the month's full
+       totals, in a single-type mode it is that type's month total,
+       which is the only amount column shown. The Grand Total and the
+       Balance still use the full-period totals above. */
+    var groups = null;
+    if(groupByMonth && filter !== "notes"){
+      var byMonth = {};
+      list.forEach(function(e){
+        var m = +e.date.slice(5,7) - 1;
+        if(!byMonth[m]) byMonth[m] = {month: m, name: MONTHS[m], entries: [], totIn: 0, totOut: 0};
+        byMonth[m].entries.push(e);
+        if(e.type === "income") byMonth[m].totIn += +e.amount;
+        else byMonth[m].totOut += +e.amount;
+      });
+      groups = Object.keys(byMonth).map(function(k){ return byMonth[k]; }).sort(function(a,b){ return a.month - b.month; });
+      groups.forEach(function(g){
+        g.totIn = Math.round(g.totIn*100)/100;
+        g.totOut = Math.round(g.totOut*100)/100;
+      });
+    }
     /* The Notes chip is not an entry filter: it shows the Notes tab's
        notes for this period on a blank page instead of the table. */
     var notesList = [];
@@ -1993,7 +2036,9 @@
       balance: Math.round((cf + totIn - totOut)*100)/100,
       empty: list.length === 0,
       filter: filter,
-      notesList: notesList
+      notesList: notesList,
+      grouped: !!groups,
+      groups: groups || []
     };
   }
   function pdfDateCell(key){
@@ -2042,20 +2087,32 @@
       if(model.empty){
         rows += '<tr><td colspan="5" style="text-align:center;color:#777;padding:16px 4px">No entries in this period.</td></tr>';
       }
-      model.rows.forEach(function(r){
-        if(r.kind === "entry"){
-          var e = r.e;
-          rows += '<tr><td class="dt">' + pdfDateCell(e.date) + '</td>' +
-            '<td>' + esc(e.text) + '</td><td>' + esc(e.category || "") + '</td>' +
-            '<td>' + esc(e.account || "") + '</td>' +
-            '<td class="num ' + amtCls + '">' + esc(fmtPlain(+e.amount)) + '</td></tr>';
-        }
-      });
-      rows += '<tr class="grand-total"><td colspan="3"></td>' +
-        '<td class="gt-label">Total</td>' +
+      var singleRow = function(e){
+        return '<tr><td class="dt">' + pdfDateCell(e.date) + '</td>' +
+          '<td>' + esc(e.text) + '</td><td>' + esc(e.category || "") + '</td>' +
+          '<td>' + esc(e.account || "") + '</td>' +
+          '<td class="num ' + amtCls + '">' + esc(fmtPlain(+e.amount)) + '</td></tr>';
+      };
+      if(model.grouped && model.groups.length){
+        model.groups.forEach(function(g){
+          rows += '<tr class="pdf-month-head"><td colspan="5">' + esc(g.name) + '</td></tr>';
+          g.entries.forEach(function(e){ rows += singleRow(e); });
+          rows += '<tr class="month-total"><td colspan="3"></td>' +
+            '<td class="gt-label">Total</td>' +
+            '<td class="num ' + amtCls + '">' + esc(fmtWhole(isIncFilter ? g.totIn : g.totOut)) + '</td></tr>';
+        });
+      } else {
+        model.rows.forEach(function(r){
+          if(r.kind === "entry") rows += singleRow(r.e);
+        });
+      }
+      rows += '<tr class="grand-total">' +
+        (model.grouped
+          ? '<td colspan="4" class="gt-label">Grand Total</td>'
+          : '<td colspan="3"></td><td class="gt-label">Total</td>') +
         '<td class="num ' + amtCls + '">' + esc(fmtWhole(isIncFilter ? model.totIn : model.totOut)) + '</td></tr>';
       rows += '<tr class="balance-row"><td colspan="5">Balance = ' + esc(curSym() + " " + fmtWhole(model.balance) + "/-") + '</td></tr>';
-      colgroup = '<colgroup><col style="width:18%"><col style="width:20%"><col style="width:22%"><col style="width:18%"><col style="width:22%"></colgroup>';
+      colgroup = '<colgroup><col style="width:17%"><col style="width:19%"><col style="width:21%"><col style="width:16%"><col style="width:27%"></colgroup>';
       thead = '<thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Account</th><th>' + (isIncFilter ? "Income" : "Expense") + '</th></tr></thead>';
     } else {
       rows = '<tr class="pdf-cf-row"><td colspan="4"></td>' +
@@ -2063,24 +2120,37 @@
       if(model.empty){
         rows += '<tr><td colspan="6" style="text-align:center;color:#777;padding:16px 4px">No entries in this period.</td></tr>';
       }
-      model.rows.forEach(function(r){
-        if(r.kind === "entry"){
-          var e = r.e;
-          var amt = esc(fmtPlain(+e.amount));
-          rows += '<tr><td class="dt">' + pdfDateCell(e.date) + '</td>' +
-            '<td>' + esc(e.text) + '</td><td>' + esc(e.category || "") + '</td>' +
-            '<td>' + esc(e.account || "") + '</td>' +
-            (e.type === "income"
-              ? '<td class="num inc-g">' + amt + '</td><td class="num"></td></tr>'
-              : '<td class="num"></td><td class="num exp-r">' + amt + '</td></tr>');
-        }
-      });
-      rows += '<tr class="grand-total"><td colspan="3"></td>' +
-        '<td class="gt-label">Total</td>' +
+      var dualRow = function(e){
+        var amt = esc(fmtPlain(+e.amount));
+        return '<tr><td class="dt">' + pdfDateCell(e.date) + '</td>' +
+          '<td>' + esc(e.text) + '</td><td>' + esc(e.category || "") + '</td>' +
+          '<td>' + esc(e.account || "") + '</td>' +
+          (e.type === "income"
+            ? '<td class="num inc-g">' + amt + '</td><td class="num"></td></tr>'
+            : '<td class="num"></td><td class="num exp-r">' + amt + '</td></tr>');
+      };
+      if(model.grouped && model.groups.length){
+        model.groups.forEach(function(g){
+          rows += '<tr class="pdf-month-head"><td colspan="6">' + esc(g.name) + '</td></tr>';
+          g.entries.forEach(function(e){ rows += dualRow(e); });
+          rows += '<tr class="month-total"><td colspan="3"></td>' +
+            '<td class="gt-label">Total</td>' +
+            '<td class="num inc-g">' + esc(fmtWhole(g.totIn)) + '</td>' +
+            '<td class="num exp-r">' + esc(fmtWhole(g.totOut)) + '</td></tr>';
+        });
+      } else {
+        model.rows.forEach(function(r){
+          if(r.kind === "entry") rows += dualRow(r.e);
+        });
+      }
+      rows += '<tr class="grand-total">' +
+        (model.grouped
+          ? '<td colspan="4" class="gt-label">Grand Total</td>'
+          : '<td colspan="3"></td><td class="gt-label">Total</td>') +
         '<td class="num inc-g">' + esc(fmtWhole(model.totIn)) + '</td>' +
         '<td class="num exp-r">' + esc(fmtWhole(model.totOut)) + '</td></tr>';
       rows += '<tr class="balance-row"><td colspan="6">Balance = ' + esc(curSym() + " " + fmtWhole(model.balance) + "/-") + '</td></tr>';
-      colgroup = '<colgroup><col style="width:16%"><col style="width:17%"><col style="width:20%"><col style="width:16%"><col style="width:15.5%"><col style="width:15.5%"></colgroup>';
+      colgroup = '<colgroup><col style="width:15%"><col style="width:16%"><col style="width:19%"><col style="width:14%"><col style="width:18%"><col style="width:18%"></colgroup>';
       thead = '<thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Account</th><th>Income</th><th>Expense</th></tr></thead>';
     }
     return head +
@@ -2175,7 +2245,7 @@
     var person = state.pdfPerson || "";
     var rng = pdfCurrentRange();
     state.pdfFrom = rng.from; state.pdfTo = rng.to; state.pdfHeading = rng.heading;
-    var model = pdfModel(rng.from, rng.to, state.pdfAccount, state.pdfFilter, person);
+    var model = pdfModel(rng.from, rng.to, state.pdfAccount, state.pdfFilter, person, state.pdfPeriod === "year");
     var dispName = person || profileName;
     var html = '<div class="sub-head slim"><button class="back-btn" id="pdfBack" aria-label="Back">←</button></div>';
     /* Period tabs — Month | Year | Date Range (Excel sample layout) */
@@ -2229,7 +2299,7 @@
   function renderReport(){
     var r = reportRange();
     var person = state.ledgerNameFilter || "";
-    var model = pdfModel(r.from, r.to, "All", state.reportFilter, person);
+    var model = pdfModel(r.from, r.to, "All", state.reportFilter, person, !state.reportCustom);
     var dispName = person || profileName;
     var heading = state.reportCustom ? (fmtKeyLong(r.from) + " – " + fmtKeyLong(r.to)) : String(state.reportYear);
     var html = '<div class="sub-head"><button class="back-btn" id="reportBack" aria-label="Back">←</button><h2>Report</h2></div>';
@@ -2357,7 +2427,7 @@
     var notesMode = model.filter === "notes";
     var singleMode = model.filter === "expense" || model.filter === "income";
     var incMode = model.filter === "income";
-    var cols = singleMode ? [92, 98, 114, 92, 139] : [86, 91, 107, 86, 83, 82];
+    var cols = singleMode ? [88, 94, 108, 86, 159] : [80, 86, 100, 79, 95, 95];
     var colX = [ML];
     for(var ci=0; ci<cols.length; ci++) colX.push(colX[ci] + cols[ci]);
     var pages = [], ops = [];
@@ -2477,7 +2547,7 @@
          single amount column; the Total row shows only that total. */
       y = rowOut([
         {text: "C/F", col: 3, font: "F2", color: DARK},
-        {text: fmt(model.cf), col: 4, font: "F2", color: DARK, align: "right"}
+        {text: fmt(model.cf), col: 4, font: "F2", size: 8.6, color: DARK, align: "right"}
       ], null, y);
     } else {
       /* C/F as a normal table row directly below the header (with grid
@@ -2485,7 +2555,7 @@
          amount in the Expense column. */
       y = rowOut([
         {text: "C/F", col: 4, font: "F2", color: DARK},
-        {text: fmt(model.cf), col: 5, font: "F2", color: DARK, align: "right"}
+        {text: fmt(model.cf), col: 5, font: "F2", size: 8.6, color: DARK, align: "right"}
       ], null, y);
     }
     if(model.empty){
@@ -2496,38 +2566,63 @@
       grid(y, eb);
       y = eb;
     }
-    model.rows.forEach(function(r){
-      if(r.kind === "entry"){
-        var e = r.e;
-        var isInc = e.type === "income";
-        var amtColor = isInc ? [0.118, 0.49, 0.196] : [0.753, 0.224, 0.169];
-        var cells = [
-          {text: pdfDateCell(e.date), col: 0, font: "F1", color: DARK},
-          {text: fitW(e.text, cols[1] - 8, 9.3), col: 1, font: "F1", color: DARK},
-          {text: fitW(e.category || "", cols[2] - 8, 9.3), col: 2, font: "F1", color: DARK},
-          {text: fitW(e.account || "", cols[3] - 8, 9.3), col: 3, font: "F1", color: DARK}
-        ];
-        if(singleMode){
-          cells.push({text: fmtPlain(+e.amount), col: 4, font: "F1", color: amtColor, align: "right"});
-        } else {
-          cells.push({text: isInc ? fmtPlain(+e.amount) : "", col: 4, font: "F1", color: amtColor, align: "right"});
-          cells.push({text: isInc ? "" : fmtPlain(+e.amount), col: 5, font: "F1", color: amtColor, align: "right"});
-        }
-        y = rowOut(cells, null, y);
+    function drawEntryRow(e){
+      var isInc = e.type === "income";
+      var amtColor = isInc ? [0.118, 0.49, 0.196] : [0.753, 0.224, 0.169];
+      var cells = [
+        {text: pdfDateCell(e.date), col: 0, font: "F1", color: DARK},
+        {text: fitW(e.text, cols[1] - 8, 9.3), col: 1, font: "F1", color: DARK},
+        {text: fitW(e.category || "", cols[2] - 8, 9.3), col: 2, font: "F1", color: DARK},
+        {text: fitW(e.account || "", cols[3] - 8, 9.3), col: 3, font: "F1", color: DARK}
+      ];
+      if(singleMode){
+        cells.push({text: fmtPlain(+e.amount), col: 4, font: "F1", color: amtColor, align: "right"});
+      } else {
+        cells.push({text: isInc ? fmtPlain(+e.amount) : "", col: 4, font: "F1", color: amtColor, align: "right"});
+        cells.push({text: isInc ? "" : fmtPlain(+e.amount), col: 5, font: "F1", color: amtColor, align: "right"});
       }
-    });
-    if(singleMode){
-      y = rowOut([
-        {text: "Total", col: 3, font: "F2", color: DARK, align: "right"},
-        {text: fmtWhole(incMode ? model.totIn : model.totOut), col: 4, font: "F2", color: incMode ? [0.118, 0.49, 0.196] : [0.753, 0.224, 0.169], align: "right"}
-      ], {fillColor: [0.878, 0.949, 0.945]}, y);
-    } else {
-      y = rowOut([
-        {text: "Total", col: 3, font: "F2", color: DARK, align: "right"},
-        {text: fmtWhole(model.totIn), col: 4, font: "F2", color: [0.118, 0.49, 0.196], align: "right"},
-        {text: fmtWhole(model.totOut), col: 5, font: "F2", color: [0.753, 0.224, 0.169], align: "right"}
-      ], {fillColor: [0.878, 0.949, 0.945]}, y);
+      y = rowOut(cells, null, y);
     }
+    function drawTotalRow(label, tIn, tOut, fillColor){
+      /* "Grand Total" is too long for the Account column alone, so its
+         label spans the first four columns (right-aligned); the plain
+         monthly / period "Total" label sits in the Account column. */
+      var spanned = label === "Grand Total";
+      var labelCell = spanned
+        ? {text: label, col: 0, span: 4, font: "F2", color: DARK, align: "right"}
+        : {text: label, col: 3, font: "F2", color: DARK, align: "right"};
+      var opts = {fillColor: fillColor};
+      if(spanned) opts.skipV = [1, 2, 3];
+      if(singleMode){
+        y = rowOut([
+          labelCell,
+          {text: fmtWhole(incMode ? tIn : tOut), col: 4, font: "F2", color: incMode ? [0.118, 0.49, 0.196] : [0.753, 0.224, 0.169], align: "right"}
+        ], opts, y);
+      } else {
+        y = rowOut([
+          labelCell,
+          {text: fmtWhole(tIn), col: 4, font: "F2", color: [0.118, 0.49, 0.196], align: "right"},
+          {text: fmtWhole(tOut), col: 5, font: "F2", color: [0.753, 0.224, 0.169], align: "right"}
+        ], opts, y);
+      }
+    }
+    if(model.grouped && model.groups && model.groups.length){
+      /* Year mode: one section per month — heading row, that month's
+         entries, then the month's total row. Grand Total follows. */
+      model.groups.forEach(function(g){
+        if(y - 32 < 42) y = newPage();
+        y = rowOut([
+          {text: g.name, col: 0, span: singleMode ? 5 : 6, font: "F2", color: [0.03, 0.37, 0.32]}
+        ], {fillColor: [0.81, 0.91, 0.89], skipV: singleMode ? [1, 2, 3, 4] : [1, 2, 3, 4, 5]}, y);
+        g.entries.forEach(drawEntryRow);
+        drawTotalRow("Total", g.totIn, g.totOut, [0.937, 0.965, 0.957]);
+      });
+    } else {
+      model.rows.forEach(function(r){
+        if(r.kind === "entry") drawEntryRow(r.e);
+      });
+    }
+    drawTotalRow(model.grouped ? "Grand Total" : "Total", model.totIn, model.totOut, [0.878, 0.949, 0.945]);
     /* Balance in its own row below the totals row, as the last table row. */
     y = rowOut([
       {text: "Balance = " + curSym() + " " + fmtWhole(model.balance) + "/-", col: 0, span: singleMode ? 5 : 6, font: "F2", size: 10, color: [0.086, 0.4, 0.753], align: "right"}
