@@ -101,6 +101,12 @@
   .period-row.monthly-compact .period-nav .nav-arrow,.period-row.yearly-compact .period-nav .nav-arrow{width:32px;height:34px;min-height:34px;font-size:22px}
   .period-row.monthly-compact .period-nav .period-label,.period-row.yearly-compact .period-nav .period-label{font-size:16.5px}
   .period-row.monthly-compact .acct-select,.period-row.yearly-compact .acct-select{min-height:40px;font-size:15px;padding:4px 8px;border-radius:8px}
+  /* Yearly top row — smaller year selector with a Ledger dropdown between it and All Accounts */
+  .period-row.yearly-top{gap:6px}
+  .period-row.yearly-top .period-nav{flex:0 0 auto;min-height:34px;padding:1px 2px}
+  .period-row.yearly-top .period-nav .nav-arrow{width:24px;height:28px;min-height:28px;font-size:19px}
+  .period-row.yearly-top .period-nav .period-label{font-size:14.5px;padding:0 1px}
+  .period-row.yearly-top .acct-select{flex:1 1 0;min-width:0;max-width:none;min-height:34px;font-size:13.5px;padding:3px 5px}
   .month-range-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
   .range-btn{flex:1;display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(255,255,255,.04);border:1.5px solid #39423c;border-radius:8px;padding:6px 10px;min-height:38px;color:var(--text);text-align:left;font-size:14.5px}
   .range-btn:active{background:#1a211c}
@@ -1300,6 +1306,7 @@
     monthRangeTo: "",
     monthRangeActive: false,
     yearAccount: "All",
+    yearLedger: "All",
     yearRangeFrom: "",
     yearRangeTo: "",
     yearRangeActive: false,
@@ -1386,6 +1393,11 @@
   function accountOptionsHTML(sel){
     var h = '<option value="All"'+(sel==="All"?" selected":"")+'>All Accounts</option>';
     allAccounts().forEach(function(a){ h += '<option value="'+esc(a)+'"'+(sel===a?" selected":"")+'>'+esc(a)+'</option>'; });
+    return h;
+  }
+  function ledgerOptionsHTML(sel){
+    var h = '<option value="All"'+(sel==="All"?" selected":"")+'>All Ledgers</option>';
+    ledgerNames.forEach(function(n){ h += '<option value="'+esc(n)+'"'+(sel===n?" selected":"")+'>'+esc(n)+'</option>'; });
     return h;
   }
   function entryItemHTML(e, showDate){
@@ -1526,14 +1538,28 @@
   /* ---------- YEARLY ---------- */
   function renderYearly(){
     var y = state.yearCursor, acct = state.yearAccount;
+    var led = state.yearLedger;
+    if(led !== "All" && ledgerNames.indexOf(led) === -1) led = "All";
     var rangeOn = state.yearRangeActive && state.yearRangeFrom && state.yearRangeTo;
-    var cf = balanceBefore(rangeOn ? state.yearRangeFrom : (y+"-01-01"), acct);
+    var cfStart = rangeOn ? state.yearRangeFrom : (y+"-01-01");
+    var cf;
+    if(led === "All"){
+      cf = balanceBefore(cfStart, acct);
+    } else {
+      /* C/F from this person's entries only (the opening balance is not
+         tied to a person, so it is not included — same as a single-account view) */
+      cf = 0;
+      entries.forEach(function(e){
+        if(e.date < cfStart && (e.ledger||"") === led && (acct === "All" || e.account === acct)) cf += signed(e);
+      });
+    }
     var rangeLabel = rangeOn ? (keyToDisplay(state.yearRangeFrom) + " – " + keyToDisplay(state.yearRangeTo)) : "Full year";
     var calSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/></svg>';
-    var html = '<div class="period-row yearly-compact">' +
+    var html = '<div class="period-row yearly-compact yearly-top">' +
       '<div class="period-nav"><button class="nav-arrow" data-ynav="-1" aria-label="Previous year">‹</button>' +
       '<span class="period-label">'+y+'</span>' +
       '<button class="nav-arrow" data-ynav="1" aria-label="Next year">›</button></div>' +
+      '<select class="acct-select" id="yearLedgerSel" aria-label="Ledger filter">'+ledgerOptionsHTML(led)+'</select>' +
       '<select class="acct-select" id="yearAcctSel" aria-label="Account filter">'+accountOptionsHTML(acct)+'</select></div>';
     html += '<div class="month-range-row"><button type="button" class="range-btn'+(rangeOn?" active":"")+'" id="yearRangeBtn" aria-label="Pick a date range">' +
       '<span class="rb-label">Date range</span><span class="rb-value">'+esc(rangeLabel)+'</span>' + calSvg + '</button>' +
@@ -1559,6 +1585,7 @@
       var list = entries.filter(function(e){
         if(e.date.slice(0,7) !== mk) return false;
         if(acct !== "All" && e.account !== acct) return false;
+        if(led !== "All" && (e.ledger||"") !== led) return false;
         if(rangeOn && (e.date < state.yearRangeFrom || e.date > state.yearRangeTo)) return false;
         return true;
       });
@@ -1580,6 +1607,7 @@
       });
     });
     document.getElementById("yearAcctSel").addEventListener("change", function(ev){ state.yearAccount = ev.target.value; render(); });
+    document.getElementById("yearLedgerSel").addEventListener("change", function(ev){ state.yearLedger = ev.target.value; render(); });
     document.getElementById("yearRangeBtn").addEventListener("click", function(){ openRangeCalendar("year"); });
     var yClearBtn = document.getElementById("yearRangeClear");
     if(yClearBtn) yClearBtn.addEventListener("click", function(){
