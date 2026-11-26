@@ -320,8 +320,8 @@
   .bar-acct-row{display:flex;justify-content:flex-end;margin-top:10px}
 
   /* Report */
-  .report-chips{display:flex;gap:6px;flex-wrap:nowrap;margin-bottom:8px}
-  .rep-chip{background:transparent;border:1.5px solid #39423c;border-radius:9px;color:var(--text);font-size:13px;font-weight:600;padding:7px 11px;min-height:38px;white-space:nowrap;flex:0 1 auto}
+  .report-chips{display:flex;gap:5px;flex-wrap:nowrap;margin-bottom:8px}
+  .rep-chip{background:transparent;border:1.5px solid #39423c;border-radius:9px;color:var(--text);font-size:12px;font-weight:600;padding:7px 4px;min-height:36px;white-space:nowrap;flex:1 1 0;min-width:0;text-align:center;letter-spacing:-.2px}
   .rep-chip.sel{background:var(--card);border-color:var(--mint)}
   .range-inputs{display:flex;gap:10px;margin-bottom:14px}
   .range-inputs label{flex:1;font-size:13.5px;color:var(--muted);display:block}
@@ -1245,6 +1245,11 @@
     reportTo: "",
     reportFilter: "all",
     pdfFilter: "all",
+    pdfPeriod: "month",
+    pdfMonth: todayKey().slice(0,7),
+    pdfYear: new Date().getFullYear(),
+    pdfRangeFrom: "",
+    pdfRangeTo: "",
     pdfFrom: "",
     pdfTo: "",
     pdfHeading: "",
@@ -1953,6 +1958,7 @@
       if(account && account !== "All" && e.account !== account) return false;
       if(filter === "expense" && e.type !== "expense") return false;
       if(filter === "income" && e.type !== "income") return false;
+      if(filter === "notes" && !(e.remarks && String(e.remarks).trim())) return false;
       return true;
     }).sort(function(a,b){
       if(a.date !== b.date) return a.date < b.date ? -1 : 1;
@@ -1969,7 +1975,8 @@
     return {
       cf: cf, rows: rows, totIn: totIn, totOut: totOut,
       balance: Math.round((cf + totIn - totOut)*100)/100,
-      empty: list.length === 0
+      empty: list.length === 0,
+      filter: filter
     };
   }
   function pdfDateCell(key){
@@ -1990,7 +1997,7 @@
     var rows = '<tr class="pdf-cf-row"><td colspan="4"></td>' +
       '<td>C/F</td><td class="num">' + esc(fmt(model.cf)) + '</td></tr>';
     if(model.empty){
-      rows += '<tr><td colspan="6" style="text-align:center;color:#777;padding:16px 4px">No entries in this period.</td></tr>';
+      rows += '<tr><td colspan="6" style="text-align:center;color:#777;padding:16px 4px">' + (model.filter === "notes" ? "No entries with notes in this period." : "No entries in this period.") + '</td></tr>';
     }
     model.rows.forEach(function(r){
       if(r.kind === "entry"){
@@ -2030,7 +2037,8 @@
     return '<div class="report-chips">' +
       '<button class="rep-chip' + (current === "all" ? " sel" : "") + '" ' + attr + '="all">All</button>' +
       '<button class="rep-chip' + (current === "expense" ? " sel" : "") + '" ' + attr + '="expense">Expense (Debit)</button>' +
-      '<button class="rep-chip' + (current === "income" ? " sel" : "") + '" ' + attr + '="income">Income (Credit)</button></div>';
+      '<button class="rep-chip' + (current === "income" ? " sel" : "") + '" ' + attr + '="income">Income (Credit)</button>' +
+      '<button class="rep-chip' + (current === "notes" ? " sel" : "") + '" ' + attr + '="notes">Notes</button></div>';
   }
   function monthPdfContext(){
     var rangeOn = state.monthRangeActive && state.monthRangeFrom && state.monthRangeTo;
@@ -2041,7 +2049,12 @@
       to: rangeOn ? state.monthRangeTo : lastDay,
       heading: rangeOn ? (fmtKeyLong(state.monthRangeFrom) + " – " + fmtKeyLong(state.monthRangeTo)) : (MONTHS[+p[1]-1] + " " + p[0]),
       account: state.monthAccount,
-      back: "monthly"
+      back: "monthly",
+      period: rangeOn ? "range" : "month",
+      month: state.monthCursor,
+      year: +p[0],
+      rangeFrom: rangeOn ? state.monthRangeFrom : "",
+      rangeTo: rangeOn ? state.monthRangeTo : ""
     };
   }
   function yearPdfContext(){
@@ -2051,12 +2064,22 @@
       to: rangeOn ? state.yearRangeTo : state.yearCursor + "-12-31",
       heading: rangeOn ? (fmtKeyLong(state.yearRangeFrom) + " – " + fmtKeyLong(state.yearRangeTo)) : String(state.yearCursor),
       account: state.yearAccount,
-      back: "yearly"
+      back: "yearly",
+      period: rangeOn ? "range" : "year",
+      month: state.yearCursor + "-01",
+      year: state.yearCursor,
+      rangeFrom: rangeOn ? state.yearRangeFrom : "",
+      rangeTo: rangeOn ? state.yearRangeTo : ""
     };
   }
   function openPdfPreview(ctx){
     state.pdfFrom = ctx.from; state.pdfTo = ctx.to; state.pdfHeading = ctx.heading;
     state.pdfAccount = ctx.account; state.pdfBack = ctx.back; state.pdfFilter = "all";
+    state.pdfPeriod = ctx.period || "month";
+    if(ctx.month) state.pdfMonth = ctx.month;
+    if(ctx.year) state.pdfYear = ctx.year;
+    state.pdfRangeFrom = ctx.rangeFrom || "";
+    state.pdfRangeTo = ctx.rangeTo || "";
     /* If a person's ledger is open on the Ledger tab, the report is for
        that person only; otherwise it is the general report. */
     state.pdfPerson = state.ledgerNameFilter || "";
@@ -2064,20 +2087,81 @@
     state.tab = "pdfpreview";
     render(); window.scrollTo(0,0);
   }
+  /* The report period chosen inside the PDF preview: Month, Year or a
+     custom Date Range. Returns the from/to keys and the heading shown in
+     the title block; the table, C/F, totals and Balance all follow it. */
+  function pdfCurrentRange(){
+    if(state.pdfPeriod === "year"){
+      return {from: state.pdfYear + "-01-01", to: state.pdfYear + "-12-31", heading: String(state.pdfYear)};
+    }
+    if(state.pdfPeriod === "range"){
+      var f = state.pdfRangeFrom, t = state.pdfRangeTo;
+      if(!f || !t){
+        var pm = state.pdfMonth || todayKey().slice(0,7);
+        var pp = pm.split("-");
+        f = pm + "-01";
+        t = toKey(new Date(+pp[0], +pp[1], 0));
+      }
+      return {from: f, to: t, heading: fmtKeyLong(f) + " – " + fmtKeyLong(t)};
+    }
+    var mp = (state.pdfMonth || todayKey().slice(0,7)).split("-");
+    var mLast = toKey(new Date(+mp[0], +mp[1], 0));
+    return {from: state.pdfMonth + "-01", to: mLast, heading: MONTHS[+mp[1]-1] + " " + mp[0]};
+  }
   function renderPdfPreview(){
     var person = state.pdfPerson || "";
-    var model = pdfModel(state.pdfFrom, state.pdfTo, state.pdfAccount, state.pdfFilter, person);
+    var rng = pdfCurrentRange();
+    state.pdfFrom = rng.from; state.pdfTo = rng.to; state.pdfHeading = rng.heading;
+    var model = pdfModel(rng.from, rng.to, state.pdfAccount, state.pdfFilter, person);
     var dispName = person || profileName;
     var html = '<div class="sub-head slim"><button class="back-btn" id="pdfBack" aria-label="Back">←</button></div>';
+    /* Period tabs — Month | Year | Date Range (Excel sample layout) */
+    html += '<div class="seg-toggle ledger-seg" role="tablist" aria-label="Report period">' +
+      '<button type="button" data-pdf-period="month"' + (state.pdfPeriod === "month" ? ' class="sel"' : "") + '>Month</button>' +
+      '<button type="button" data-pdf-period="year"' + (state.pdfPeriod === "year" ? ' class="sel"' : "") + '>Year</button>' +
+      '<button type="button" data-pdf-period="range"' + (state.pdfPeriod === "range" ? ' class="sel"' : "") + '>Date Range</button></div>';
+    /* Selector for the active period tab */
+    if(state.pdfPeriod === "month"){
+      var pp2 = (state.pdfMonth || todayKey().slice(0,7)).split("-");
+      html += '<div class="period-row monthly-compact ledger-period"><div class="period-nav">' +
+        '<button class="nav-arrow" data-pdf-mnav="-1" aria-label="Previous month">‹</button>' +
+        '<span class="period-label">' + MONTHS[+pp2[1]-1] + ' ' + pp2[0] + '</span>' +
+        '<button class="nav-arrow" data-pdf-mnav="1" aria-label="Next month">›</button></div></div>';
+    } else if(state.pdfPeriod === "year"){
+      html += '<div class="period-row yearly-compact ledger-period"><div class="period-nav">' +
+        '<button class="nav-arrow" data-pdf-ynav="-1" aria-label="Previous year">‹</button>' +
+        '<span class="period-label">' + state.pdfYear + '</span>' +
+        '<button class="nav-arrow" data-pdf-ynav="1" aria-label="Next year">›</button></div></div>';
+    } else {
+      var calSvgP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/></svg>';
+      html += '<div class="month-range-row ledger-range"><button type="button" class="range-btn active" id="pdfRangeBtn" aria-label="Pick a date range">' +
+        '<span class="rb-label">Date range</span><span class="rb-value">' + esc(keyToDisplay(rng.from) + " – " + keyToDisplay(rng.to)) + '</span>' + calSvgP + '</button></div>';
+    }
     html += pdfFilterChipsHTML(state.pdfFilter, "data-pdf-filter");
-    html += pdfPreviewHTML(model, state.pdfHeading, dispName, state.pdfGenerated);
+    html += pdfPreviewHTML(model, rng.heading, dispName, state.pdfGenerated);
     html += pdfFabsHTML();
     main.innerHTML = html;
     document.getElementById("pdfBack").addEventListener("click", function(){ setTab(state.pdfBack || "monthly"); });
+    main.querySelectorAll("[data-pdf-period]").forEach(function(b){
+      b.addEventListener("click", function(){ state.pdfPeriod = b.getAttribute("data-pdf-period"); render(); });
+    });
+    main.querySelectorAll("[data-pdf-mnav]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var p = (state.pdfMonth || todayKey().slice(0,7)).split("-");
+        var nd = new Date(+p[0], (+p[1]-1) + (+b.getAttribute("data-pdf-mnav")), 1);
+        state.pdfMonth = nd.getFullYear() + "-" + pad(nd.getMonth()+1);
+        render();
+      });
+    });
+    main.querySelectorAll("[data-pdf-ynav]").forEach(function(b){
+      b.addEventListener("click", function(){ state.pdfYear += +b.getAttribute("data-pdf-ynav"); render(); });
+    });
+    var pdfRangeBtn = document.getElementById("pdfRangeBtn");
+    if(pdfRangeBtn) pdfRangeBtn.addEventListener("click", function(){ openRangeCalendar("pdf"); });
     main.querySelectorAll("[data-pdf-filter]").forEach(function(b){
       b.addEventListener("click", function(){ state.pdfFilter = b.getAttribute("data-pdf-filter"); render(); });
     });
-    bindPdfFabs(model, state.pdfHeading, dispName, state.pdfGenerated);
+    bindPdfFabs(model, rng.heading, dispName, state.pdfGenerated);
   }
   function renderReport(){
     var r = reportRange();
@@ -2284,7 +2368,7 @@
       if(y - 16 < 42) y = newPage();
       var eb = y - 16;
       fill(0.45, 0.45, 0.45);
-      txt("No entries in this period.", ML + CW/2, eb + 5.4, "F1", 9.3, "center");
+      txt(model.filter === "notes" ? "No entries with notes in this period." : "No entries in this period.", ML + CW/2, eb + 5.4, "F1", 9.3, "center");
       grid(y, eb);
       y = eb;
     }
@@ -2610,13 +2694,18 @@
     });
   }
   function openRangeCalendar(context){
-    rangeContext = context === "year" ? "year" : (context === "chart" ? "chart" : (context === "ledger" ? "ledger" : "month"));
+    rangeContext = context === "year" ? "year" : (context === "chart" ? "chart" : (context === "ledger" ? "ledger" : (context === "pdf" ? "pdf" : "month")));
     if(rangeContext === "ledger"){
       var lMonthStart = state.ledgerMonth + "-01";
       var lparts = state.ledgerMonth.split("-");
       var lMonthEnd = toKey(new Date(+lparts[0], +lparts[1], 0));
       rangeFromKey = state.ledgerRangeFrom || lMonthStart;
       rangeToKey = state.ledgerRangeTo || lMonthEnd;
+    } else if(rangeContext === "pdf"){
+      var pdfPm = state.pdfMonth || todayKey().slice(0,7);
+      var pdfPp = pdfPm.split("-");
+      rangeFromKey = state.pdfRangeFrom || (pdfPm + "-01");
+      rangeToKey = state.pdfRangeTo || toKey(new Date(+pdfPp[0], +pdfPp[1], 0));
     } else if(rangeContext === "year"){
       rangeFromKey = state.yearRangeFrom || (state.yearCursor + "-01-01");
       rangeToKey = state.yearRangeTo || (state.yearCursor + "-12-31");
@@ -2661,6 +2750,7 @@
     if(rangeContext === "year"){ state.yearRangeActive = false; state.yearRangeFrom = ""; state.yearRangeTo = ""; }
     else if(rangeContext === "chart"){ state.chartRangeActive = false; state.chartRangeFrom = ""; state.chartRangeTo = ""; }
     else if(rangeContext === "ledger"){ state.ledgerRangeActive = false; state.ledgerRangeFrom = ""; state.ledgerRangeTo = ""; }
+    else if(rangeContext === "pdf"){ state.pdfRangeFrom = ""; state.pdfRangeTo = ""; state.pdfPeriod = "range"; }
     else { state.monthRangeActive = false; state.monthRangeFrom = ""; state.monthRangeTo = ""; }
     closeRangeCalendar(); render();
   });
@@ -2670,6 +2760,7 @@
     if(rangeContext === "year"){ state.yearRangeFrom = rangeFromKey; state.yearRangeTo = rangeToKey; state.yearRangeActive = true; }
     else if(rangeContext === "chart"){ state.chartRangeFrom = rangeFromKey; state.chartRangeTo = rangeToKey; state.chartRangeActive = true; }
     else if(rangeContext === "ledger"){ state.ledgerRangeFrom = rangeFromKey; state.ledgerRangeTo = rangeToKey; state.ledgerRangeActive = true; }
+    else if(rangeContext === "pdf"){ state.pdfRangeFrom = rangeFromKey; state.pdfRangeTo = rangeToKey; state.pdfPeriod = "range"; }
     else { state.monthRangeFrom = rangeFromKey; state.monthRangeTo = rangeToKey; state.monthRangeActive = true; }
     closeRangeCalendar(); render();
   });
