@@ -329,8 +329,6 @@
   .cat-entries .ce-sub{color:var(--muted);font-size:12.5px}
   .bar-legend{display:flex;gap:22px;flex-wrap:wrap;font-size:14.5px;margin:8px 0 2px}
   .bar-legend .dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:7px;vertical-align:-1px}
-  .bar-acct-row{display:flex;justify-content:flex-end;margin-top:8px}
-  .bar-acct-row .acct-select{min-height:38px;font-size:14.5px;padding:4px 8px;border-radius:8px}
   /* Charts — smart/compact top row, header gap and toggle (this screen only) */
   .sub-head.charts-head{padding-bottom:2px}
   .chart-top-row .alltime-btn{font-size:15px;padding:5px 12px;min-height:38px;border-radius:9px}
@@ -2081,11 +2079,11 @@
     }
     html += '</div>';
 
-    /* Bar chart */
+    /* Bar chart — filtered by the Ledger + Account dropdowns at the top
+       of this screen (barChartSVG reads state.chartLedger/chartAccount). */
     html += '<div class="chart-card">' + barChartSVG() +
       '<div class="bar-legend"><span><span class="dot" style="background:#7ed491"></span>Income (Credit)</span>' +
-      '<span><span class="dot" style="background:#f2766d"></span>Expense (Debit)</span></div>' +
-      '<div class="bar-acct-row"><select class="acct-select" id="chartAcctSel" aria-label="Account filter" style="max-width:60%">'+accountOptionsHTML(state.chartAccount)+'</select></div></div>';
+      '<span><span class="dot" style="background:#f2766d"></span>Expense (Debit)</span></div></div>';
 
     main.innerHTML = html;
     document.getElementById("chartsBack").addEventListener("click", function(){ setTab("daily"); });
@@ -2122,7 +2120,6 @@
         state.chartExpandedCat = state.chartExpandedCat === c ? "" : c; render();
       });
     });
-    document.getElementById("chartAcctSel").addEventListener("change", function(ev){ state.chartAccount = ev.target.value; render(); });
   }
 
   /* ---------- REPORT / PDF PREVIEW ---------- */
@@ -3852,11 +3849,23 @@
   var balanceOverlay = document.getElementById("balanceOverlay");
   function openBalanceSheet(){
     var totIn = sumType(entries,"income"), totOut = sumType(entries,"expense");
-    document.getElementById("balanceBox").innerHTML =
+    var html =
       '<div class="summary-line"><span><strong>Balance</strong></span><span><strong>'+esc(fmt(totalBalance("All")))+'</strong></span></div>' +
       '<div class="summary-line"><span>C/F</span><span>'+esc(fmt(opening))+'</span></div>' +
       '<div class="summary-line"><span>Total Income (Credit)</span><span class="in">'+esc(fmt(totIn))+'</span></div>' +
       '<div class="summary-line"><span>Total Expense (Debit)</span><span class="out">'+esc(fmt(totOut))+'</span></div>';
+    /* Per-ledger breakdown — each person's Balance is the same value as
+       in that person's ledger detail screen (money given minus money
+       received, via personBalance) and is shown WITHOUT a minus sign,
+       in the detail screen's format (curSym + fmtPlain). "General"
+       covers the entries that have no person/ledger, so the breakdown
+       covers all entries. */
+    html += '<div class="summary-line"><span><strong>Balance by Ledger</strong></span><span></span></div>';
+    ledgerNames.forEach(function(name){
+      html += '<div class="summary-line"><span>'+esc(name)+'</span><span>'+esc(curSym() + fmtPlain(personBalance(name)))+'</span></div>';
+    });
+    html += '<div class="summary-line"><span>General</span><span>'+esc(curSym() + fmtPlain(personBalance("")))+'</span></div>';
+    document.getElementById("balanceBox").innerHTML = html;
     balanceOverlay.classList.add("open");
   }
   function closeBalanceSheet(){ balanceOverlay.classList.remove("open"); }
