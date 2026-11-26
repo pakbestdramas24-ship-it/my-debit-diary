@@ -285,11 +285,11 @@
   .btn-ghost{background:transparent;border:1.5px solid #93a698;color:var(--text)}
 
   /* PDF preview page (Monthly / Yearly / Report) */
-  .pdf-page{background:#ffffff;color:#1c1c1c;border-radius:4px;padding:20px 10px 24px;margin:0 -8px}
-  .pdf-page h3{margin:0;text-align:center;color:#0e8a75;font-size:19px;font-weight:700}
-  .pdf-page .pp-name{text-align:center;color:#6a1fa2;font-size:16.5px;font-weight:600;margin-top:5px;min-height:22px}
-  .pdf-page .pp-period{text-align:center;font-weight:700;font-size:14.5px;margin-top:8px;color:#222}
-  .pdf-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:10.5px;table-layout:fixed}
+  .pdf-page{background:#ffffff;color:#1c1c1c;border-radius:4px;padding:16px 10px 24px;margin:0 -8px}
+  .pdf-page h3{margin:0;text-align:center;color:#0e8a75;font-size:19px;font-weight:700;line-height:1.15}
+  .pdf-page .pp-name{text-align:center;color:#6a1fa2;font-size:16.5px;font-weight:600;margin-top:1px;line-height:1.2}
+  .pdf-page .pp-period{text-align:center;font-weight:700;font-size:14.5px;margin-top:2px;line-height:1.2;color:#222}
+  .pdf-table{width:100%;border-collapse:collapse;margin-top:9px;font-size:10.5px;table-layout:fixed}
   .pdf-table th{background:#0097a7;color:#fff;font-weight:700;text-align:center;padding:5px 2px;border:1px solid #00838f;font-size:9.5px}
   .pdf-table td{border:1px solid #c3ced1;padding:4px 3px;vertical-align:top;overflow-wrap:break-word}
   .pdf-table td.dt{white-space:nowrap;font-size:10px;letter-spacing:-.3px}
@@ -299,7 +299,7 @@
   .pdf-table tr.grand-total td{background:#e0f2f1;font-weight:700}
   .pdf-table .inc-g{color:#1e7d32}
   .pdf-table .exp-r{color:#c0392b}
-  .pdf-balance{text-align:right;color:#1565c0;font-weight:700;margin-top:8px;font-size:13.5px}
+  .pdf-table tr.grand-total td.bal-cell{color:#1565c0;text-align:right;white-space:nowrap;font-size:10px;padding-right:5px}
   .pdf-fabs{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:30;display:flex;gap:14px}
   .pdf-fab{width:56px;height:56px;min-height:56px;border-radius:50%;border:0;background:var(--mint-btn);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.45);padding:0}
   .pdf-fab:active{background:var(--mint)}
@@ -1048,6 +1048,7 @@
     yearRangeActive: false,
     ledgerAccount: "All",
     ledgerNameFilter: "",
+    pdfPerson: "",
     notesMonth: todayKey().slice(0,7),
     noteMode: "list",
     noteEditId: null,
@@ -1653,10 +1654,22 @@
      the C/F at the start of the period, the entries grouped by day (with a
      subtotal row after any day that has more than one entry), the totals
      and the closing balance. The filter keeps only one entry type. */
-  function pdfModel(from, to, account, filter){
-    var cf = balanceBefore(from, account);
+  function pdfModel(from, to, account, filter, person){
+    var cf;
+    if(person){
+      /* A person's ledger: only their entries, and the C/F is what their
+         own entries before this period add up to (no opening balance). */
+      cf = 0;
+      entries.forEach(function(e){
+        if(e.date < from && (e.ledger || "") === person) cf += signed(e);
+      });
+      cf = Math.round(cf*100)/100;
+    } else {
+      cf = balanceBefore(from, account);
+    }
     var list = entries.filter(function(e){
       if(e.date < from || e.date > to) return false;
+      if(person && (e.ledger || "") !== person) return false;
       if(account && account !== "All" && e.account !== account) return false;
       if(filter === "expense" && e.type !== "expense") return false;
       if(filter === "income" && e.type !== "income") return false;
@@ -1690,9 +1703,9 @@
     var d = parseKey(key);
     return pad(d.getDate()) + "-" + pad(d.getMonth()+1) + "-" + d.getFullYear();
   }
-  function pdfPreviewHTML(model, heading){
+  function pdfPreviewHTML(model, heading, name){
     var rows = "";
-    rows += '<tr><td>C/F</td><td></td><td></td><td></td>' +
+    rows += '<tr><td colspan="4">C/F</td>' +
       '<td class="num">' + (model.cf >= 0 ? esc(fmt(model.cf)) : "") + '</td>' +
       '<td class="num">' + (model.cf < 0 ? esc(fmt(-model.cf)) : "") + '</td></tr>';
     if(model.empty){
@@ -1711,25 +1724,24 @@
           '<td class="num">' + (r.exp ? esc(fmtPlain(r.exp)) : "") + '</td></tr>';
       }
     });
-    rows += '<tr class="grand-total"><td colspan="4"></td>' +
+    rows += '<tr class="grand-total"><td colspan="4" class="bal-cell">Balance = ' + esc(fmt(model.balance)) + '</td>' +
       '<td class="num inc-g">' + esc(fmt(model.totIn)) + '</td>' +
       '<td class="num exp-r">' + esc(fmt(model.totOut)) + '</td></tr>';
     return '<div class="pdf-page"><h3>My Debit Diary</h3>' +
-      '<div class="pp-name">' + esc(profileName) + '</div>' +
+      '<div class="pp-name">' + esc(name != null ? name : profileName) + '</div>' +
       '<div class="pp-period">' + esc(heading) + '</div>' +
-      '<table class="pdf-table"><colgroup><col style="width:17%"><col style="width:20%"><col style="width:16%"><col style="width:13%"><col style="width:17%"><col style="width:17%"></colgroup>' +
+      '<table class="pdf-table"><colgroup><col style="width:16%"><col style="width:19%"><col style="width:19%"><col style="width:11%"><col style="width:17.5%"><col style="width:17.5%"></colgroup>' +
       '<thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Account</th><th>Income (Credit)</th><th>Expense (Debit)</th></tr></thead>' +
-      '<tbody>' + rows + '</tbody></table>' +
-      '<div class="pdf-balance">Balance = ' + esc(fmt(model.balance)) + '</div></div>';
+      '<tbody>' + rows + '</tbody></table></div>';
   }
   function pdfFabsHTML(){
     return '<div class="pdf-fabs">' +
       '<button type="button" class="pdf-fab" id="pdfShareBtn" aria-label="Share PDF" title="Share PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg></button>' +
       '<button type="button" class="pdf-fab" id="pdfDownloadBtn" aria-label="Download PDF" title="Download PDF"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></button></div>';
   }
-  function bindPdfFabs(model, heading){
-    document.getElementById("pdfShareBtn").addEventListener("click", function(){ shareStyledPDF(model, heading); });
-    document.getElementById("pdfDownloadBtn").addEventListener("click", function(){ downloadStyledPDF(model, heading); });
+  function bindPdfFabs(model, heading, name){
+    document.getElementById("pdfShareBtn").addEventListener("click", function(){ shareStyledPDF(model, heading, name); });
+    document.getElementById("pdfDownloadBtn").addEventListener("click", function(){ downloadStyledPDF(model, heading, name); });
   }
   function pdfFilterChipsHTML(current, attr){
     return '<div class="report-chips">' +
@@ -1762,25 +1774,32 @@
   function openPdfPreview(ctx){
     state.pdfFrom = ctx.from; state.pdfTo = ctx.to; state.pdfHeading = ctx.heading;
     state.pdfAccount = ctx.account; state.pdfBack = ctx.back; state.pdfFilter = "all";
+    /* If a person's ledger is open on the Ledger tab, the report is for
+       that person only; otherwise it is the general report. */
+    state.pdfPerson = state.ledgerNameFilter || "";
     state.tab = "pdfpreview";
     render(); window.scrollTo(0,0);
   }
   function renderPdfPreview(){
-    var model = pdfModel(state.pdfFrom, state.pdfTo, state.pdfAccount, state.pdfFilter);
+    var person = state.pdfPerson || "";
+    var model = pdfModel(state.pdfFrom, state.pdfTo, state.pdfAccount, state.pdfFilter, person);
+    var dispName = person || profileName;
     var html = '<div class="sub-head"><button class="back-btn" id="pdfBack" aria-label="Back">←</button><h2>PDF Report</h2></div>';
     html += pdfFilterChipsHTML(state.pdfFilter, "data-pdf-filter");
-    html += pdfPreviewHTML(model, state.pdfHeading);
+    html += pdfPreviewHTML(model, state.pdfHeading, dispName);
     html += pdfFabsHTML();
     main.innerHTML = html;
     document.getElementById("pdfBack").addEventListener("click", function(){ setTab(state.pdfBack || "monthly"); });
     main.querySelectorAll("[data-pdf-filter]").forEach(function(b){
       b.addEventListener("click", function(){ state.pdfFilter = b.getAttribute("data-pdf-filter"); render(); });
     });
-    bindPdfFabs(model, state.pdfHeading);
+    bindPdfFabs(model, state.pdfHeading, dispName);
   }
   function renderReport(){
     var r = reportRange();
-    var model = pdfModel(r.from, r.to, "All", state.reportFilter);
+    var person = state.ledgerNameFilter || "";
+    var model = pdfModel(r.from, r.to, "All", state.reportFilter, person);
+    var dispName = person || profileName;
     var heading = state.reportCustom ? (fmtKeyLong(r.from) + " – " + fmtKeyLong(r.to)) : String(state.reportYear);
     var html = '<div class="sub-head"><button class="back-btn" id="reportBack" aria-label="Back">←</button><h2>Report</h2></div>';
     html += '<div class="period-row">' +
@@ -1793,7 +1812,7 @@
         '<label>To<input type="date" id="repTo" value="' + esc(state.reportTo) + '"></label></div>';
     }
     html += pdfFilterChipsHTML(state.reportFilter, "data-rep-filter");
-    html += pdfPreviewHTML(model, heading);
+    html += pdfPreviewHTML(model, heading, dispName);
     html += pdfFabsHTML();
     main.innerHTML = html;
     document.getElementById("reportBack").addEventListener("click", function(){ setTab("monthly"); });
@@ -1812,7 +1831,7 @@
     main.querySelectorAll("[data-rep-filter]").forEach(function(b){
       b.addEventListener("click", function(){ state.reportFilter = b.getAttribute("data-rep-filter"); render(); });
     });
-    bindPdfFabs(model, heading);
+    bindPdfFabs(model, heading, dispName);
   }
 
   /* ---------- PDF export ---------- */
@@ -1899,9 +1918,10 @@
     while(str.length && helvWidth(str + "...", size) > maxW) str = str.slice(0, -1);
     return str + "...";
   }
-  function buildStyledPDF(model, heading){
+  function buildStyledPDF(model, heading, name){
+    var dispName = name != null ? name : profileName;
     var PW = 595, PH = 842, ML = 30, CW = PW - 60;
-    var cols = [70, 130, 80, 75, 90, 90];
+    var cols = [65, 120, 95, 70, 92, 93];
     var colX = [ML];
     for(var ci=0; ci<cols.length; ci++) colX.push(colX[ci] + cols[ci]);
     var pages = [], ops = [];
@@ -1914,10 +1934,13 @@
       ops.push("BT /" + font + " " + size + " Tf 1 0 0 1 " + n2(xx) + " " + n2(y) + " Tm (" + pdfEscapeText(str) + ") Tj ET");
     }
     function rectF(x, y, w, h){ ops.push(n2(x) + " " + n2(y) + " " + n2(w) + " " + n2(h) + " re f"); }
-    function grid(top, bottom){
+    function grid(top, bottom, skipV){
       strokeC(0.72, 0.78, 0.8); ops.push("0.6 w");
       ops.push(n2(ML) + " " + n2(bottom) + " m " + n2(ML+CW) + " " + n2(bottom) + " l S");
-      for(var i=0;i<colX.length;i++) ops.push(n2(colX[i]) + " " + n2(bottom) + " m " + n2(colX[i]) + " " + n2(top) + " l S");
+      for(var i=0;i<colX.length;i++){
+        if(skipV && skipV.indexOf(i) !== -1) continue;
+        ops.push(n2(colX[i]) + " " + n2(bottom) + " m " + n2(colX[i]) + " " + n2(top) + " l S");
+      }
     }
     function headerRow(top){
       fill(0, 0.592, 0.655); rectF(ML, top - 20, CW, 20);
@@ -1938,30 +1961,33 @@
       cells.forEach(function(c){
         if(!c.text) return;
         fill(c.color[0], c.color[1], c.color[2]);
-        if(c.align === "right") txt(c.text, colX[c.col] + cols[c.col] - 4, bottom + 5.4, c.font, 9.3, "right");
+        if(c.align === "right"){
+          var rightEdge = c.span ? colX[c.col + c.span] : colX[c.col] + cols[c.col];
+          txt(c.text, rightEdge - 4, bottom + 5.4, c.font, c.size || 9.3, "right");
+        }
         else txt(c.text, colX[c.col] + 4, bottom + 5.4, c.font, 9.3, "left");
       });
-      grid(y, bottom);
+      grid(y, bottom, opts && opts.skipV);
       return bottom;
     }
     var DARK = [0.11, 0.11, 0.11];
     var y;
     fill(0.055, 0.541, 0.459);
-    txt("My Debit Diary", PW/2, PH - 52, "F2", 17, "center");
-    var headY = PH - 74;
-    if(profileName){
+    txt("My Debit Diary", PW/2, PH - 50, "F2", 17, "center");
+    var headY = PH - 67;
+    if(dispName){
       fill(0.416, 0.122, 0.635);
-      txt(profileName, PW/2, headY, "F2", 13, "center");
-      headY -= 20;
+      txt(dispName, PW/2, headY, "F2", 13, "center");
+      headY -= 16;
     }
     fill(0.13, 0.13, 0.13);
     txt(heading, PW/2, headY, "F2", 12, "center");
-    y = headerRow(headY - 14);
+    y = headerRow(headY - 12);
     y = rowOut([
       {text: "C/F", col: 0, font: "F1", color: DARK},
       {text: model.cf >= 0 ? fmt(model.cf) : "", col: 4, font: "F1", color: DARK, align: "right"},
       {text: model.cf < 0 ? fmt(-model.cf) : "", col: 5, font: "F1", color: DARK, align: "right"}
-    ], null, y);
+    ], {skipV: [1, 2, 3]}, y);
     if(model.empty){
       if(y - 16 < 42) y = newPage();
       var eb = y - 16;
@@ -1989,13 +2015,10 @@
       }
     });
     y = rowOut([
+      {text: "Balance = " + fmt(model.balance), col: 0, span: 4, font: "F2", size: 10, color: [0.086, 0.4, 0.753], align: "right"},
       {text: fmt(model.totIn), col: 4, font: "F2", color: [0.118, 0.49, 0.196], align: "right"},
       {text: fmt(model.totOut), col: 5, font: "F2", color: [0.753, 0.224, 0.169], align: "right"}
     ], {fillColor: [0.878, 0.949, 0.945]}, y);
-    y -= 20;
-    if(y < 42){ pages.push(ops.join("\n")); ops = []; y = PH - 60; }
-    fill(0.086, 0.4, 0.753);
-    txt("Balance = " + fmt(model.balance), ML + CW, y, "F2", 11, "right");
     pages.push(ops.join("\n"));
     var bytes = [], offsets = {};
     function pushStr(s){ var b = winAnsiBytes(s); for(var j=0;j<b.length;j++) bytes.push(b[j]); }
@@ -2032,12 +2055,12 @@
     var slug = String(heading || "report").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
     return "my-debit-diary-" + (slug || "report") + ".pdf";
   }
-  function downloadStyledPDF(model, heading){
-    downloadBlob(pdfFileName(heading), buildStyledPDF(model, heading));
+  function downloadStyledPDF(model, heading, name){
+    downloadBlob(pdfFileName(heading), buildStyledPDF(model, heading, name));
     toast("PDF downloaded ✓");
   }
-  function shareStyledPDF(model, heading){
-    var blob = buildStyledPDF(model, heading);
+  function shareStyledPDF(model, heading, name){
+    var blob = buildStyledPDF(model, heading, name);
     var shared = false;
     try{
       var file = new File([blob], pdfFileName(heading), {type: "application/pdf"});
