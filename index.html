@@ -211,6 +211,7 @@
   .summary-line:last-child{border-bottom:0}
   .summary-line .in{color:var(--mint)}
   .summary-line .out{color:var(--danger)}
+  .summary-line .bal{color:#5eb1ff}
   /* Ledger — people list */
   .people-head{display:flex;justify-content:space-between;align-items:center;margin:2px 2px 10px}
   .people-title{font-size:17px;font-weight:700}
@@ -364,9 +365,22 @@
   /* PDF Report preview — Account + Ledger filter row (same compact setting as Monthly / Charts) */
   .pdf-filter-row{display:flex;gap:8px;margin-bottom:8px}
   .pdf-filter-row .acct-select{flex:1 1 0;min-width:0;max-width:none;min-height:34px;font-size:13.5px;padding:3px 5px;border-radius:8px}
-  /* Charts Report screen — Ledger dropdown row (same compact setting) */
-  .report-ledger-row{display:flex;gap:8px;margin-bottom:8px}
-  .report-ledger-row .acct-select{flex:1 1 0;min-width:0;max-width:none;min-height:38px;font-size:14.5px;padding:4px 8px;border-radius:8px}
+  /* Charts Report screen — the Back / Report header sits almost flush
+     above the controls below it (the gap the user circled) */
+  .sub-head.report-head{padding:2px 0 1px}
+  /* Charts Report screen — Month / Year / Date range tabs, period selector
+     and Account + Ledger dropdowns (same compact setting as Monthly / Charts) */
+  .seg-toggle.report-mode-seg{margin-bottom:7px;border-width:1px}
+  .seg-toggle.report-mode-seg button{padding:5px 2px;font-size:14px;min-height:32px}
+  .period-row.report-period{margin-bottom:7px}
+  .period-row.report-period .period-nav{min-height:34px;padding:1px 2px}
+  .period-row.report-period .period-nav .nav-arrow{width:28px;height:28px;min-height:28px;font-size:19px}
+  .period-row.report-period .period-label{font-size:15px}
+  .month-range-row.report-range{margin-bottom:7px}
+  .month-range-row.report-range .range-btn{min-height:32px;padding:4px 8px;font-size:13.5px}
+  .month-range-row.report-range .range-clear-btn{width:32px;height:32px;min-height:32px}
+  .report-filter-row{display:flex;gap:8px;margin-bottom:8px}
+  .report-filter-row .acct-select{flex:1 1 0;min-width:0;max-width:none;min-height:34px;font-size:13.5px;padding:3px 5px;border-radius:8px}
   /* Charts Report — chart page (white paper, replaces the entries table) */
   .cr-sec{margin-top:16px}
   .cr-sec-title{font-size:14.5px;font-weight:700;color:#075e52;margin:0 0 6px}
@@ -656,6 +670,7 @@
   body.light .pd-amt.credit{color:#1e7d32}
   body.light .pd-amt.debit{color:#c0392b}
   body.light .day-balance .db-amt{color:#1565c0}
+  body.light .summary-line .bal{color:#1565c0}
   body.light .year-row .yr-bal,body.light .year-cf .cf-bal{color:#1565c0}
   body.light .day-col-head,body.light .info-note,body.light .donut-label,body.light .collapse-hint{color:#223028}
   body.light .collapse-head .car{color:#43534a}
@@ -1395,6 +1410,10 @@
     reportTo: "",
     reportFilter: "all",
     reportLedger: "All",
+    reportMode: "month",
+    reportMonth: todayKey().slice(0,7),
+    reportAccount: "All",
+    reportRangeActive: false,
     pdfFilter: "all",
     pdfPeriod: "month",
     pdfMonth: todayKey().slice(0,7),
@@ -2223,9 +2242,29 @@
     var d = parseKey(key);
     return pad(d.getDate()) + " " + MONTHS_S[d.getMonth()] + " " + d.getFullYear();
   }
+  /* The Charts Report period, following its Month / Year / Date range
+     tabs: the picked month, the picked year, or the picked date range
+     (until a range is picked, the Date range tab falls back to the
+     picked month, like the PDF preview). "monthly" tells the bar chart
+     to use one bucket per month (Year tab) instead of one per day. */
   function reportRange(){
-    if(state.reportCustom && state.reportFrom && state.reportTo) return {from: state.reportFrom, to: state.reportTo};
-    return {from: state.reportYear + "-01-01", to: state.reportYear + "-12-31"};
+    if(state.reportMode === "year"){
+      return {from: state.reportYear + "-01-01", to: state.reportYear + "-12-31", heading: String(state.reportYear), monthly: true};
+    }
+    var mp = (state.reportMonth || todayKey().slice(0,7)).split("-");
+    var last = toKey(new Date(+mp[0], +mp[1], 0));
+    if(state.reportMode === "range" && state.reportRangeActive && state.reportFrom && state.reportTo){
+      return {from: state.reportFrom, to: state.reportTo, heading: fmtKeyLong(state.reportFrom) + " – " + fmtKeyLong(state.reportTo), monthly: false};
+    }
+    if(state.reportMode === "range"){
+      return {from: state.reportMonth + "-01", to: last, heading: fmtKeyLong(state.reportMonth + "-01") + " – " + fmtKeyLong(last), monthly: false};
+    }
+    return {from: state.reportMonth + "-01", to: last, heading: MONTHS[+mp[1]-1] + " " + mp[0], monthly: false};
+  }
+  function reportAccountSel(){
+    var a = state.reportAccount;
+    if(a !== "All" && allAccounts().indexOf(a) === -1) a = "All";
+    return a;
   }
   /* Report data shared by the on-screen preview and the downloaded PDF:
      the C/F at the start of the period, the entries in date order, the
@@ -2779,23 +2818,27 @@
   }
   /* ---------- CHARTS REPORT (the Report screen opened from Charts) ----------
      This screen no longer shows the entries table at all. It shows the
-     CHART for the ledger picked in its Ledger dropdown: a donut per
-     type (Expense / Income, following the filter chips) and the Income
-     vs Expense bar chart, all for the selected year / custom date
-     range and that ledger only. The title block (My Debit Diary, name,
-     period, Generated on) stays at the top of the white page, and the
-     downloaded / shared PDF contains these same charts — not the table.
-     The Notes chip still shows the notes paper for the period. */
+     CHART for the period and filters picked at the top — the same
+     setting as the Monthly and Charts screens: Month / Year / Date
+     range tabs with the matching period selector, then an Account
+     dropdown and a Ledger dropdown side by side. A donut per type
+     (Expense / Income, following the filter chips) and the Income vs
+     Expense bar chart follow those tabs and dropdowns. The title block
+     (My Debit Diary, name, period, Generated on) stays at the top of
+     the white page, and the downloaded / shared PDF contains these
+     same charts — not the table. The Notes chip still shows the notes
+     paper for the period. */
   function reportLedgerSel(){
     var led = state.reportLedger;
     if(led !== "All" && ledgerNames.indexOf(led) === -1) led = "All";
     return led;
   }
-  function reportTypeList(from, to, person, type){
+  function reportTypeList(from, to, person, type, account){
     return entries.filter(function(e){
       if(e.type !== type) return false;
       if(e.date < from || e.date > to) return false;
       if(person && (e.ledger || "") !== person) return false;
+      if(account && account !== "All" && e.account !== account) return false;
       return true;
     });
   }
@@ -2815,9 +2858,14 @@
     return '<svg class="cr-donut-svg" viewBox="0 0 200 200" role="img" aria-label="Donut chart">' + parts + '</svg>';
   }
   /* Bar-chart buckets for the report: one Income/Expense pair per month
-     for a whole year, or one pair per day for a custom date range. */
-  function reportBarData(from, to, person, filter){
-    function inLed(e){ return !person || (e.ledger || "") === person; }
+     on the Year tab, or one pair per day on the Month tab and for a
+     picked date range. */
+  function reportBarData(from, to, person, filter, account, monthlyBuckets){
+    function inScope(e){
+      if(person && (e.ledger || "") !== person) return false;
+      if(account && account !== "All" && e.account !== account) return false;
+      return true;
+    }
     var perDay = [], maxV = 0;
     function pushBucket(label, list){
       var di = sumType(list, "income"), de = sumType(list, "expense");
@@ -2825,26 +2873,26 @@
       if(filter !== "expense" && di > maxV) maxV = di;
       if(filter !== "income" && de > maxV) maxV = de;
     }
-    var monthly = !state.reportCustom;
+    var monthly = !!monthlyBuckets;
     if(monthly){
       var yr = +String(from).slice(0, 4);
       for(var mm = 0; mm < 12; mm++){
         var mk = yr + "-" + pad(mm + 1);
-        pushBucket(MONTHS_S[mm], entries.filter(function(e){ return e.date.slice(0, 7) === mk && inLed(e); }));
+        pushBucket(MONTHS_S[mm], entries.filter(function(e){ return e.date.slice(0, 7) === mk && inScope(e); }));
       }
     } else {
       var cur = parseKey(from), end = parseKey(to), guard = 0;
       while(cur <= end && guard < 366){
         var key = toKey(cur);
-        pushBucket(pad(cur.getDate()) + " " + MONTHS_S[cur.getMonth()], entries.filter(function(e){ return e.date === key && inLed(e); }));
+        pushBucket(pad(cur.getDate()) + " " + MONTHS_S[cur.getMonth()], entries.filter(function(e){ return e.date === key && inScope(e); }));
         cur.setDate(cur.getDate() + 1);
         guard++;
       }
     }
     return {perDay: perDay, maxV: maxV, monthly: monthly};
   }
-  function reportBarSVG(from, to, person, filter){
-    var data = reportBarData(from, to, person, filter);
+  function reportBarSVG(from, to, person, filter, account, monthlyBuckets){
+    var data = reportBarData(from, to, person, filter, account, monthlyBuckets);
     var perDay = data.perDay, maxV = data.maxV;
     var n = perDay.length || 1;
     var W = 660, H = 300, base = 252, top = 26, plotH = base - top;
@@ -2880,7 +2928,7 @@
     svg += '</svg>';
     return svg;
   }
-  function chartReportHTML(from, to, heading, dispName, genStamp, filter, person){
+  function chartReportHTML(from, to, heading, dispName, genStamp, filter, person, account, monthlyBuckets){
     var head = '<div class="pdf-page"><h3>My Debit Diary</h3>' +
       '<div class="pp-name">' + esc(dispName || "") + '</div>' +
       '<div class="pp-period">' + esc(heading) + '</div>' +
@@ -2888,7 +2936,7 @@
     var types = filter === "all" ? ["expense", "income"] : [filter];
     var body = "";
     types.forEach(function(type){
-      var list = reportTypeList(from, to, person, type);
+      var list = reportTypeList(from, to, person, type, account);
       var byCat = {};
       list.forEach(function(e){
         var c = e.category || (type === "income" ? "Other" : "Misc");
@@ -2916,7 +2964,7 @@
       body += '</div>';
     });
     body += '<div class="cr-sec"><p class="cr-sec-title">Income vs Expense</p>' +
-      reportBarSVG(from, to, person, filter) +
+      reportBarSVG(from, to, person, filter, account, monthlyBuckets) +
       '<div class="cr-legend">' +
       (filter !== "expense" ? '<span><span class="dot" style="background:#7ed491"></span>Income (Credit)</span>' : '') +
       (filter !== "income" ? '<span><span class="dot" style="background:#f2766d"></span>Expense (Debit)</span>' : '') +
@@ -2927,48 +2975,77 @@
     var r = reportRange();
     var led = reportLedgerSel();
     var person = led === "All" ? "" : led;
+    var acct = reportAccountSel();
     var dispName = person || profileName;
-    var heading = state.reportCustom ? (fmtKeyLong(r.from) + " – " + fmtKeyLong(r.to)) : String(state.reportYear);
+    var heading = r.heading;
+    var mode = state.reportMode;
+    var rangeOn = mode === "range" && state.reportRangeActive && state.reportFrom && state.reportTo;
     var notesMode = state.reportFilter === "notes";
-    var notesModel = notesMode ? pdfModel(r.from, r.to, "All", "notes", person, false) : null;
-    var html = '<div class="sub-head"><button class="back-btn" id="reportBack" aria-label="Back">Back</button><h2>Report</h2></div>';
-    html += '<div class="period-row">' +
-      '<div class="period-nav"><button class="nav-arrow" data-rnav="-1" aria-label="Previous year">‹</button>' +
-      '<span class="period-label">' + state.reportYear + '</span>' +
-      '<button class="nav-arrow" data-rnav="1" aria-label="Next year">›</button></div>' +
-      '<button class="rep-chip' + (state.reportCustom ? " sel" : "") + '" id="customRangeBtn" style="flex:1">Custom date range</button></div>';
-    if(state.reportCustom){
-      html += '<div class="range-inputs"><label>From<input type="date" id="repFrom" value="' + esc(state.reportFrom) + '"></label>' +
-        '<label>To<input type="date" id="repTo" value="' + esc(state.reportTo) + '"></label></div>';
+    var notesModel = notesMode ? pdfModel(r.from, r.to, acct, "notes", person, false) : null;
+    var calSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/></svg>';
+    var html = '<div class="sub-head report-head"><button class="back-btn" id="reportBack" aria-label="Back">Back</button><h2>Report</h2></div>';
+    /* Period tabs — Month / Year / Date range segmented pill with the
+       matching selector below it (the same setting as the Monthly and
+       Charts screens; it replaces the old year selector, the Custom
+       date range button and the single Ledger dropdown). */
+    html += '<div class="seg-toggle report-mode-seg" role="tablist" aria-label="Report period">' +
+      '<button type="button" data-rmode="month"' + (mode === "month" ? ' class="sel"' : "") + '>Month</button>' +
+      '<button type="button" data-rmode="year"' + (mode === "year" ? ' class="sel"' : "") + '>Year</button>' +
+      '<button type="button" data-rmode="range"' + (mode === "range" ? ' class="sel"' : "") + '>Date range</button></div>';
+    if(mode === "month"){
+      var rp = (state.reportMonth || todayKey().slice(0,7)).split("-");
+      html += '<div class="period-row monthly-compact report-period"><div class="period-nav">' +
+        '<button class="nav-arrow" data-rmnav="-1" aria-label="Previous month">‹</button>' +
+        '<span class="period-label">' + MONTHS[+rp[1]-1] + ' ' + rp[0] + '</span>' +
+        '<button class="nav-arrow" data-rmnav="1" aria-label="Next month">›</button></div></div>';
+    } else if(mode === "year"){
+      html += '<div class="period-row yearly-compact report-period"><div class="period-nav">' +
+        '<button class="nav-arrow" data-rynav="-1" aria-label="Previous year">‹</button>' +
+        '<span class="period-label">' + state.reportYear + '</span>' +
+        '<button class="nav-arrow" data-rynav="1" aria-label="Next year">›</button></div></div>';
+    } else {
+      html += '<div class="month-range-row report-range"><button type="button" class="range-btn active" id="reportRangeBtn" aria-label="Pick a date range">' +
+        '<span class="rb-label">Date range</span><span class="rb-value">' + esc(keyToDisplay(r.from) + " – " + keyToDisplay(r.to)) + '</span>' + calSvg + '</button>' +
+        (rangeOn ? '<button type="button" class="range-clear-btn" id="reportRangeClear" aria-label="Clear date range" title="Clear date range">✕</button>' : '') + '</div>';
     }
-    /* Ledger dropdown — the chart below (and its PDF) is drawn for the
-       selected ledger only; "All Ledgers" covers every entry. */
-    html += '<div class="report-ledger-row">' +
+    /* Account + Ledger dropdowns, side by side — both filter the chart
+       below (donut, category breakdown and bar chart) and its PDF. */
+    html += '<div class="report-filter-row">' +
+      '<select class="acct-select" id="reportAcctSel" aria-label="Account filter">' + accountOptionsHTML(acct) + '</select>' +
       '<select class="acct-select" id="reportLedgerSel" aria-label="Ledger filter">' + ledgerOptionsHTML(led) + '</select></div>';
     html += pdfFilterChipsHTML(state.reportFilter, "data-rep-filter");
     if(notesMode) html += pdfPreviewHTML(notesModel, heading, dispName, state.reportGenerated);
-    else html += chartReportHTML(r.from, r.to, heading, dispName, state.reportGenerated, state.reportFilter, person);
+    else html += chartReportHTML(r.from, r.to, heading, dispName, state.reportGenerated, state.reportFilter, person, acct, r.monthly);
     html += pdfFabsHTML();
     main.innerHTML = html;
     document.getElementById("reportBack").addEventListener("click", function(){ setTab("monthly"); });
-    main.querySelectorAll("[data-rnav]").forEach(function(b){
-      b.addEventListener("click", function(){ state.reportYear += +b.getAttribute("data-rnav"); state.reportCustom = false; render(); });
+    main.querySelectorAll("[data-rmode]").forEach(function(b){
+      b.addEventListener("click", function(){ state.reportMode = b.getAttribute("data-rmode"); render(); });
     });
-    document.getElementById("customRangeBtn").addEventListener("click", function(){
-      state.reportCustom = !state.reportCustom;
-      if(state.reportCustom && !state.reportFrom){ state.reportFrom = state.reportYear + "-01-01"; state.reportTo = todayKey(); }
-      render();
+    main.querySelectorAll("[data-rmnav]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var p = (state.reportMonth || todayKey().slice(0,7)).split("-");
+        var nd = new Date(+p[0], (+p[1]-1) + (+b.getAttribute("data-rmnav")), 1);
+        state.reportMonth = nd.getFullYear() + "-" + pad(nd.getMonth()+1);
+        render();
+      });
     });
-    if(state.reportCustom){
-      document.getElementById("repFrom").addEventListener("change", function(ev){ state.reportFrom = ev.target.value; render(); });
-      document.getElementById("repTo").addEventListener("change", function(ev){ state.reportTo = ev.target.value; render(); });
-    }
+    main.querySelectorAll("[data-rynav]").forEach(function(b){
+      b.addEventListener("click", function(){ state.reportYear += +b.getAttribute("data-rynav"); render(); });
+    });
+    var repRangeBtn = document.getElementById("reportRangeBtn");
+    if(repRangeBtn) repRangeBtn.addEventListener("click", function(){ openRangeCalendar("report"); });
+    var repRangeClear = document.getElementById("reportRangeClear");
+    if(repRangeClear) repRangeClear.addEventListener("click", function(){
+      state.reportRangeActive = false; state.reportFrom = ""; state.reportTo = ""; render();
+    });
+    document.getElementById("reportAcctSel").addEventListener("change", function(ev){ state.reportAccount = ev.target.value; render(); });
     document.getElementById("reportLedgerSel").addEventListener("change", function(ev){ state.reportLedger = ev.target.value; render(); });
     main.querySelectorAll("[data-rep-filter]").forEach(function(b){
       b.addEventListener("click", function(){ state.reportFilter = b.getAttribute("data-rep-filter"); render(); });
     });
     if(notesMode) bindPdfFabs(notesModel, heading, dispName, state.reportGenerated);
-    else bindChartPdfFabs(r.from, r.to, heading, dispName, state.reportGenerated, state.reportFilter, person);
+    else bindChartPdfFabs(r.from, r.to, heading, dispName, state.reportGenerated, state.reportFilter, person, acct, r.monthly);
   }
 
   /* ---------- PDF export ---------- */
@@ -3413,7 +3490,7 @@
      Draws the same charts the Report screen shows — the donut(s) for
      the selected ledger and the Income vs Expense bar chart — as vector
      graphics. No entries table is drawn. */
-  function buildChartPDF(from, to, heading, name, genStamp, filter, person){
+  function buildChartPDF(from, to, heading, name, genStamp, filter, person, account, monthlyBuckets){
     var dispName = name != null ? name : profileName;
     var PW = 595, PH = 842, ML = 30, CW = PW - 60;
     var pages = [], ops = [];
@@ -3488,7 +3565,7 @@
     function newPage(){ pages.push(ops.join("\n")); ops = []; y = PH - 56; }
     var types = filter === "all" ? ["expense", "income"] : [filter];
     types.forEach(function(type){
-      var list = reportTypeList(from, to, person, type);
+      var list = reportTypeList(from, to, person, type, account);
       var byCat = {};
       list.forEach(function(e){
         var c = e.category || (type === "income" ? "Other" : "Misc");
@@ -3529,7 +3606,7 @@
       y = Math.min(cy - 80, ry + 6) - 12;
     });
     /* Income vs Expense bar chart */
-    var bdata = reportBarData(from, to, person, filter);
+    var bdata = reportBarData(from, to, person, filter, account, monthlyBuckets);
     if(y - 240 < 42) newPage();
     fill(0.03, 0.37, 0.32);
     txt("Income vs Expense", ML, y, "F2", 12.5, "left");
@@ -3603,12 +3680,12 @@
     pushStr("trailer\n<< /Size " + (totalObjs + 1) + " /Root 1 0 R >>\nstartxref\n" + xrefPos + "\n%%EOF");
     return new Blob([new Uint8Array(bytes)], {type: "application/pdf"});
   }
-  function downloadChartPDF(from, to, heading, name, genStamp, filter, person){
-    downloadBlob(pdfFileName(heading), buildChartPDF(from, to, heading, name, genStamp, filter, person));
+  function downloadChartPDF(from, to, heading, name, genStamp, filter, person, account, monthlyBuckets){
+    downloadBlob(pdfFileName(heading), buildChartPDF(from, to, heading, name, genStamp, filter, person, account, monthlyBuckets));
     toast("PDF downloaded ✓");
   }
-  function shareChartPDF(from, to, heading, name, genStamp, filter, person){
-    var blob = buildChartPDF(from, to, heading, name, genStamp, filter, person);
+  function shareChartPDF(from, to, heading, name, genStamp, filter, person, account, monthlyBuckets){
+    var blob = buildChartPDF(from, to, heading, name, genStamp, filter, person, account, monthlyBuckets);
     var shared = false;
     try{
       var file = new File([blob], pdfFileName(heading), {type: "application/pdf"});
@@ -3625,9 +3702,9 @@
       toast("Sharing is not available here — tap Download instead");
     }
   }
-  function bindChartPdfFabs(from, to, heading, name, genStamp, filter, person){
-    document.getElementById("pdfShareBtn").addEventListener("click", function(){ shareChartPDF(from, to, heading, name, genStamp, filter, person); });
-    document.getElementById("pdfDownloadBtn").addEventListener("click", function(){ downloadChartPDF(from, to, heading, name, genStamp, filter, person); });
+  function bindChartPdfFabs(from, to, heading, name, genStamp, filter, person, account, monthlyBuckets){
+    document.getElementById("pdfShareBtn").addEventListener("click", function(){ shareChartPDF(from, to, heading, name, genStamp, filter, person, account, monthlyBuckets); });
+    document.getElementById("pdfDownloadBtn").addEventListener("click", function(){ downloadChartPDF(from, to, heading, name, genStamp, filter, person, account, monthlyBuckets); });
   }
 
   /* ---------- render / tabs / FAB ---------- */
@@ -3953,7 +4030,7 @@
     });
   }
   function openRangeCalendar(context){
-    rangeContext = context === "year" ? "year" : (context === "chart" ? "chart" : (context === "ledger" ? "ledger" : (context === "pdf" ? "pdf" : "month")));
+    rangeContext = context === "year" ? "year" : (context === "chart" ? "chart" : (context === "ledger" ? "ledger" : (context === "pdf" ? "pdf" : (context === "report" ? "report" : "month"))));
     if(rangeContext === "ledger"){
       var lMonthStart = state.ledgerMonth + "-01";
       var lparts = state.ledgerMonth.split("-");
@@ -3965,6 +4042,11 @@
       var pdfPp = pdfPm.split("-");
       rangeFromKey = state.pdfRangeFrom || (pdfPm + "-01");
       rangeToKey = state.pdfRangeTo || toKey(new Date(+pdfPp[0], +pdfPp[1], 0));
+    } else if(rangeContext === "report"){
+      var repPm = state.reportMonth || todayKey().slice(0,7);
+      var repPp = repPm.split("-");
+      rangeFromKey = state.reportFrom || (repPm + "-01");
+      rangeToKey = state.reportTo || toKey(new Date(+repPp[0], +repPp[1], 0));
     } else if(rangeContext === "year"){
       rangeFromKey = state.yearRangeFrom || (state.yearCursor + "-01-01");
       rangeToKey = state.yearRangeTo || (state.yearCursor + "-12-31");
@@ -4010,6 +4092,7 @@
     else if(rangeContext === "chart"){ state.chartRangeActive = false; state.chartRangeFrom = ""; state.chartRangeTo = ""; }
     else if(rangeContext === "ledger"){ state.ledgerRangeActive = false; state.ledgerRangeFrom = ""; state.ledgerRangeTo = ""; }
     else if(rangeContext === "pdf"){ state.pdfRangeFrom = ""; state.pdfRangeTo = ""; state.pdfPeriod = "range"; }
+    else if(rangeContext === "report"){ state.reportRangeActive = false; state.reportFrom = ""; state.reportTo = ""; state.reportMode = "range"; }
     else { state.monthRangeActive = false; state.monthRangeFrom = ""; state.monthRangeTo = ""; }
     closeRangeCalendar(); render();
   });
@@ -4020,6 +4103,7 @@
     else if(rangeContext === "chart"){ state.chartRangeFrom = rangeFromKey; state.chartRangeTo = rangeToKey; state.chartRangeActive = true; }
     else if(rangeContext === "ledger"){ state.ledgerRangeFrom = rangeFromKey; state.ledgerRangeTo = rangeToKey; state.ledgerRangeActive = true; }
     else if(rangeContext === "pdf"){ state.pdfRangeFrom = rangeFromKey; state.pdfRangeTo = rangeToKey; state.pdfPeriod = "range"; }
+    else if(rangeContext === "report"){ state.reportFrom = rangeFromKey; state.reportTo = rangeToKey; state.reportRangeActive = true; state.reportMode = "range"; }
     else { state.monthRangeFrom = rangeFromKey; state.monthRangeTo = rangeToKey; state.monthRangeActive = true; }
     closeRangeCalendar(); render();
   });
@@ -4375,34 +4459,34 @@
   var balanceOverlay = document.getElementById("balanceOverlay");
   var balanceLedgerSelEl = document.getElementById("balanceLedgerSel");
   /* The sheet's Ledger dropdown value: "All" = All Ledgers (overall
-     totals), "__general" = General (entries with no person), anything
-     else is that person's name. There is no per-ledger list anymore —
-     picking a ledger re-shows the four rows for that ledger only. */
+     totals), anything else is that person's name — the dropdown lists
+     people only, there is no "General" option. There is no per-ledger
+     list anymore — picking a ledger re-shows the four rows for that
+     ledger only. */
   var balanceLedger = "All";
   function renderBalanceBox(){
     var html;
     if(balanceLedger === "All"){
       var totIn = sumType(entries, "income"), totOut = sumType(entries, "expense");
       html =
-        '<div class="summary-line"><span><strong>Balance</strong></span><span><strong>' + esc(fmt(totalBalance("All"))) + '</strong></span></div>' +
+        '<div class="summary-line"><span class="bal"><strong>Balance</strong></span><span class="bal"><strong>' + esc(fmt(totalBalance("All"))) + '</strong></span></div>' +
         '<div class="summary-line"><span>C/F</span><span>' + esc(fmt(opening)) + '</span></div>' +
         '<div class="summary-line"><span>Total Income (Credit)</span><span class="in">' + esc(fmt(totIn)) + '</span></div>' +
         '<div class="summary-line"><span>Total Expense (Debit)</span><span class="out">' + esc(fmt(totOut)) + '</span></div>';
     } else {
-      /* One ledger only: that person's entries (General = entries with
-         no person). C/F is 0 — the opening balance is not tied to a
-         ledger. The Balance is the same value as in that person's
-         ledger detail screen (money given minus money received, via
-         personBalance) and is shown WITHOUT a minus sign, in the
-         detail screen's format (curSym + fmtPlain). */
-      var personKey = balanceLedger === "__general" ? "" : balanceLedger;
+      /* One ledger only: that person's entries. C/F is 0 — the opening
+         balance is not tied to a ledger. The Balance is the same value
+         as in that person's ledger detail screen (money given minus
+         money received, via personBalance) and is shown WITHOUT a
+         minus sign, in the detail screen's format (curSym + fmtPlain). */
+      var personKey = balanceLedger;
       var lIn = 0, lOut = 0;
       entries.forEach(function(e){
         if((e.ledger || "") !== personKey) return;
         if(e.type === "income") lIn += +e.amount; else lOut += +e.amount;
       });
       html =
-        '<div class="summary-line"><span><strong>Balance</strong></span><span><strong>' + esc(curSym() + fmtPlain(personBalance(personKey))) + '</strong></span></div>' +
+        '<div class="summary-line"><span class="bal"><strong>Balance</strong></span><span class="bal"><strong>' + esc(curSym() + fmtPlain(personBalance(personKey))) + '</strong></span></div>' +
         '<div class="summary-line"><span>C/F</span><span>' + esc(fmt(0)) + '</span></div>' +
         '<div class="summary-line"><span>Total Income (Credit)</span><span class="in">' + esc(fmt(lIn)) + '</span></div>' +
         '<div class="summary-line"><span>Total Expense (Debit)</span><span class="out">' + esc(fmt(lOut)) + '</span></div>';
@@ -4412,12 +4496,11 @@
   function openBalanceSheet(){
     /* Rebuild the dropdown each time the sheet opens (people may have
        been added since), keeping the current pick when it still exists. */
-    if(balanceLedger !== "All" && balanceLedger !== "__general" && ledgerNames.indexOf(balanceLedger) === -1) balanceLedger = "All";
+    if(balanceLedger !== "All" && ledgerNames.indexOf(balanceLedger) === -1) balanceLedger = "All";
     var opts = '<option value="All"' + (balanceLedger === "All" ? " selected" : "") + '>All Ledgers</option>';
     ledgerNames.forEach(function(name){
       opts += '<option value="' + esc(name) + '"' + (balanceLedger === name ? " selected" : "") + '>' + esc(name) + '</option>';
     });
-    opts += '<option value="__general"' + (balanceLedger === "__general" ? " selected" : "") + '>General</option>';
     balanceLedgerSelEl.innerHTML = opts;
     balanceLedgerSelEl.value = balanceLedger;
     renderBalanceBox();
