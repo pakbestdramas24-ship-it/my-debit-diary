@@ -361,6 +361,9 @@
   .month-range-row.month-range .range-clear-btn{width:32px;height:32px;min-height:32px}
   .month-filter-row{display:flex;gap:8px;margin-bottom:8px}
   .month-filter-row .acct-select{flex:1 1 0;min-width:0;max-width:none;min-height:34px;font-size:13.5px;padding:3px 5px;border-radius:8px}
+  /* PDF Report preview — Account + Ledger filter row (same compact setting as Monthly / Charts) */
+  .pdf-filter-row{display:flex;gap:8px;margin-bottom:8px}
+  .pdf-filter-row .acct-select{flex:1 1 0;min-width:0;max-width:none;min-height:34px;font-size:13.5px;padding:3px 5px;border-radius:8px}
 
   /* Report */
   .report-chips{display:flex;gap:4px;flex-wrap:nowrap;margin-bottom:8px}
@@ -2678,10 +2681,18 @@
     return {from: state.pdfMonth + "-01", to: mLast, heading: MONTHS[+mp[1]-1] + " " + mp[0]};
   }
   function renderPdfPreview(){
-    var person = state.pdfPerson || "";
+    /* Account + Ledger dropdown values for this screen: the account
+       comes from state.pdfAccount, the ledger from state.pdfPerson
+       ("" means All Ledgers). A saved name that no longer exists
+       falls back to All, like the Monthly / Charts filters. */
+    var pdfAcct = state.pdfAccount || "All";
+    if(pdfAcct !== "All" && allAccounts().indexOf(pdfAcct) === -1) pdfAcct = "All";
+    var pdfLed = state.pdfPerson || "All";
+    if(pdfLed !== "All" && ledgerNames.indexOf(pdfLed) === -1) pdfLed = "All";
+    var person = pdfLed === "All" ? "" : pdfLed;
     var rng = pdfCurrentRange();
     state.pdfFrom = rng.from; state.pdfTo = rng.to; state.pdfHeading = rng.heading;
-    var model = pdfModel(rng.from, rng.to, state.pdfAccount, state.pdfFilter, person, state.pdfPeriod === "year");
+    var model = pdfModel(rng.from, rng.to, pdfAcct, state.pdfFilter, person, state.pdfPeriod === "year");
     var dispName = person || profileName;
     var html = '<div class="sub-head slim"><button class="back-btn" id="pdfBack" aria-label="Back">Back</button></div>';
     /* Period tabs — Month | Year | Date Range (Excel sample layout) */
@@ -2706,6 +2717,12 @@
       html += '<div class="month-range-row ledger-range"><button type="button" class="range-btn active" id="pdfRangeBtn" aria-label="Pick a date range">' +
         '<span class="rb-label">Date range</span><span class="rb-value">' + esc(keyToDisplay(rng.from) + " – " + keyToDisplay(rng.to)) + '</span>' + calSvgP + '</button></div>';
     }
+    /* Account + Ledger dropdowns, side by side — both filter the whole
+       report (preview table, C/F, totals, Balance, Notes and the
+       downloaded PDF, which is built from this same model). */
+    html += '<div class="pdf-filter-row">' +
+      '<select class="acct-select" id="pdfAcctSel" aria-label="Account filter">' + accountOptionsHTML(pdfAcct) + '</select>' +
+      '<select class="acct-select" id="pdfLedgerSel" aria-label="Ledger filter">' + ledgerOptionsHTML(pdfLed) + '</select></div>';
     html += pdfFilterChipsHTML(state.pdfFilter, "data-pdf-filter");
     html += pdfPreviewHTML(model, rng.heading, dispName, state.pdfGenerated);
     html += pdfFabsHTML();
@@ -2730,6 +2747,8 @@
     main.querySelectorAll("[data-pdf-filter]").forEach(function(b){
       b.addEventListener("click", function(){ state.pdfFilter = b.getAttribute("data-pdf-filter"); render(); });
     });
+    document.getElementById("pdfAcctSel").addEventListener("change", function(ev){ state.pdfAccount = ev.target.value; render(); });
+    document.getElementById("pdfLedgerSel").addEventListener("change", function(ev){ state.pdfPerson = ev.target.value === "All" ? "" : ev.target.value; render(); });
     bindPdfFabs(model, rng.heading, dispName, state.pdfGenerated);
   }
   function renderReport(){
