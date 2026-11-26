@@ -124,9 +124,9 @@
   .summary-card .sc-amt.credit,.pd-summary .sc-amt.credit{color:var(--mint)}
   .summary-card .sc-amt.debit,.pd-summary .sc-amt.debit{color:var(--danger)}
   /* Ledger detail — the period summary lives inside the header chip */
-  .pd-summary{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;flex:1 1 100%;margin-top:4px}
-  .pd-summary .sc-label{font-size:12px;line-height:1.2}
-  .pd-summary .sc-amt{font-size:14.5px;margin-top:1px;line-height:1.15}
+  .pd-summary{display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;flex:1 1 100%;margin-top:2px}
+  .pd-summary .sc-label{font-size:12px;line-height:1.1}
+  .pd-summary .sc-amt{font-size:14.5px;margin-top:0;line-height:1.1}
   /* Ledger detail — smart, compact period controls (this screen only) */
   .seg-toggle.ledger-seg{margin-bottom:7px;border-width:1px}
   .seg-toggle.ledger-seg button{padding:5px 2px;font-size:14px;min-height:32px}
@@ -236,7 +236,7 @@
   .icon-pick .ip-initial{font-size:20px;font-weight:700;line-height:1.15}
   [data-avatar-edit]{cursor:pointer;border-radius:50%;flex:0 0 auto}
   [data-avatar-edit]:active{opacity:.75}
-  .person-detail{display:flex;align-items:center;flex-wrap:wrap;gap:6px 9px;background:var(--card);border-radius:8px;padding:8px 10px;margin:0 0 8px}
+  .person-detail{display:flex;align-items:center;flex-wrap:wrap;gap:3px 9px;background:var(--card);border-radius:8px;padding:5px 10px 6px;margin:0 0 8px}
   .person-detail .person-name{font-size:16.5px;line-height:1.2}
   .person-detail .person-sub{font-size:12.5px;margin-top:1px;line-height:1.25}
   .person-detail .person-avatar.large{width:48px;height:48px;font-size:20px}
@@ -272,8 +272,8 @@
   .sub-head h2.pdf-title{font-size:20px}
   .back-btn{background:none;border:0;color:var(--text);font-size:28px;width:44px;height:48px;display:flex;align-items:center;justify-content:center}
   /* Ledger detail — compact top bar, only as tall as the back arrow itself */
-  .sub-head.slim{padding:0 0 2px}
-  .sub-head.slim .back-btn{height:28px;width:32px;font-size:23px}
+  .sub-head.slim{padding:0;margin:-8px 0 0}
+  .sub-head.slim .back-btn{height:24px;min-height:24px;width:30px;font-size:21px;padding:0;line-height:1}
 
   /* Charts */
   .chart-top-row{display:flex;gap:10px;align-items:stretch;margin-bottom:14px}
