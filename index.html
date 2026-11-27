@@ -569,6 +569,15 @@
   .cal-foot button{flex:1;border-radius:999px;padding:10px;font-size:15.5px;font-weight:600;min-height:44px}
   .cal-today-btn{background:transparent;border:1.5px solid #93a698;color:var(--text)}
   .cal-close-btn{background:var(--teal);border:0;color:#eafff6}
+  /* Duplicate-entry warning popup — centered card above the entry sheet */
+  .dup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:55;display:none;align-items:center;justify-content:center;padding:18px}
+  .dup-overlay.open{display:flex}
+  .dup-card{background:var(--sheet);color:var(--text);width:100%;max-width:380px;border-radius:16px;padding:20px 18px 16px;box-shadow:0 12px 32px rgba(0,0,0,.5);text-align:center}
+  .dup-card h2{margin:0 0 10px;font-size:20px;font-weight:700}
+  .dup-card p{margin:0 0 18px;font-size:15.5px;line-height:1.55;color:#e6ede7}
+  body.light .dup-card p{color:#2c3a30}
+  .dup-actions{display:flex;gap:10px}
+  .dup-actions .btn{flex:1}
   .desc-row{display:flex;gap:12px;align-items:flex-start}
   .desc-row .desc-ic{font-size:22px;margin-top:10px;color:#c9d4cb}
   .desc-row .field{flex:1}
@@ -871,6 +880,18 @@
       <button class="btn-danger" id="deleteBtn" style="display:none">Delete</button>
       <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
       <button class="btn btn-primary" id="saveBtn">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- Duplicate entry warning popup -->
+<div class="dup-overlay" id="dupOverlay" role="alertdialog" aria-modal="true" aria-labelledby="dupTitle" aria-describedby="dupMsg">
+  <div class="dup-card">
+    <h2 id="dupTitle">Duplicate Entry?</h2>
+    <p id="dupMsg"></p>
+    <div class="dup-actions">
+      <button type="button" class="btn btn-ghost" id="dupCancelBtn">Cancel</button>
+      <button type="button" class="btn btn-primary" id="dupSaveBtn">Save Anyway</button>
     </div>
   </div>
 </div>
@@ -4664,6 +4685,38 @@
       account: formAccount, category: formCategory, ledger: ledgerName,
       remarks: fRemarks.value.trim(), tags: []
     };
+    /* Duplicate check BEFORE saving: same date + same type + same
+       text (trimmed, case-insensitive) + same amount + same ledger
+       as an existing entry. When editing, the entry itself is
+       excluded by id, so saving an entry unchanged never warns
+       about itself. A duplicate only warns — "Save Anyway" in the
+       popup still saves it (two genuine repeats are allowed). */
+    var dup = findDuplicate(data);
+    if(dup){
+      pendingDupData = data;
+      dupMsg.textContent = "Ye entry pehle se mojood hai: " + dup.text + " — " + fmt(dup.amount) + " (" + fmtKeyLong(dup.date) + "). Kya aap phir bhi save karna chahte hain?";
+      dupOverlay.classList.add("open");
+      return;
+    }
+    doSaveEntry(data);
+  }
+
+  function findDuplicate(data){
+    var key = data.text.trim().toLowerCase();
+    for(var i=0;i<entries.length;i++){
+      var e = entries[i];
+      if(editingId && e.id===editingId) continue;
+      if(e.date!==data.date || e.type!==data.type) continue;
+      if(String(e.text||"").trim().toLowerCase()!==key) continue;
+      if(Math.abs(Number(e.amount)-data.amount) > 0.001) continue;
+      if((e.ledger||"")!==(data.ledger||"")) continue;
+      return e;
+    }
+    return null;
+  }
+
+  function doSaveEntry(data){
+    var text = data.text;
     /* Remember this text → category pairing for the current type, so
        the next time this text (or a prefix of it) is typed its
        category sets itself. Re-setting the key on every save moves
@@ -4687,10 +4740,26 @@
       toast(formType==="income" ? "Income (Credit) added ✓" : "Expense (Debit) added ✓");
     }
     persist();
-    if(state.tab==="daily") state.date = date;
-    if(state.tab==="monthly") state.monthCursor = date.slice(0,7);
+    if(state.tab==="daily") state.date = data.date;
+    if(state.tab==="monthly") state.monthCursor = data.date.slice(0,7);
     closeSheet(); render();
   }
+
+  /* Duplicate warning popup wiring: "Save Anyway" saves the stashed
+     entry; "Cancel" (or tapping outside the card) just closes the
+     popup and leaves the form open, unsaved. */
+  var dupOverlay = document.getElementById("dupOverlay");
+  var dupMsg = document.getElementById("dupMsg");
+  var pendingDupData = null;
+  function closeDupWarning(){ dupOverlay.classList.remove("open"); pendingDupData = null; }
+  document.getElementById("dupSaveBtn").addEventListener("click", function(){
+    var data = pendingDupData;
+    closeDupWarning();
+    if(data) doSaveEntry(data);
+  });
+  document.getElementById("dupCancelBtn").addEventListener("click", closeDupWarning);
+  dupOverlay.addEventListener("click", function(ev){ if(ev.target===dupOverlay) closeDupWarning(); });
+
   document.getElementById("saveBtn").addEventListener("click", saveEntry);
   document.getElementById("cancelBtn").addEventListener("click", closeSheet);
   document.getElementById("closeSheetBtn").addEventListener("click", closeSheet);
