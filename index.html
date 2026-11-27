@@ -490,6 +490,17 @@
   .entry-top-row{display:flex;gap:12px;align-items:flex-end;margin-bottom:6px}
   .cat-icon-btn{flex:0 0 auto;width:52px;height:52px;border-radius:12px;border:1.5px solid #93a698;background:var(--sheet-2);font-size:25px;display:flex;align-items:center;justify-content:center;min-height:52px}
   .entry-top-row .field{margin-bottom:0}
+  /* Enter Text suggestion dropdown: previously saved entry texts that
+     start with what is being typed, each with its remembered category. */
+  .text-field-wrap{position:relative}
+  .text-suggest{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--sheet-2);border:1.5px solid #93a698;border-radius:10px;box-shadow:0 12px 28px rgba(0,0,0,.5);z-index:25;display:none;max-height:264px;overflow-y:auto}
+  .text-suggest.open{display:block}
+  .ts-row{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-bottom:1px solid rgba(255,255,255,.08);color:var(--text);text-align:left;padding:8px 10px;min-height:44px}
+  .ts-row:last-child{border-bottom:0}
+  .ts-row:active{background:#39423c}
+  .ts-text{flex:1;min-width:0;font-size:15.5px;font-weight:500;overflow-wrap:anywhere}
+  .ts-cat{flex:0 0 auto;font-size:13px;color:var(--muted);white-space:nowrap}
+  .ts-cat .ts-ic{font-size:15px}
   .from-label{font-size:16px;color:#c9d4cb;margin:14px 0 2px}
   .from-acct-btn{width:100%;background:none;border:0;color:var(--text);text-align:left;padding:4px 0 0;min-height:0}
   .from-acct-name{font-size:23px;font-weight:700}
@@ -814,8 +825,9 @@
 
     <div class="entry-top-row">
       <button type="button" class="cat-icon-btn" id="catIconBtn" aria-label="Choose category" title="Category">▦</button>
-      <div class="field" style="flex:1.4">
+      <div class="field text-field-wrap" style="flex:1.4">
         <input type="text" id="fText" placeholder="Enter Text" autocomplete="off" aria-label="Enter Text" />
+        <div class="text-suggest" id="textSuggest" role="listbox" aria-label="Saved entry suggestions"></div>
       </div>
       <div class="field" style="flex:1">
         <input type="text" id="fAmount" placeholder="Amount" inputmode="none" readonly autocomplete="off" aria-label="Amount — tap to open the calculator keypad" />
@@ -1500,6 +1512,23 @@
       }
     }
     return "";
+  }
+  /* All remembered texts for a type that START WITH the typed key,
+     most recently saved first, capped at `limit` — the suggestion
+     dropdown under the Enter Text field is fed from this list. Each
+     item carries the key (the normalized saved text) and its
+     remembered category. */
+  function listTextCatMatches(type, typedKey, limit){
+    var map = textCat[type];
+    var out = [];
+    if(!map || !typedKey) return out;
+    var keys = Object.keys(map);
+    for(var i = keys.length - 1; i >= 0 && out.length < limit; i--){
+      if(keys[i].indexOf(typedKey) === 0 && map[keys[i]]){
+        out.push({ key: keys[i], category: map[keys[i]] });
+      }
+    }
+    return out;
   }
   /* Migration — Income categories replaced 2026-11-27 with the new
      13-category list in INCOME_CATS above (Easypaisa, JazzCash, Online
@@ -4307,6 +4336,7 @@
     if(formCategory && !list.some(function(c){ return c.name===formCategory; }))
       formCategory = "";
     syncCategoryUI();
+    updateTextSuggest();
   }
   typeIncome.addEventListener("click", function(){ setFormType("income"); });
   typeExpense.addEventListener("click", function(){ setFormType("expense"); });
@@ -4321,6 +4351,7 @@
      leaves the category exactly as it is (a manually picked
      category is never cleared). */
   fText.addEventListener("input", function(){
+    updateTextSuggest();
     var key = textCatKey(fText.value);
     if(!key) return;
     var remembered = lookupTextCat(formType, key);
@@ -4328,6 +4359,87 @@
       formCategory = remembered;
       syncCategoryUI();
     }
+  });
+
+  /* ---------- Enter Text suggestion dropdown ----------
+     While typing in the Enter Text field, a small dropdown under the
+     field lists the previously saved texts for the CURRENT type that
+     start with what was typed (most recently saved first, at most 8),
+     each shown with its remembered category. Tapping a row fills the
+     field with that exact saved text and sets its category. It works
+     alongside the prefix auto-fill above: typing still sets the most
+     recent match's category on its own, and picking a different row
+     switches the text and category to that row's. The dropdown only
+     shows while the field is focused, has at least 1 character and at
+     least 1 match; it hides on selection, on a tap outside the field
+     and dropdown, when the text is cleared, and when the sheet
+     closes. */
+  var textSuggest = document.getElementById("textSuggest");
+  var suggestItems = [];
+  /* The memory keys are normalized (trimmed, lowercased); recover the
+     text as the user actually saved it from the newest entry of this
+     type with that text, so the dropdown shows e.g. "Petrol", not
+     "petrol". Falls back to the key when no such entry remains. */
+  function suggestDisplayText(type, key){
+    for(var i = entries.length - 1; i >= 0; i--){
+      var e = entries[i];
+      if(e && e.type === type && textCatKey(e.text) === key) return e.text;
+    }
+    return key;
+  }
+  function hideTextSuggest(){
+    suggestItems = [];
+    textSuggest.innerHTML = "";
+    textSuggest.classList.remove("open");
+  }
+  function updateTextSuggest(){
+    if(document.activeElement !== fText){ hideTextSuggest(); return; }
+    var key = textCatKey(fText.value);
+    var matches = key ? listTextCatMatches(formType, key, 8) : [];
+    if(!matches.length){ hideTextSuggest(); return; }
+    suggestItems = matches.map(function(m){
+      return { text: suggestDisplayText(formType, m.key), category: m.category };
+    });
+    var html = "";
+    suggestItems.forEach(function(it, idx){
+      var info = catInfo(formType, it.category);
+      html += '<button type="button" class="ts-row" role="option" data-ts-idx="'+idx+'">'
+        + '<span class="ts-text">'+esc(it.text)+'</span>'
+        + '<span class="ts-cat"><span class="ts-ic" style="color:'+esc(info.color)+'">'+esc(info.icon)+'</span> '+esc(info.name)+'</span>'
+        + '</button>';
+    });
+    textSuggest.innerHTML = html;
+    textSuggest.classList.add("open");
+  }
+  function pickTextSuggest(idx){
+    var it = suggestItems[idx];
+    if(!it) return;
+    fText.value = it.text;
+    if(it.category && it.category !== formCategory){
+      formCategory = it.category;
+      syncCategoryUI();
+    }
+    hideTextSuggest();
+    fText.focus();
+  }
+  /* Set by openSheet: the programmatic focus when the sheet opens
+     must not pop the dropdown up on its own (e.g. over an entry being
+     edited) — it appears once the user actually types or refocuses. */
+  var suppressSuggestOnce = false;
+  fText.addEventListener("focus", function(){
+    if(suppressSuggestOnce){ suppressSuggestOnce = false; hideTextSuggest(); return; }
+    updateTextSuggest();
+  });
+  fText.addEventListener("keydown", function(ev){ if(ev.key === "Escape") hideTextSuggest(); });
+  textSuggest.addEventListener("click", function(ev){
+    var row = ev.target;
+    while(row && row !== textSuggest && !row.getAttribute("data-ts-idx")) row = row.parentNode;
+    if(row && row !== textSuggest) pickTextSuggest(parseInt(row.getAttribute("data-ts-idx"), 10));
+  });
+  document.addEventListener("pointerdown", function(ev){
+    if(!textSuggest.classList.contains("open")) return;
+    if(ev.target === fText || textSuggest.contains(ev.target)) return;
+    hideTextSuggest();
   });
 
   function showError(msg){ formError.textContent = msg; formError.classList.add("show"); }
@@ -4663,9 +4775,10 @@
     fromAcctName.textContent = formAccount;
     syncLedgerField();
     overlay.classList.add("open");
+    suppressSuggestOnce = true;
     setTimeout(function(){ fText.focus(); }, 60);
   }
-  function closeSheet(){ closeCalendar(); closeCalcPad(); overlay.classList.remove("open"); editingId = null; }
+  function closeSheet(){ closeCalendar(); closeCalcPad(); hideTextSuggest(); overlay.classList.remove("open"); editingId = null; }
 
   function saveEntry(){
     var text = fText.value.trim();
@@ -4694,7 +4807,7 @@
     var dup = findDuplicate(data);
     if(dup){
       pendingDupData = data;
-      dupMsg.textContent = "Ye entry pehle se mojood hai: " + dup.text + " — " + fmt(dup.amount) + " (" + fmtKeyLong(dup.date) + "). Kya aap phir bhi save karna chahte hain?";
+      dupMsg.textContent = "This entry already exists: " + dup.text + " — " + fmt(dup.amount) + " (" + fmtKeyLong(dup.date) + "). Do you still want to save it?";
       dupOverlay.classList.add("open");
       return;
     }
