@@ -1075,17 +1075,22 @@
   var DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   var DAYS_S = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
-  /* Expense categories: EMPTY since 2026-11-27 — the user had ALL 20
-     deleted (the original 9: Electricity, Petrol/Gas, Kids, Medicines,
-     Mobile, Vegetables, Food and Dining, Misc, Education; and the 11
-     added earlier the same day: Lentils, Ghee & Oil, Rice, Sugar, Tea,
-     Milk, Spices, Flour, Corn, Fruits, Dry Fruits) and asked for
-     nothing to be added back until he finalizes a new list and says
-     so. The Expense picker therefore shows no categories — only the
-     "Add Your Own Category" option. Entries keep their stored
-     category text; catInfo() falls back cleanly for names that no
-     longer exist here. */
-  var EXPENSE_CATS = [];
+  /* Expense categories: the 11 finalized by the user and added
+     2026-11-27 on his "Add kro" (after all 20 old ones were deleted
+     earlier the same day). Emoji icons only, in his approved order. */
+  var EXPENSE_CATS = [
+    {name:"Lentils", icon:"🫘", color:"#b5651d"},
+    {name:"Ghee & Oil", icon:"🧈", color:"#d9a41b"},
+    {name:"Rice", icon:"🍚", color:"#6a994e"},
+    {name:"Sugar", icon:"🍯", color:"#c95d7b"},
+    {name:"Tea", icon:"🫖", color:"#8d6e63"},
+    {name:"Milk", icon:"🐄", color:"#5b8dd9"},
+    {name:"Spices", icon:"🌶️", color:"#d94f30"},
+    {name:"Flour", icon:"🌾", color:"#a3b34d"},
+    {name:"Corn", icon:"🌽", color:"#e0a800"},
+    {name:"Fruits", icon:"🍎", color:"#d62828"},
+    {name:"Dry Fruits", icon:"🥜", color:"#7a68c9"}
+  ];
   var INCOME_CATS = [
     {name:"Easypaisa", icon:"💳", color:"#2fa84f"},
     {name:"JazzCash", icon:"💵", color:"#b23a48"},
@@ -1281,26 +1286,36 @@
     return changed;
   }
   migrateIncomeCats();
-  /* Expense categories deleted 2026-11-27 (see EXPENSE_CATS above):
-     the old load-time migration that merged the Expense defaults back
-     in is REMOVED, so nothing re-adds them. Any Expense categories
-     still stored from before in the custom list are cleared ONCE, so
-     the Expense picker opens empty; the one-time flag keeps a
-     category the user adds themselves later (via "Add Your Own
-     Category") from being wiped on the next load. Entries are NOT
-     touched — they keep their stored category text, and catInfo()
-     falls back to a plain icon/colour for names that no longer
-     exist, so old entries display and edit normally. Income
+  /* Migration — Expense categories added 2026-11-27: the 11 finalized
+     categories in EXPENSE_CATS above (Lentils, Ghee & Oil, Rice,
+     Sugar, Tea, Milk, Spices, Flour, Corn, Fruits, Dry Fruits). This
+     replaces the earlier one-time clear that emptied stored Expense
+     categories (clearStoredExpenseCats — now removed, so nothing
+     wipes these 11 again). Like migrateIncomeCats, it runs on every
+     load (and after a backup restore): any stored custom Expense
+     name that is now a default is dropped from the stored list (no
+     duplicates — the defaults come from EXPENSE_CATS itself), while
+     genuinely custom Expense names the user added stay. Income
      categories are never touched here. */
-  function clearStoredExpenseCats(){
-    if(!customCats.expense.length) return false;
-    customCats.expense = [];
-    return true;
+  function migrateExpenseCats(){
+    var changed = false;
+    var baseNames = EXPENSE_CATS.map(function(c){ return c.name.toLowerCase(); });
+    var seen = {};
+    var kept = [];
+    customCats.expense.forEach(function(n){
+      var ln = String(n).toLowerCase();
+      if(baseNames.indexOf(ln) !== -1){ changed = true; return; }
+      if(seen[ln]){ changed = true; return; }
+      seen[ln] = true;
+      kept.push(n);
+    });
+    if(kept.length !== customCats.expense.length) customCats.expense = kept;
+    if(changed){
+      lsSet(LS_CUSTOMCATS, JSON.stringify(customCats));
+    }
+    return changed;
   }
-  if(!lsGet(LS_EXPCATS_CLEARED)){
-    if(clearStoredExpenseCats()) lsSet(LS_CUSTOMCATS, JSON.stringify(customCats));
-    lsSet(LS_EXPCATS_CLEARED, "1");
-  }
+  migrateExpenseCats();
   entries.forEach(function(e){ if(e.ledger && ledgerNames.indexOf(e.ledger)===-1) ledgerNames.push(e.ledger); });
 
   function persist(){
@@ -4879,11 +4894,10 @@
     /* An old backup can carry the pre-2026-11-27 Income categories —
        run the same replacement so the restored list matches the new 10. */
     migrateIncomeCats();
-    /* Same for Expense: all Expense categories were deleted
-       2026-11-27, so a restored backup's stored Expense categories
-       are cleared too and the picker stays empty. The restored
-       entries keep their stored category text. */
-    clearStoredExpenseCats();
+    /* Same for Expense: a restored backup's stored Expense names
+       that are now defaults are de-duplicated so the 11 finalized
+       categories show once, from EXPENSE_CATS. */
+    migrateExpenseCats();
     notes = Array.isArray(d.notes) ? d.notes : [];
     if(typeof d.currency === "string" && CURRENCIES.some(function(c){ return c.code === d.currency; })) currency = d.currency;
     if(typeof d.fiscalMonth === "number" && d.fiscalMonth >= 0 && d.fiscalMonth <= 11) fiscalMonth = d.fiscalMonth;
