@@ -800,7 +800,7 @@
         <input type="text" id="fAmount" placeholder="Amount" inputmode="none" readonly autocomplete="off" aria-label="Amount — tap to open the calculator keypad" />
       </div>
     </div>
-    <p style="margin:3px 0 0 64px;font-size:12.5px;color:#c9d4cb">Category: <strong id="catNameLabel">Misc</strong> — tap the icon to change</p>
+    <p style="margin:3px 0 0 64px;font-size:12.5px;color:#c9d4cb">Category: <strong id="catNameLabel">No category</strong> — tap the icon to change</p>
 
     <div class="calc-pad" id="calcPad" aria-label="Calculator keypad">
       <button type="button" class="calc-key" data-calc="7">7</button>
@@ -1058,6 +1058,7 @@
   var LS_NAME = "mdd-web-profilename-v1";
   var LS_OPENING1 = "mdd-web-opening-single-v1";
   var LS_CUSTOMCATS = "mdd-web-customcats-v1";
+  var LS_EXPCATS_CLEARED = "mdd-web-expensecats-cleared-v1";
   var LS_NOTES = "mdd-web-notes-v1";
   var LS_PERSON_NOTES = "mdd-web-person-notes-v1";
   var LS_PERSON_PHOTOS = "mdd-web-person-photos-v1";
@@ -1074,28 +1075,17 @@
   var DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   var DAYS_S = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
-  var EXPENSE_CATS = [
-    {name:"Electricity", icon:"⚡", color:"#7c4dff"},
-    {name:"Petrol/Gas", icon:"⛽", color:"#8e7cc3"},
-    {name:"Kids", icon:"☺", color:"#7cb342"},
-    {name:"Medicines", icon:"✚", color:"#8e24aa"},
-    {name:"Mobile", icon:"▯", color:"#c218b8"},
-    {name:"Vegetables", icon:"🥕", color:"#2e8b74"},
-    {name:"Food and Dining", icon:"✂", color:"#26b6c9"},
-    {name:"Misc", icon:"!", color:"#f4511e"},
-    {name:"Education", icon:"🎓", color:"#b08968"},
-    {name:"Lentils", icon:"🫘", color:"#9c6b30"},
-    {name:"Ghee & Oil", icon:"🧈", color:"#c77800"},
-    {name:"Rice", icon:"🍛", color:"#a1887f"},
-    {name:"Sugar", icon:"🍯", color:"#d97ca6"},
-    {name:"Tea", icon:"🫖", color:"#6d4c41"},
-    {name:"Milk", icon:"🐄", color:"#7e9cc4"},
-    {name:"Spices", icon:"🌶️", color:"#c62828"},
-    {name:"Flour", icon:"🌾", color:"#a3b34d"},
-    {name:"Corn", icon:"🌽", color:"#efb920"},
-    {name:"Fruits", icon:"🍎", color:"#e53935"},
-    {name:"Dry Fruits", icon:"🥜", color:"#795548"}
-  ];
+  /* Expense categories: EMPTY since 2026-11-27 — the user had ALL 20
+     deleted (the original 9: Electricity, Petrol/Gas, Kids, Medicines,
+     Mobile, Vegetables, Food and Dining, Misc, Education; and the 11
+     added earlier the same day: Lentils, Ghee & Oil, Rice, Sugar, Tea,
+     Milk, Spices, Flour, Corn, Fruits, Dry Fruits) and asked for
+     nothing to be added back until he finalizes a new list and says
+     so. The Expense picker therefore shows no categories — only the
+     "Add Your Own Category" option. Entries keep their stored
+     category text; catInfo() falls back cleanly for names that no
+     longer exist here. */
+  var EXPENSE_CATS = [];
   var INCOME_CATS = [
     {name:"Easypaisa", icon:"💳", color:"#2fa84f"},
     {name:"JazzCash", icon:"💵", color:"#b23a48"},
@@ -1140,7 +1130,7 @@
     var arr = parseJSON(lsGet(LS_ENTRIES), []);
     if(!Array.isArray(arr)) return [];
     arr.forEach(function(e){
-      if(!e.category) e.category = (e.type==="income" ? "Other Credits" : "Misc");
+      if(!e.category) e.category = (e.type==="income" ? "Other Credits" : "");
       if(!Array.isArray(e.tags)) e.tags = [];
       if(!e.account) e.account = "Cash";
     });
@@ -1291,43 +1281,26 @@
     return changed;
   }
   migrateIncomeCats();
-  /* Migration — Expense categories extended 2026-11-27 with 11 new
-     defaults in EXPENSE_CATS above (Lentils, Ghee & Oil, Rice, Sugar,
-     Tea, Milk, Spices, Flour, Corn, Fruits, Dry Fruits), added AFTER
-     the original 9, which stay exactly as they were. The user's list
-     said "Beans", but that was corrected to "Lentils" (Dalain =
-     Lentils, not Beans), so the new category is "Lentils" and any
-     stored "Beans" name or entry is moved to it. This runs on every
-     load (and after a backup restore): any stored custom Expense
-     name that is now a default is dropped from the stored list (no
-     duplicates — the defaults come from EXPENSE_CATS itself, and
-     catsFor() merges them in for every existing user), while
-     genuinely custom Expense names the user added stay. Income
+  /* Expense categories deleted 2026-11-27 (see EXPENSE_CATS above):
+     the old load-time migration that merged the Expense defaults back
+     in is REMOVED, so nothing re-adds them. Any Expense categories
+     still stored from before in the custom list are cleared ONCE, so
+     the Expense picker opens empty; the one-time flag keeps a
+     category the user adds themselves later (via "Add Your Own
+     Category") from being wiped on the next load. Entries are NOT
+     touched — they keep their stored category text, and catInfo()
+     falls back to a plain icon/colour for names that no longer
+     exist, so old entries display and edit normally. Income
      categories are never touched here. */
-  function migrateExpenseCats(){
-    var changed = false;
-    var baseNames = EXPENSE_CATS.map(function(c){ return c.name.toLowerCase(); });
-    var seen = {};
-    var kept = [];
-    customCats.expense.forEach(function(n){
-      var ln = String(n).toLowerCase();
-      if(baseNames.indexOf(ln) !== -1 || ln === "beans"){ changed = true; return; }
-      if(seen[ln]){ changed = true; return; }
-      seen[ln] = true;
-      kept.push(n);
-    });
-    if(kept.length !== customCats.expense.length) customCats.expense = kept;
-    entries.forEach(function(e){
-      if(!e || e.type !== "expense" || !e.category) return;
-      if(String(e.category).toLowerCase() === "beans" && e.category !== "Lentils"){ e.category = "Lentils"; changed = true; }
-    });
-    if(changed){
-      lsSet(LS_CUSTOMCATS, JSON.stringify(customCats));
-      lsSet(LS_ENTRIES, JSON.stringify(entries));
-    }
-    return changed;
+  function clearStoredExpenseCats(){
+    if(!customCats.expense.length) return false;
+    customCats.expense = [];
+    return true;
   }
-  migrateExpenseCats();
+  if(!lsGet(LS_EXPCATS_CLEARED)){
+    if(clearStoredExpenseCats()) lsSet(LS_CUSTOMCATS, JSON.stringify(customCats));
+    lsSet(LS_EXPCATS_CLEARED, "1");
+  }
   entries.forEach(function(e){ if(e.ledger && ledgerNames.indexOf(e.ledger)===-1) ledgerNames.push(e.ledger); });
 
   function persist(){
@@ -1358,7 +1331,7 @@
   function catInfo(kind, name){
     var list = catsFor(kind);
     for(var i=0;i<list.length;i++) if(list[i].name===name) return list[i];
-    return {name:name || "Misc", icon:"▦", color:"#8a8f98"};
+    return {name:name || "No category", icon:"▦", color:"#8a8f98"};
   }
   function ensureLedger(name){
     name = (name||"").trim();
@@ -2210,7 +2183,7 @@
     var list = chartEntries();
     var byCat = {}, byAcct = {};
     list.forEach(function(e){
-      var c = e.category || (type==="income" ? "Other Credits" : "Misc");
+      var c = e.category || (type==="income" ? "Other Credits" : "No category");
       byCat[c] = (byCat[c] || 0) + (+e.amount);
       byAcct[e.account || "Cash"] = (byAcct[e.account || "Cash"] || 0) + (+e.amount);
     });
@@ -3041,7 +3014,7 @@
       var list = reportTypeList(from, to, person, type, account);
       var byCat = {};
       list.forEach(function(e){
-        var c = e.category || (type === "income" ? "Other Credits" : "Misc");
+        var c = e.category || (type === "income" ? "Other Credits" : "No category");
         byCat[c] = (byCat[c] || 0) + (+e.amount);
       });
       var total = list.reduce(function(t, e){ return t + (+e.amount); }, 0);
@@ -3781,7 +3754,7 @@
       var list = reportTypeList(from, to, person, type, account);
       var byCat = {};
       list.forEach(function(e){
-        var c = e.category || (type === "income" ? "Other Credits" : "Misc");
+        var c = e.category || (type === "income" ? "Other Credits" : "No category");
         byCat[c] = (byCat[c] || 0) + (+e.amount);
       });
       var total = list.reduce(function(t, e){ return t + (+e.amount); }, 0);
@@ -4012,7 +3985,7 @@
       fromAcctName = document.getElementById("fromAcctName"),
       catIconBtn = document.getElementById("catIconBtn"), catNameLabel = document.getElementById("catNameLabel"),
       deleteBtn = document.getElementById("deleteBtn");
-  var formType = "expense", editingId = null, formAccount = "Cash", formCategory = "Misc";
+  var formType = "expense", editingId = null, formAccount = "Cash", formCategory = "";
 
   /* The entry form has a Ledger field listing only people (added from the
      Ledger tab). It is hidden only when a new entry is opened from a
@@ -4039,7 +4012,9 @@
     var info = catInfo(formType, formCategory);
     catIconBtn.textContent = info.icon;
     catIconBtn.style.color = info.color;
-    catNameLabel.textContent = info.name;
+    /* With no category chosen (the Expense list is empty until the
+       user adds one), show a plain "No category" label. */
+    catNameLabel.textContent = formCategory ? info.name : "No category";
   }
   function setFormType(t){
     formType = t;
@@ -4047,8 +4022,9 @@
     typeExpense.classList.toggle("sel", t==="expense");
     fromLabel.textContent = t==="income" ? "Credit To" : "Debit From";
     fromType.textContent = t==="income" ? "Credit" : "Debit";
-    var def = t==="income" ? "Other Credits" : "Misc";
-    if(!catsFor(t).some(function(c){ return c.name===formCategory; })) formCategory = def;
+    var list = catsFor(t);
+    if(!list.some(function(c){ return c.name===formCategory; }))
+      formCategory = list.length ? (t==="income" ? "Other Credits" : list[0].name) : "";
     syncCategoryUI();
   }
   typeIncome.addEventListener("click", function(){ setFormType("income"); });
@@ -4359,8 +4335,13 @@
       if(e.ledger) ensureLedger(e.ledger);
       formLedger = e.ledger || "";
       hideLedgerField = false;
-      formCategory = e.category || (e.type==="income" ? "Other Credits" : "Misc");
       setFormType(e.type);
+      /* Keep the entry's stored category even when it is no longer in
+         the picker list (e.g. a deleted Expense category): catInfo()
+         falls back cleanly, so the entry shows normally and re-saves
+         with its category unchanged. */
+      formCategory = e.category || (e.type==="income" ? "Other Credits" : "");
+      syncCategoryUI();
       deleteBtn.style.display = "";
     } else {
       formDateKey = todayKey(); syncDateBox();
@@ -4372,7 +4353,7 @@
         formLedger = "";
         hideLedgerField = false;
       }
-      formCategory = "Misc";
+      formCategory = "";
       setFormType("expense");
       deleteBtn.style.display = "none";
     }
@@ -4873,7 +4854,7 @@
     pendingRestore = null;
     entries = d.entries;
     entries.forEach(function(e){
-      if(!e.category) e.category = (e.type==="income" ? "Other Credits" : "Misc");
+      if(!e.category) e.category = (e.type==="income" ? "Other Credits" : "");
       if(!Array.isArray(e.tags)) e.tags = [];
       if(!e.account) e.account = "Cash";
     });
@@ -4898,9 +4879,11 @@
     /* An old backup can carry the pre-2026-11-27 Income categories —
        run the same replacement so the restored list matches the new 10. */
     migrateIncomeCats();
-    /* Same for Expense: an old backup predates the 11 new defaults —
-       drop any stored duplicates (and move "Beans" to "Lentils"). */
-    migrateExpenseCats();
+    /* Same for Expense: all Expense categories were deleted
+       2026-11-27, so a restored backup's stored Expense categories
+       are cleared too and the picker stays empty. The restored
+       entries keep their stored category text. */
+    clearStoredExpenseCats();
     notes = Array.isArray(d.notes) ? d.notes : [];
     if(typeof d.currency === "string" && CURRENCIES.some(function(c){ return c.code === d.currency; })) currency = d.currency;
     if(typeof d.fiscalMonth === "number" && d.fiscalMonth >= 0 && d.fiscalMonth <= 11) fiscalMonth = d.fiscalMonth;
