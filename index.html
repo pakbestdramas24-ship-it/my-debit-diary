@@ -4799,8 +4799,9 @@
       remarks: fRemarks.value.trim(), tags: []
     };
     /* Duplicate check BEFORE saving: same date + same type + same
-       text (trimmed, case-insensitive) + same amount + same ledger
-       as an existing entry. When editing, the entry itself is
+       text (trimmed, case-insensitive) + same amount as an existing
+       entry (the ledger is not compared — see findDuplicate). When
+       editing, the entry itself is
        excluded by id, so saving an entry unchanged never warns
        about itself. A duplicate only warns — "Save Anyway" in the
        popup still saves it (two genuine repeats are allowed). */
@@ -4822,7 +4823,10 @@
       if(e.date!==data.date || e.type!==data.type) continue;
       if(String(e.text||"").trim().toLowerCase()!==key) continue;
       if(Math.abs(Number(e.amount)-data.amount) > 0.001) continue;
-      if((e.ledger||"")!==(data.ledger||"")) continue;
+      /* The ledger is deliberately NOT compared: the same purchase
+         on the same day is a duplicate even if one copy was filed
+         under a person and the other was not (e.g. saved once from
+         the Daily + button and once from a ledger detail screen). */
       return e;
     }
     return null;
@@ -4850,7 +4854,9 @@
     } else {
       data.id = uid(); data.createdAt = Date.now();
       entries.push(data);
-      toast(formType==="income" ? "Income (Credit) added ✓" : "Expense (Debit) added ✓");
+      /* No "added" toast for a new entry (removed at the user's
+         request): the sheet closing and the entry appearing in the
+         list is confirmation enough. */
     }
     persist();
     if(state.tab==="daily") state.date = data.date;
