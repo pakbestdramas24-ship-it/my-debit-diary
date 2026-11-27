@@ -1078,8 +1078,10 @@
   /* Expense categories: the 11 finalized by the user and added
      2026-11-27 on his "Add kro" (after all 20 old ones were deleted
      earlier the same day), plus 10 more finalized and added the same
-     day on his "Add karo" — 21 total. Emoji icons only, in his
-     approved order. */
+     day on his "Add karo", plus 7 more finalized and added the same
+     day on his "Add kro" (Dairy Products, Health Drinks, Coffee,
+     Bakery, Fast Food, Desserts, Mithai & Snacks) — 28 total. Emoji
+     icons only, in his approved order. */
   var EXPENSE_CATS = [
     {name:"Lentils", icon:"🫘", color:"#b5651d"},
     {name:"Ghee & Oil", icon:"🧈", color:"#d9a41b"},
@@ -1101,7 +1103,14 @@
     {name:"Mutton", icon:"🍖", color:"#bc4749"},
     {name:"Soft Drinks", icon:"🥤", color:"#4361ee"},
     {name:"Kids Snacks", icon:"🍪", color:"#f4a261"},
-    {name:"Distillates", icon:"💧", color:"#48cae4"}
+    {name:"Distillates", icon:"💧", color:"#48cae4"},
+    {name:"Dairy Products", icon:"🧀", color:"#f2c14e"},
+    {name:"Health Drinks", icon:"🥛", color:"#2a9d8f"},
+    {name:"Coffee", icon:"☕", color:"#6f4e37"},
+    {name:"Bakery", icon:"🍞", color:"#b07d48"},
+    {name:"Fast Food", icon:"🍕", color:"#ef476f"},
+    {name:"Desserts", icon:"🍦", color:"#9b5de5"},
+    {name:"Mithai & Snacks", icon:"🍬", color:"#ff8500"}
   ];
   var INCOME_CATS = [
     {name:"Easypaisa", icon:"💳", color:"#2fa84f"},
@@ -1298,12 +1307,14 @@
     return changed;
   }
   migrateIncomeCats();
-  /* Migration — Expense categories: the 21 finalized categories in
+  /* Migration — Expense categories: the 28 finalized categories in
      EXPENSE_CATS above (the original 11 — Lentils, Ghee & Oil, Rice,
      Sugar, Tea, Milk, Spices, Flour, Corn, Fruits, Dry Fruits — plus
      the 10 added 2026-11-27: Desi Ghee, Cosmetics, Personal Care,
      Preserves, Chicken, Beef, Mutton, Soft Drinks, Kids Snacks,
-     Distillates). This replaces the earlier one-time clear that
+     Distillates — plus the 7 added 2026-11-27: Dairy Products,
+     Health Drinks, Coffee, Bakery, Fast Food, Desserts,
+     Mithai & Snacks). This replaces the earlier one-time clear that
      emptied stored Expense categories (clearStoredExpenseCats — now
      removed, so nothing wipes these again). Like migrateIncomeCats,
      it runs on every load (and after a backup restore): any stored
@@ -4909,7 +4920,7 @@
        run the same replacement so the restored list matches the new 10. */
     migrateIncomeCats();
     /* Same for Expense: a restored backup's stored Expense names
-       that are now defaults are de-duplicated so the 11 finalized
+       that are now defaults are de-duplicated so the 28 finalized
        categories show once, from EXPENSE_CATS. */
     migrateExpenseCats();
     notes = Array.isArray(d.notes) ? d.notes : [];
