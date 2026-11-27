@@ -1438,8 +1438,13 @@
      Remembers which category the user picked for an entry text
      ("Enter Text"), kept separately for Income and Expense: the same
      words can mean different things in each. Keys are the entry text
-     trimmed and lowercased; values are category names. Stored under
-     its own localStorage key and included in Backup/Restore. */
+     trimmed and lowercased; values are category names. Lookup is by
+     PREFIX: typing "pet" already matches a remembered "Petrol".
+     When several remembered texts share the typed prefix, the most
+     recently saved/updated one wins — recency is the key order of
+     each map (saving a pairing moves its key to the end), which
+     JSON round-trips preserve. Stored under its own localStorage
+     key and included in Backup/Restore. */
   function loadTextCat(){
     var o = parseJSON(lsGet(LS_TEXTCAT), null);
     var out = {income:{}, expense:{}};
@@ -1458,6 +1463,23 @@
   var textCat = loadTextCat();
   function persistTextCat(){ lsSet(LS_TEXTCAT, JSON.stringify(textCat)); }
   function textCatKey(text){ return String(text == null ? "" : text).trim().toLowerCase(); }
+  /* Prefix lookup: returns the category remembered for the most
+     recently saved text that STARTS WITH the typed text (both
+     already trimmed/lowercased), or "" when nothing matches. A full
+     remembered text is a prefix of itself, so exact matches still
+     work. Keys are scanned newest-first (see the note above). */
+  function lookupTextCat(type, typedKey){
+    var map = textCat[type];
+    if(!map || !typedKey) return "";
+    var keys = Object.keys(map);
+    for(var i = keys.length - 1; i >= 0; i--){
+      if(keys[i].indexOf(typedKey) === 0){
+        var cat = map[keys[i]];
+        if(cat) return cat;
+      }
+    }
+    return "";
+  }
   /* Migration — Income categories replaced 2026-11-27 with the new
      13-category list in INCOME_CATS above (Easypaisa, JazzCash, Online
      Earnings, Salary, Bonus, Gift Credit, House Rent, Shop Rent,
@@ -4269,17 +4291,18 @@
   typeExpense.addEventListener("click", function(){ setFormType("expense"); });
 
   /* Smart category memory: while the user TYPES in the "Enter Text"
-     field, an exact match (trimmed, lowercased) against the texts
-     remembered for the current type fills the category in on its own.
-     This runs ONLY on typing — never when the form opens or an entry
-     is loaded — and a text with no memory leaves the category exactly
-     as it is (a manually picked category is never cleared). */
+     field, a PREFIX match against the texts remembered for the
+     current type fills the category in on its own — typing "pet"
+     already brings up the category remembered for "Petrol", and if
+     several remembered texts start with what was typed, the most
+     recently saved one wins. This runs ONLY on typing — never when
+     the form opens or an entry is loaded — and a text with no match
+     leaves the category exactly as it is (a manually picked
+     category is never cleared). */
   fText.addEventListener("input", function(){
     var key = textCatKey(fText.value);
     if(!key) return;
-    var map = textCat[formType];
-    if(!map || !Object.prototype.hasOwnProperty.call(map, key)) return;
-    var remembered = map[key];
+    var remembered = lookupTextCat(formType, key);
     if(remembered && remembered !== formCategory){
       formCategory = remembered;
       syncCategoryUI();
@@ -4642,11 +4665,15 @@
       remarks: fRemarks.value.trim(), tags: []
     };
     /* Remember this text → category pairing for the current type, so
-       the next time the same text is typed its category sets itself.
-       Saving with NO category is allowed and remembers nothing. */
+       the next time this text (or a prefix of it) is typed its
+       category sets itself. Re-setting the key on every save moves
+       it to the end of the map, which is what makes it the most
+       recent for prefix tie-breaks. Saving with NO category is
+       allowed and remembers nothing. */
     if(formCategory){
       var tcKey = textCatKey(text);
-      if(tcKey && textCat[formType][tcKey] !== formCategory){
+      if(tcKey){
+        delete textCat[formType][tcKey];
         textCat[formType][tcKey] = formCategory;
         persistTextCat();
       }
