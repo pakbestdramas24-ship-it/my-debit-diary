@@ -583,6 +583,17 @@
   .picker-item .pi-ic{font-size:23px;width:34px;text-align:center;flex:0 0 auto}
   .picker-item .pi-check{margin-left:auto;color:var(--mint);font-weight:800}
   .picker-item:active{background:#2c352f}
+  /* Category picker — tags as compact boxes in a 2-column grid,
+     Expense tags grouped under section headers (CAT_GROUPS). */
+  .cat-group-head{display:flex;align-items:center;gap:10px;margin:18px 2px 9px;font-size:15px;font-weight:700;color:var(--text)}
+  .cat-group-head:first-child{margin-top:2px}
+  .cat-group-head::after{content:"";flex:1;height:1px;background:#4a574e}
+  .cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .cat-box{display:flex;align-items:center;gap:8px;width:100%;background:var(--sheet-2);border:1px solid #4a574e;border-radius:10px;color:var(--text);padding:8px 10px;font-size:14.5px;line-height:1.25;text-align:left;min-height:46px}
+  .cat-box .pi-ic{font-size:20px;line-height:1;flex:0 0 auto}
+  .cat-box .cb-name{flex:1;overflow-wrap:break-word}
+  .cat-box .pi-check{margin-left:auto;color:var(--mint);font-weight:800;flex:0 0 auto}
+  .cat-box:active{background:#22352b}
 
   /* Inline input row (custom category) */
   .tag-input-row{display:flex;gap:10px;align-items:flex-end}
@@ -698,6 +709,9 @@
   body.light .toggle button.sel{background:#dce8df}
   body.light .picker-item{border-bottom-color:#d3dcd4}
   body.light .picker-item:active{background:#eef2ee}
+  body.light .cat-group-head::after{background:#d3dcd4}
+  body.light .cat-box{background:#ffffff;border-color:#c4d2c6}
+  body.light .cat-box:active{background:#eef2ee}
   body.light .cal-nav{background:rgba(0,0,0,.06)}
   body.light .cal-day:active{background:#e4eae5}
   body.light .cal-week{color:#43534a}
@@ -953,7 +967,7 @@
   <div class="sheet">
     <button class="sheet-close" id="closeCategoryBtn" aria-label="Close"><span>⌄</span></button>
     <h2 class="sheet-title">Category</h2>
-    <ul class="picker-list" id="categoryList"></ul>
+    <div id="categoryList"></div>
     <div class="field" style="margin-top:16px">
       <label for="customCatInput">Add Your Own Category</label>
       <div class="tag-input-row">
@@ -1258,6 +1272,27 @@
     {name:"Bank", icon:"🏦", color:"#1565c0"},
     {name:"Borrow", icon:"🤲", color:"#0277bd"},
     {name:"Committee", icon:"👥", color:"#3949ab"}
+  ];
+  /* Expense picker groups — the 127 EXPENSE_CATS arranged in one series
+     for the category picker: [group title, category names in order].
+     Every EXPENSE_CATS name appears in exactly one group; the picker
+     looks each name up in EXPENSE_CATS for its icon and color, so this
+     list only sets the grouping and order, never the tags themselves. */
+  var CAT_GROUPS = [
+    ["Groceries", ["Lentils","Ghee & Oil","Rice","Sugar","Tea","Milk","Spices","Flour","Corn","Fruits","Dry Fruits","Desi Ghee","Preserves","Chicken","Beef","Mutton","Soft Drinks","Kids Snacks","Distillates","Dairy Products","Coffee","Bakery","Fast Food","Desserts","Mithai & Snacks","Vegetables","Eggs","Tandoor","Dining Out"]],
+    ["Education", ["Education","School Fee","Tuition Fee","Admission","Dars","Stationery","Uniform","Canteen Bill"]],
+    ["Construction", ["Materials","Hardware","Drainage","Wood & Metal Work","Paint & Decor","Land","Tube Well","Wages","Welder","Architect","Solar System"]],
+    ["Health", ["Herbal Medicine","Medical","Medicines","Health Drinks","Supplements","Pregnancy"]],
+    ["Marriage", ["Engagement","Nikkah","Mehndi","Barat","Waleema","Salami","Laag","Bride Feast","Nandra","Bhaji","Dowry"]],
+    ["Home", ["Cleaning","Utensils","Crockery","Bedding","Home Repair","Appliances","Furniture","House Rent","Society Charges","Laundry","Toys","Potter"]],
+    ["Transport", ["Bicycle","Motorcycle","Car","Vehicle Wash","Bike Fuel","Car Fuel","Transport","Trip","Air Travel","Traveling"]],
+    ["Personal Care", ["Cosmetics","Personal Care","Clothes","Shoes","Barber/Salon","Spa","Beautician","Cobbler","Tailor","Sewing","Bags"]],
+    ["Bills", ["Mobile Package","Internet Bill","Electricity Bill","Gas Bill","Water Bill"]],
+    ["Giving", ["Masjid","Gifts","Eidi","Puchh","Charity & Alms","Donation","Aid","Lend","Committee"]],
+    ["Electronics", ["CCTV","Laptop","Mobile","Electronics"]],
+    ["Jewelry", ["Gold","Artificial Jewelry","Girls Accessories","Boys Accessories"]],
+    ["Fun & Shopping", ["Entertainment","Cinema","Dating","Shopping","Fine"]],
+    ["Funeral", ["Funeral","Graveyard"]]
   ];
   var EXTRA_COLORS = ["#4db3c9","#a3b34d","#d97c4a","#7a68c9","#3f9e6e","#b04a4a"];
 
@@ -4707,11 +4742,31 @@
 
   /* ---------- category picker ---------- */
   var categoryOverlay = document.getElementById("categoryOverlay");
+  function catBoxHTML(c){
+    return '<button class="cat-box" data-cat-pick="'+esc(c.name)+'"><span class="pi-ic" style="color:'+c.color+'">'+esc(c.icon)+'</span><span class="cb-name">'+esc(c.name)+'</span>' +
+      (c.name===formCategory ? '<span class="pi-check">✓</span>' : '') + '</button>';
+  }
   function openCategoryPicker(){
-    document.getElementById("categoryList").innerHTML = catsFor(formType).map(function(c){
-      return '<li><button class="picker-item" data-cat-pick="'+esc(c.name)+'"><span class="pi-ic" style="color:'+c.color+'">'+esc(c.icon)+'</span><span style="flex:1">'+esc(c.name)+'</span>' +
-        (c.name===formCategory ? '<span class="pi-check">✓</span>' : '') + '</button></li>';
-    }).join("");
+    var list = catsFor(formType);
+    var html = "";
+    if(formType === "expense"){
+      var byName = {}, used = {};
+      list.forEach(function(c){ byName[c.name] = c; });
+      CAT_GROUPS.forEach(function(g){
+        var boxes = "";
+        g[1].forEach(function(n){
+          if(byName[n]){ boxes += catBoxHTML(byName[n]); used[n] = true; }
+        });
+        if(boxes) html += '<div class="cat-group-head">'+esc(g[0])+'</div><div class="cat-grid">'+boxes+'</div>';
+      });
+      /* A category in no group (one the user added themselves) stays
+         reachable under "Other" so it never disappears from the picker. */
+      var rest = list.filter(function(c){ return !used[c.name]; });
+      if(rest.length) html += '<div class="cat-group-head">Other</div><div class="cat-grid">'+rest.map(catBoxHTML).join("")+'</div>';
+    } else {
+      html = '<div class="cat-grid">'+list.map(catBoxHTML).join("")+'</div>';
+    }
+    document.getElementById("categoryList").innerHTML = html;
     categoryOverlay.querySelectorAll("[data-cat-pick]").forEach(function(b){
       b.addEventListener("click", function(){
         formCategory = b.getAttribute("data-cat-pick");
