@@ -1125,7 +1125,9 @@
      the same day on his "Add kro" (Dowry, Committee, Borrow,
      Lend, Tandoor, Potter, Architect, Supplements) — Borrow was
      removed from Expense on the user's request 2026-11-27 (it
-     stays in Income only), so 127 total. Emoji
+     stays in Income only). School Fee, Tuition Fee and
+     Admission were removed from Expense on the user's request
+     2026-11-27 too, so 124 total. Emoji
      icons only, in his approved order.
      Note: the Expense "House Rent" (🏡, rent paid) is distinct from
      the Income "House Rent" (🏠, rent received) in INCOME_CATS. */
@@ -1195,9 +1197,6 @@
     {name:"Stationery", icon:"✏️", color:"#9575cd"},
     {name:"Uniform", icon:"👔", color:"#455a64"},
     {name:"Bags", icon:"🎒", color:"#e65100"},
-    {name:"Admission", icon:"🎓", color:"#1565c0"},
-    {name:"School Fee", icon:"🧾", color:"#6a1b9a"},
-    {name:"Tuition Fee", icon:"👨‍🏫", color:"#00838f"},
     {name:"Dars", icon:"📖", color:"#2e7d32"},
     {name:"Canteen Bill", icon:"🍔", color:"#f57c00"},
     {name:"Trip", icon:"🧳", color:"#8d6e63"},
@@ -1273,14 +1272,14 @@
     {name:"Borrow", icon:"🤲", color:"#0277bd"},
     {name:"Committee", icon:"👥", color:"#3949ab"}
   ];
-  /* Expense picker groups — the 127 EXPENSE_CATS arranged in one series
+  /* Expense picker groups — the 124 EXPENSE_CATS arranged in one series
      for the category picker: [group title, category names in order].
      Every EXPENSE_CATS name appears in exactly one group; the picker
      looks each name up in EXPENSE_CATS for its icon and color, so this
      list only sets the grouping and order, never the tags themselves. */
   var CAT_GROUPS = [
     ["Groceries", ["Lentils","Ghee & Oil","Rice","Sugar","Tea","Milk","Spices","Flour","Corn","Fruits","Dry Fruits","Desi Ghee","Preserves","Chicken","Beef","Mutton","Soft Drinks","Kids Snacks","Distillates","Dairy Products","Coffee","Bakery","Fast Food","Desserts","Mithai & Snacks","Vegetables","Eggs","Tandoor","Dining Out"]],
-    ["Education", ["Education","School Fee","Tuition Fee","Admission","Dars","Stationery","Uniform","Canteen Bill"]],
+    ["Education", ["Education","Dars","Stationery","Uniform","Canteen Bill"]],
     ["Construction", ["Materials","Hardware","Drainage","Wood & Metal Work","Paint & Decor","Land","Tube Well","Wages","Welder","Architect","Solar System"]],
     ["Health", ["Herbal Medicine","Medical","Medicines","Health Drinks","Supplements","Pregnancy"]],
     ["Marriage", ["Engagement","Nikkah","Mehndi","Barat","Waleema","Salami","Laag","Bride Feast","Nandra","Bhaji","Dowry"]],
@@ -1477,7 +1476,7 @@
     return changed;
   }
   migrateIncomeCats();
-  /* Migration — Expense categories: the 127 finalized categories in
+  /* Migration — Expense categories: the 124 finalized categories in
      EXPENSE_CATS above (the original 11 — Lentils, Ghee & Oil, Rice,
      Sugar, Tea, Milk, Spices, Flour, Corn, Fruits, Dry Fruits — plus
      the 10 added 2026-11-27: Desi Ghee, Cosmetics, Personal Care,
@@ -1510,7 +1509,10 @@
      request 2026-11-27 — it stays in Income only — so a stored
      custom Expense "Borrow" is filtered out below too, so it does
      not reappear in the Expense picker; entries already filed
-     under "Borrow" keep their stored category text). This replaces the earlier one-time clear that
+     under "Borrow" keep their stored category text. School Fee,
+     Tuition Fee and Admission were likewise removed from Expense
+     on the user's request 2026-11-27 and are filtered out the
+     same way; entries filed under them keep their stored text). This replaces the earlier one-time clear that
      emptied stored Expense categories (clearStoredExpenseCats — now
      removed, so nothing wipes these again). Like migrateIncomeCats,
      it runs on every load (and after a backup restore): any stored
@@ -1521,7 +1523,7 @@
   function migrateExpenseCats(){
     var changed = false;
     var baseNames = EXPENSE_CATS.map(function(c){ return c.name.toLowerCase(); });
-    var removed = ["borrow"];
+    var removed = ["borrow","school fee","tuition fee","admission"];
     var seen = {};
     var kept = [];
     customCats.expense.forEach(function(n){
