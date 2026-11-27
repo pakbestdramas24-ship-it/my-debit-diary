@@ -1253,7 +1253,10 @@
     {name:"House Rent", icon:"🏠", color:"#3f9e6e"},
     {name:"Shop Rent", icon:"🏪", color:"#d97c4a"},
     {name:"Business", icon:"📊", color:"#7a68c9"},
-    {name:"Other Credits", icon:"💲", color:"#78909c"}
+    {name:"Other Credits", icon:"💲", color:"#78909c"},
+    {name:"Bank", icon:"🏦", color:"#1565c0"},
+    {name:"Borrow", icon:"🤲", color:"#0277bd"},
+    {name:"Committee", icon:"👥", color:"#3949ab"}
   ];
   var EXTRA_COLORS = ["#4db3c9","#a3b34d","#d97c4a","#7a68c9","#3f9e6e","#b04a4a"];
 
@@ -1395,9 +1398,9 @@
   var profileName = lsGet(LS_NAME) || "";
   var customCats = loadCustomCats();
   /* Migration — Income categories replaced 2026-11-27 with the new
-     10-category list in INCOME_CATS above (Easypaisa, JazzCash, Online
+     13-category list in INCOME_CATS above (Easypaisa, JazzCash, Online
      Earnings, Salary, Bonus, Gift Credit, House Rent, Shop Rent,
-     Business, Other Credits). The old Income list (Salary, House Rent,
+     Business, Other Credits, Bank, Borrow, Committee). The old Income list (Salary, House Rent,
      Shop Rent, Business, Rent, Gift, Other) is gone: the generic
      "Rent" category is removed, "Gift" is renamed "Gift Credit" and
      "Other" is renamed "Other Credits". This runs on every load (and
