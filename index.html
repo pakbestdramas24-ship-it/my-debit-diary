@@ -491,7 +491,7 @@
   .cat-icon-btn{flex:0 0 auto;width:52px;height:52px;border-radius:12px;border:1.5px solid #93a698;background:var(--sheet-2);font-size:25px;display:flex;align-items:center;justify-content:center;min-height:52px}
   .entry-top-row .field{margin-bottom:0}
   /* Enter Text suggestion dropdown: previously saved entry texts that
-     start with what is being typed, each with its remembered category. */
+     start with what is being typed — text only, no category shown. */
   .text-field-wrap{position:relative}
   .text-suggest{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--sheet-2);border:1.5px solid #93a698;border-radius:10px;box-shadow:0 12px 28px rgba(0,0,0,.5);z-index:25;display:none;max-height:264px;overflow-y:auto}
   .text-suggest.open{display:block}
@@ -499,8 +499,6 @@
   .ts-row:last-child{border-bottom:0}
   .ts-row:active{background:#39423c}
   .ts-text{flex:1;min-width:0;font-size:15.5px;font-weight:500;overflow-wrap:anywhere}
-  .ts-cat{flex:0 0 auto;font-size:13px;color:var(--muted);white-space:nowrap}
-  .ts-cat .ts-ic{font-size:15px}
   .from-label{font-size:16px;color:#c9d4cb;margin:14px 0 2px}
   .from-acct-btn{width:100%;background:none;border:0;color:var(--text);text-align:left;padding:4px 0 0;min-height:0}
   .from-acct-name{font-size:23px;font-weight:700}
@@ -4341,39 +4339,34 @@
   typeIncome.addEventListener("click", function(){ setFormType("income"); });
   typeExpense.addEventListener("click", function(){ setFormType("expense"); });
 
-  /* Smart category memory: while the user TYPES in the "Enter Text"
-     field, a PREFIX match against the texts remembered for the
-     current type fills the category in on its own — typing "pet"
-     already brings up the category remembered for "Petrol", and if
-     several remembered texts start with what was typed, the most
-     recently saved one wins. This runs ONLY on typing — never when
-     the form opens or an entry is loaded — and a text with no match
-     leaves the category exactly as it is (a manually picked
-     category is never cleared). */
+  /* Smart category memory: typing in the "Enter Text" field does NOT
+     set the category — the category box stays exactly as it is (empty
+     / "Not selected" on a new entry) while he types, however much of
+     a remembered text he has typed. The remembered category is only
+     applied later, when he moves on to the Amount field (see the
+     Amount focus handler by the calculator keypad below). Typing
+     here only refreshes the suggestion dropdown and marks the text
+     as edited in this form session, so the Amount-focus lookup knows
+     the text on screen is his, not one loaded from a saved entry. */
+  var textEditedInForm = false;
   fText.addEventListener("input", function(){
+    textEditedInForm = true;
     updateTextSuggest();
-    var key = textCatKey(fText.value);
-    if(!key) return;
-    var remembered = lookupTextCat(formType, key);
-    if(remembered && remembered !== formCategory){
-      formCategory = remembered;
-      syncCategoryUI();
-    }
   });
 
   /* ---------- Enter Text suggestion dropdown ----------
      While typing in the Enter Text field, a small dropdown under the
      field lists the previously saved texts for the CURRENT type that
-     start with what was typed (most recently saved first, at most 8),
-     each shown with its remembered category. Tapping a row fills the
-     field with that exact saved text and sets its category. It works
-     alongside the prefix auto-fill above: typing still sets the most
-     recent match's category on its own, and picking a different row
-     switches the text and category to that row's. The dropdown only
-     shows while the field is focused, has at least 1 character and at
-     least 1 match; it hides on selection, on a tap outside the field
-     and dropdown, when the text is cleared, and when the sheet
-     closes. */
+     start with what was typed (most recently saved first, at most 8).
+     Each row shows the saved TEXT ONLY — no category icon or name.
+     Tapping a row fills the field with that exact saved text and
+     nothing more: the category is NOT set on selection. It is set
+     later, when he moves on to the Amount field (see the Amount
+     focus handler by the calculator keypad below). The dropdown
+     only shows while the field is focused, has at least 1 character
+     and at least 1 match; it hides on selection, on a tap outside
+     the field and dropdown, when the text is cleared, and when the
+     sheet closes. */
   var textSuggest = document.getElementById("textSuggest");
   var suggestItems = [];
   /* The memory keys are normalized (trimmed, lowercased); recover the
@@ -4398,14 +4391,12 @@
     var matches = key ? listTextCatMatches(formType, key, 8) : [];
     if(!matches.length){ hideTextSuggest(); return; }
     suggestItems = matches.map(function(m){
-      return { text: suggestDisplayText(formType, m.key), category: m.category };
+      return { text: suggestDisplayText(formType, m.key) };
     });
     var html = "";
     suggestItems.forEach(function(it, idx){
-      var info = catInfo(formType, it.category);
       html += '<button type="button" class="ts-row" role="option" data-ts-idx="'+idx+'">'
         + '<span class="ts-text">'+esc(it.text)+'</span>'
-        + '<span class="ts-cat"><span class="ts-ic" style="color:'+esc(info.color)+'">'+esc(info.icon)+'</span> '+esc(info.name)+'</span>'
         + '</button>';
     });
     textSuggest.innerHTML = html;
@@ -4414,11 +4405,10 @@
   function pickTextSuggest(idx){
     var it = suggestItems[idx];
     if(!it) return;
+    /* Fill the text only — the category stays untouched here and is
+       applied when the Amount field gains focus. */
     fText.value = it.text;
-    if(it.category && it.category !== formCategory){
-      formCategory = it.category;
-      syncCategoryUI();
-    }
+    textEditedInForm = true;
     hideTextSuggest();
     fText.focus();
   }
@@ -4526,6 +4516,25 @@
   });
   fAmount.addEventListener("click", openCalcPad);
   fAmount.addEventListener("focus", openCalcPad);
+  /* Moving to the Amount field is what applies the remembered
+     category: once the text was typed or picked from the suggestion
+     dropdown in this form session, focusing Amount looks the text up
+     in the text→category memory (PREFIX match, most recently saved
+     wins) and sets the category, so its icon appears in the category
+     box. No match leaves the category exactly as it is ("Not
+     selected" on a new entry). A text loaded from a saved entry and
+     never edited here is not looked up, so opening an entry to edit
+     it can never overwrite its stored category. */
+  fAmount.addEventListener("focus", function(){
+    if(!textEditedInForm) return;
+    var key = textCatKey(fText.value);
+    if(!key) return;
+    var remembered = lookupTextCat(formType, key);
+    if(remembered && remembered !== formCategory){
+      formCategory = remembered;
+      syncCategoryUI();
+    }
+  });
   fText.addEventListener("focus", closeCalcPad);
   fRemarks.addEventListener("focus", closeCalcPad);
 
@@ -4738,6 +4747,7 @@
     hideError();
     closeCalcPad();
     editingId = id || null;
+    textEditedInForm = false;
     if(id){
       var e = null;
       for(var i=0;i<entries.length;i++) if(entries[i].id===id) e = entries[i];
@@ -4835,8 +4845,8 @@
   function doSaveEntry(data){
     var text = data.text;
     /* Remember this text → category pairing for the current type, so
-       the next time this text (or a prefix of it) is typed its
-       category sets itself. Re-setting the key on every save moves
+       the next time this text is entered, its category is applied
+       when the Amount field is focused. Re-setting the key on every save moves
        it to the end of the map, which is what makes it the most
        recent for prefix tie-breaks. Saving with NO category is
        allowed and remembers nothing. */
