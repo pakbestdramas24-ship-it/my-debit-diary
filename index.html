@@ -812,7 +812,7 @@
         <input type="text" id="fAmount" placeholder="Amount" inputmode="none" readonly autocomplete="off" aria-label="Amount — tap to open the calculator keypad" />
       </div>
     </div>
-    <p style="margin:3px 0 0 64px;font-size:12.5px;color:#c9d4cb">Category: <strong id="catNameLabel">No category</strong> — tap the icon to change</p>
+    <p style="margin:3px 0 0 64px;font-size:12.5px;color:#c9d4cb">Category: <strong id="catNameLabel">Not selected</strong><span id="catLabelSuffix"> — tap the icon to select</span></p>
 
     <div class="calc-pad" id="calcPad" aria-label="Calculator keypad">
       <button type="button" class="calc-key" data-calc="7">7</button>
@@ -1074,6 +1074,7 @@
   var LS_CUSTOM_ACCOUNTS = "mdd-web-customaccounts-v1";
   var LS_THEME = "mdd-web-theme-v1";
   var LS_DATEFMT = "mdd-web-datefmt-v1";
+  var LS_TEXTCAT = "mdd-web-textcat-v1";
   var ACCOUNTS = ["Cash","Bank","JazzCash","Easypaisa","Other"];
   var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   var MONTHS_S = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -1323,7 +1324,10 @@
     var arr = parseJSON(lsGet(LS_ENTRIES), []);
     if(!Array.isArray(arr)) return [];
     arr.forEach(function(e){
-      if(!e.category) e.category = (e.type==="income" ? "Other Credits" : "");
+      /* An entry may legitimately have NO category (saved that way on
+         purpose) — keep the empty string; only a missing field is
+         normalised, to "". Lists/reports fall back cleanly on "". */
+      if(typeof e.category !== "string") e.category = "";
       if(!Array.isArray(e.tags)) e.tags = [];
       if(!e.account) e.account = "Cash";
     });
@@ -1430,6 +1434,30 @@
   function fmtDateKey(key){ return fmtDateWith(dateFmt, key); }
   var profileName = lsGet(LS_NAME) || "";
   var customCats = loadCustomCats();
+  /* ---------- smart category memory (text → category) ----------
+     Remembers which category the user picked for an entry text
+     ("Enter Text"), kept separately for Income and Expense: the same
+     words can mean different things in each. Keys are the entry text
+     trimmed and lowercased; values are category names. Stored under
+     its own localStorage key and included in Backup/Restore. */
+  function loadTextCat(){
+    var o = parseJSON(lsGet(LS_TEXTCAT), null);
+    var out = {income:{}, expense:{}};
+    if(o && typeof o === "object" && !Array.isArray(o)){
+      ["income","expense"].forEach(function(t){
+        var m = o[t];
+        if(m && typeof m === "object" && !Array.isArray(m)){
+          Object.keys(m).forEach(function(k){
+            if(typeof m[k] === "string" && m[k]) out[t][k] = m[k];
+          });
+        }
+      });
+    }
+    return out;
+  }
+  var textCat = loadTextCat();
+  function persistTextCat(){ lsSet(LS_TEXTCAT, JSON.stringify(textCat)); }
+  function textCatKey(text){ return String(text == null ? "" : text).trim().toLowerCase(); }
   /* Migration — Income categories replaced 2026-11-27 with the new
      13-category list in INCOME_CATS above (Easypaisa, JazzCash, Online
      Earnings, Salary, Bonus, Gift Credit, House Rent, Shop Rent,
@@ -1582,6 +1610,7 @@
     lsSet(LS_CUSTOM_ACCOUNTS, JSON.stringify(customAccounts));
     lsSet(LS_THEME, theme);
     lsSet(LS_DATEFMT, dateFmt);
+    lsSet(LS_TEXTCAT, JSON.stringify(textCat));
   }
   function catsFor(kind){
     var base = kind === "income" ? INCOME_CATS : EXPENSE_CATS;
@@ -4203,13 +4232,24 @@
     ledgerField.style.display = hideLedgerField ? "none" : "";
   }
   fLedger.addEventListener("change", function(){ formLedger = fLedger.value; });
+  var catLabelSuffix = document.getElementById("catLabelSuffix");
   function syncCategoryUI(){
+    if(!formCategory){
+      /* No category selected: the icon box stays EMPTY (blank box, no
+         icon) and the label says so — a new entry starts like this
+         until the user picks a category or a remembered text fills
+         one in. */
+      catIconBtn.textContent = "";
+      catIconBtn.style.color = "";
+      catNameLabel.textContent = "Not selected";
+      if(catLabelSuffix) catLabelSuffix.textContent = " — tap the icon to select";
+      return;
+    }
     var info = catInfo(formType, formCategory);
     catIconBtn.textContent = info.icon;
     catIconBtn.style.color = info.color;
-    /* With no category chosen (the Expense list is empty until the
-       user adds one), show a plain "No category" label. */
-    catNameLabel.textContent = formCategory ? info.name : "No category";
+    catNameLabel.textContent = info.name;
+    if(catLabelSuffix) catLabelSuffix.textContent = " — tap the icon to change";
   }
   function setFormType(t){
     formType = t;
@@ -4217,13 +4257,34 @@
     typeExpense.classList.toggle("sel", t==="expense");
     fromLabel.textContent = t==="income" ? "Credit To" : "Debit From";
     fromType.textContent = t==="income" ? "Credit" : "Debit";
+    /* No category is ever pre-selected: if the current pick is not a
+       category of the new type, the form goes back to EMPTY rather
+       than defaulting to the first category. */
     var list = catsFor(t);
-    if(!list.some(function(c){ return c.name===formCategory; }))
-      formCategory = list.length ? (t==="income" ? "Other Credits" : list[0].name) : "";
+    if(formCategory && !list.some(function(c){ return c.name===formCategory; }))
+      formCategory = "";
     syncCategoryUI();
   }
   typeIncome.addEventListener("click", function(){ setFormType("income"); });
   typeExpense.addEventListener("click", function(){ setFormType("expense"); });
+
+  /* Smart category memory: while the user TYPES in the "Enter Text"
+     field, an exact match (trimmed, lowercased) against the texts
+     remembered for the current type fills the category in on its own.
+     This runs ONLY on typing — never when the form opens or an entry
+     is loaded — and a text with no memory leaves the category exactly
+     as it is (a manually picked category is never cleared). */
+  fText.addEventListener("input", function(){
+    var key = textCatKey(fText.value);
+    if(!key) return;
+    var map = textCat[formType];
+    if(!map || !Object.prototype.hasOwnProperty.call(map, key)) return;
+    var remembered = map[key];
+    if(remembered && remembered !== formCategory){
+      formCategory = remembered;
+      syncCategoryUI();
+    }
+  });
 
   function showError(msg){ formError.textContent = msg; formError.classList.add("show"); }
   function hideError(){ formError.classList.remove("show"); formError.textContent = ""; }
@@ -4534,8 +4595,11 @@
       /* Keep the entry's stored category even when it is no longer in
          the picker list (e.g. a deleted Expense category): catInfo()
          falls back cleanly, so the entry shows normally and re-saves
-         with its category unchanged. */
-      formCategory = e.category || (e.type==="income" ? "Other Credits" : "");
+         with its category unchanged. An entry saved with no category
+         shows the empty state here too. This is set directly (never
+         via the text→category memory), so opening an entry can never
+         overwrite its saved category. */
+      formCategory = e.category || "";
       syncCategoryUI();
       deleteBtn.style.display = "";
     } else {
@@ -4577,6 +4641,16 @@
       account: formAccount, category: formCategory, ledger: ledgerName,
       remarks: fRemarks.value.trim(), tags: []
     };
+    /* Remember this text → category pairing for the current type, so
+       the next time the same text is typed its category sets itself.
+       Saving with NO category is allowed and remembers nothing. */
+    if(formCategory){
+      var tcKey = textCatKey(text);
+      if(tcKey && textCat[formType][tcKey] !== formCategory){
+        textCat[formType][tcKey] = formCategory;
+        persistTextCat();
+      }
+    }
     if(editingId){
       for(var i=0;i<entries.length;i++) if(entries[i].id===editingId){ for(var k in data) entries[i][k]=data[k]; }
       toast("Entry updated ✓");
@@ -5004,6 +5078,7 @@
       personIcons: personIcons,
       name: profileName,
       customCats: customCats,
+      textCat: textCat,
       notes: notes,
       currency: currency,
       fiscalMonth: fiscalMonth,
@@ -5053,10 +5128,23 @@
     pendingRestore = null;
     entries = d.entries;
     entries.forEach(function(e){
-      if(!e.category) e.category = (e.type==="income" ? "Other Credits" : "");
+      if(typeof e.category !== "string") e.category = "";
       if(!Array.isArray(e.tags)) e.tags = [];
       if(!e.account) e.account = "Cash";
     });
+    /* Restore the text → category memory too (an old backup without
+       it simply starts with an empty memory). */
+    textCat = {income:{}, expense:{}};
+    if(d.textCat && typeof d.textCat === "object" && !Array.isArray(d.textCat)){
+      ["income","expense"].forEach(function(t){
+        var m = d.textCat[t];
+        if(m && typeof m === "object" && !Array.isArray(m)){
+          Object.keys(m).forEach(function(k){
+            if(typeof m[k] === "string" && m[k]) textCat[t][k] = m[k];
+          });
+        }
+      });
+    }
     opening = typeof d.opening === "number" ? d.opening : 0;
     ledgerNames = Array.isArray(d.people) ? d.people.filter(function(n){ return typeof n === "string" && !!n.trim(); }) : [];
     entries.forEach(function(e){ if(e.ledger && ledgerNames.indexOf(e.ledger)===-1) ledgerNames.push(e.ledger); });
