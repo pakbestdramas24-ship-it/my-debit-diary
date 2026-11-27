@@ -1126,7 +1126,10 @@
      "Vehicle Wash" was removed the same day as well, so 120
      total; Farming (🚜) was added the same day on his "Add kro",
      in its own new Farming group at the end of the picker series,
-     so 121 total. Emoji
+     so 121 total; Misc (❓) was added the same day on his
+     "Question mark icon" pick, in its own new Misc group at the
+     very end of the picker series (after Farming), so 122 total.
+     Emoji
      icons only, in his approved order.
      Note: the Expense "House Rent" (🏡, rent paid) is distinct from
      the Income "House Rent" (🏠, rent received) in INCOME_CATS. */
@@ -1251,7 +1254,8 @@
     {name:"Potter", icon:"🏺", color:"#a1887f"},
     {name:"Architect", icon:"📐", color:"#546e7a"},
     {name:"Supplements", icon:"💪", color:"#e53935"},
-    {name:"Farming", icon:"🚜", color:"#689f38"}
+    {name:"Farming", icon:"🚜", color:"#689f38"},
+    {name:"Misc", icon:"❓", color:"#78909c"}
   ];
   var INCOME_CATS = [
     {name:"Easypaisa", icon:"💳", color:"#2fa84f"},
@@ -1268,7 +1272,7 @@
     {name:"Borrow", icon:"🤲", color:"#0277bd"},
     {name:"Committee", icon:"👥", color:"#3949ab"}
   ];
-  /* Expense picker groups — the 121 EXPENSE_CATS arranged in one series
+  /* Expense picker groups — the 122 EXPENSE_CATS arranged in one series
      for the category picker: [group title, category names in order].
      Every EXPENSE_CATS name appears in exactly one group; the picker
      looks each name up in EXPENSE_CATS for its icon and color, so this
@@ -1288,7 +1292,8 @@
     ["Jewelry", ["Gold","Girls Accessories","Boys Accessories"]],
     ["Fun & Shopping", ["Cinema","Dating","Shopping","Fine"]],
     ["Funeral", ["Funeral","Graveyard"]],
-    ["Farming", ["Farming"]]
+    ["Farming", ["Farming"]],
+    ["Misc", ["Misc"]]
   ];
   var EXTRA_COLORS = ["#4db3c9","#a3b34d","#d97c4a","#7a68c9","#3f9e6e","#b04a4a"];
 
@@ -1503,7 +1508,9 @@
      Boys Accessories, Eggs — plus the 8 added 2026-11-27: Dowry,
      Committee, Borrow, Lend, Tandoor, Potter, Architect,
      Supplements — plus Farming (🚜) added 2026-11-27 in its own
-     new Farming group at the end of the picker series; Borrow was removed from Expense on the user's
+     new Farming group at the end of the picker series — plus
+     Misc (❓) added 2026-11-27 in its own new Misc group at the
+     very end of the picker series (after Farming); Borrow was removed from Expense on the user's
      request 2026-11-27 — it stays in Income only — so a stored
      custom Expense "Borrow" is filtered out below too, so it does
      not reappear in the Expense picker; entries already filed
