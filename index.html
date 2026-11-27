@@ -968,13 +968,6 @@
     <button class="sheet-close" id="closeCategoryBtn" aria-label="Close"><span>⌄</span></button>
     <h2 class="sheet-title">Category</h2>
     <div id="categoryList"></div>
-    <div class="field" style="margin-top:16px">
-      <label for="customCatInput">Add Your Own Category</label>
-      <div class="tag-input-row">
-        <input type="text" id="customCatInput" placeholder="New category name" autocomplete="off" />
-        <button type="button" class="tag-add-btn" id="addCustomCatBtn">Add</button>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -1188,7 +1181,6 @@
     {name:"Education", icon:"📚", color:"#1e88e5"},
     {name:"Transport", icon:"🚌", color:"#00838f"},
     {name:"Barber/Salon", icon:"💇", color:"#ec407a"},
-    {name:"Entertainment", icon:"🎬", color:"#5e35b1"},
     {name:"Gifts", icon:"🎁", color:"#ad1457"},
     {name:"Laundry", icon:"🧺", color:"#00acc1"},
     {name:"Home Repair", icon:"🔧", color:"#757575"},
@@ -1244,7 +1236,6 @@
     {name:"Laptop", icon:"💻", color:"#3949ab"},
     {name:"Mobile", icon:"📲", color:"#00838f"},
     {name:"Electronics", icon:"💡", color:"#f57f17"},
-    {name:"Artificial Jewelry", icon:"💎", color:"#00acc1"},
     {name:"Gold", icon:"🥇", color:"#c49000"},
     {name:"Girls Accessories", icon:"🎀", color:"#e91e63"},
     {name:"Boys Accessories", icon:"⌚", color:"#5e35b1"},
@@ -1272,7 +1263,7 @@
     {name:"Borrow", icon:"🤲", color:"#0277bd"},
     {name:"Committee", icon:"👥", color:"#3949ab"}
   ];
-  /* Expense picker groups — the 124 EXPENSE_CATS arranged in one series
+  /* Expense picker groups — the 122 EXPENSE_CATS arranged in one series
      for the category picker: [group title, category names in order].
      Every EXPENSE_CATS name appears in exactly one group; the picker
      looks each name up in EXPENSE_CATS for its icon and color, so this
@@ -1289,8 +1280,8 @@
     ["Bills", ["Mobile Package","Internet Bill","Electricity Bill","Gas Bill","Water Bill"]],
     ["Giving", ["Masjid","Gifts","Eidi","Puchh","Charity & Alms","Donation","Aid","Lend","Committee"]],
     ["Electronics", ["CCTV","Laptop","Mobile","Electronics"]],
-    ["Jewelry", ["Gold","Artificial Jewelry","Girls Accessories","Boys Accessories"]],
-    ["Fun & Shopping", ["Entertainment","Cinema","Dating","Shopping","Fine"]],
+    ["Jewelry", ["Gold","Girls Accessories","Boys Accessories"]],
+    ["Fun & Shopping", ["Cinema","Dating","Shopping","Fine"]],
     ["Funeral", ["Funeral","Graveyard"]]
   ];
   var EXTRA_COLORS = ["#4db3c9","#a3b34d","#d97c4a","#7a68c9","#3f9e6e","#b04a4a"];
@@ -1476,7 +1467,7 @@
     return changed;
   }
   migrateIncomeCats();
-  /* Migration — Expense categories: the 124 finalized categories in
+  /* Migration — Expense categories: the 122 finalized categories in
      EXPENSE_CATS above (the original 11 — Lentils, Ghee & Oil, Rice,
      Sugar, Tea, Milk, Spices, Flour, Corn, Fruits, Dry Fruits — plus
      the 10 added 2026-11-27: Desi Ghee, Cosmetics, Personal Care,
@@ -1512,7 +1503,11 @@
      under "Borrow" keep their stored category text. School Fee,
      Tuition Fee and Admission were likewise removed from Expense
      on the user's request 2026-11-27 and are filtered out the
-     same way; entries filed under them keep their stored text). This replaces the earlier one-time clear that
+     same way; entries filed under them keep their stored text.
+     Artificial Jewelry and Entertainment were likewise removed
+     from Expense on the user's request 2026-11-27 and are
+     filtered out the same way; entries filed under them keep
+     their stored text). This replaces the earlier one-time clear that
      emptied stored Expense categories (clearStoredExpenseCats — now
      removed, so nothing wipes these again). Like migrateIncomeCats,
      it runs on every load (and after a backup restore): any stored
@@ -1523,7 +1518,7 @@
   function migrateExpenseCats(){
     var changed = false;
     var baseNames = EXPENSE_CATS.map(function(c){ return c.name.toLowerCase(); });
-    var removed = ["borrow","school fee","tuition fee","admission"];
+    var removed = ["borrow","school fee","tuition fee","admission","artificial jewelry","entertainment"];
     var seen = {};
     var kept = [];
     customCats.expense.forEach(function(n){
@@ -4781,22 +4776,6 @@
   catIconBtn.addEventListener("click", openCategoryPicker);
   document.getElementById("closeCategoryBtn").addEventListener("click", function(){ categoryOverlay.classList.remove("open"); });
   categoryOverlay.addEventListener("click", function(ev){ if(ev.target===categoryOverlay) categoryOverlay.classList.remove("open"); });
-  document.getElementById("addCustomCatBtn").addEventListener("click", function(){
-    var inp = document.getElementById("customCatInput");
-    var name = inp.value.trim();
-    if(!name) { inp.focus(); return; }
-    if(!customCats[formType].some(function(n){ return n.toLowerCase()===name.toLowerCase(); }) &&
-       !catsFor(formType).some(function(c){ return c.name.toLowerCase()===name.toLowerCase(); })){
-      customCats[formType].push(name);
-      persist();
-    }
-    formCategory = name;
-    inp.value = "";
-    syncCategoryUI();
-    categoryOverlay.classList.remove("open");
-    toast("Category added ✓");
-  });
-
   /* ---------- notes tab ---------- */
   function loadNotes(){
     var a = parseJSON(lsGet(LS_NOTES), []);
