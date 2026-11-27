@@ -1087,6 +1087,8 @@
   ];
   var INCOME_CATS = [
     {name:"Salary", icon:"💼", color:"#26b6c9"},
+    {name:"House Rent", icon:"🏠", color:"#3f9e6e"},
+    {name:"Shop Rent", icon:"🏪", color:"#d97c4a"},
     {name:"Business", icon:"🏢", color:"#e0a458"},
     {name:"Rent", icon:"🏠", color:"#5b8dd9"},
     {name:"Gift", icon:"🎁", color:"#c95d7b"},
@@ -1231,6 +1233,25 @@
   function fmtDateKey(key){ return fmtDateWith(dateFmt, key); }
   var profileName = lsGet(LS_NAME) || "";
   var customCats = loadCustomCats();
+  /* Migration — "House Rent" and "Shop Rent" income categories
+     (added 2026-11-27). They are defaults in INCOME_CATS above, so
+     catsFor("income") already includes them for fresh and existing
+     installs alike. This merge guards existing users whose stored
+     custom categories were saved by an older build: if either name
+     is missing from the stored list AND from the defaults, add it to
+     the stored list and save it, so it shows in the income category
+     picker on this and every later load. No existing category is
+     removed or changed, and no duplicate is created. */
+  (function ensureRentIncomeCats(){
+    var wanted = ["House Rent", "Shop Rent"];
+    var changed = false;
+    wanted.forEach(function(name){
+      var inBase = INCOME_CATS.some(function(c){ return c.name.toLowerCase() === name.toLowerCase(); });
+      var inCustom = customCats.income.some(function(n){ return String(n).toLowerCase() === name.toLowerCase(); });
+      if(!inBase && !inCustom){ customCats.income.push(name); changed = true; }
+    });
+    if(changed) lsSet(LS_CUSTOMCATS, JSON.stringify(customCats));
+  })();
   entries.forEach(function(e){ if(e.ledger && ledgerNames.indexOf(e.ledger)===-1) ledgerNames.push(e.ledger); });
 
   function persist(){
