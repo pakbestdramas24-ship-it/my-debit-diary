@@ -1077,7 +1077,9 @@
 
   /* Expense categories: the 11 finalized by the user and added
      2026-11-27 on his "Add kro" (after all 20 old ones were deleted
-     earlier the same day). Emoji icons only, in his approved order. */
+     earlier the same day), plus 10 more finalized and added the same
+     day on his "Add karo" — 21 total. Emoji icons only, in his
+     approved order. */
   var EXPENSE_CATS = [
     {name:"Lentils", icon:"🫘", color:"#b5651d"},
     {name:"Ghee & Oil", icon:"🧈", color:"#d9a41b"},
@@ -1089,7 +1091,17 @@
     {name:"Flour", icon:"🌾", color:"#a3b34d"},
     {name:"Corn", icon:"🌽", color:"#e0a800"},
     {name:"Fruits", icon:"🍎", color:"#d62828"},
-    {name:"Dry Fruits", icon:"🥜", color:"#7a68c9"}
+    {name:"Dry Fruits", icon:"🥜", color:"#7a68c9"},
+    {name:"Desi Ghee", icon:"🫗", color:"#e67e22"},
+    {name:"Cosmetics", icon:"💄", color:"#d63384"},
+    {name:"Personal Care", icon:"🧼", color:"#20a39e"},
+    {name:"Preserves", icon:"🫙", color:"#6d4c41"},
+    {name:"Chicken", icon:"🍗", color:"#e07a5f"},
+    {name:"Beef", icon:"🥩", color:"#9d0208"},
+    {name:"Mutton", icon:"🍖", color:"#bc4749"},
+    {name:"Soft Drinks", icon:"🥤", color:"#4361ee"},
+    {name:"Kids Snacks", icon:"🍪", color:"#f4a261"},
+    {name:"Distillates", icon:"💧", color:"#48cae4"}
   ];
   var INCOME_CATS = [
     {name:"Easypaisa", icon:"💳", color:"#2fa84f"},
@@ -1286,17 +1298,19 @@
     return changed;
   }
   migrateIncomeCats();
-  /* Migration — Expense categories added 2026-11-27: the 11 finalized
-     categories in EXPENSE_CATS above (Lentils, Ghee & Oil, Rice,
-     Sugar, Tea, Milk, Spices, Flour, Corn, Fruits, Dry Fruits). This
-     replaces the earlier one-time clear that emptied stored Expense
-     categories (clearStoredExpenseCats — now removed, so nothing
-     wipes these 11 again). Like migrateIncomeCats, it runs on every
-     load (and after a backup restore): any stored custom Expense
-     name that is now a default is dropped from the stored list (no
-     duplicates — the defaults come from EXPENSE_CATS itself), while
-     genuinely custom Expense names the user added stay. Income
-     categories are never touched here. */
+  /* Migration — Expense categories: the 21 finalized categories in
+     EXPENSE_CATS above (the original 11 — Lentils, Ghee & Oil, Rice,
+     Sugar, Tea, Milk, Spices, Flour, Corn, Fruits, Dry Fruits — plus
+     the 10 added 2026-11-27: Desi Ghee, Cosmetics, Personal Care,
+     Preserves, Chicken, Beef, Mutton, Soft Drinks, Kids Snacks,
+     Distillates). This replaces the earlier one-time clear that
+     emptied stored Expense categories (clearStoredExpenseCats — now
+     removed, so nothing wipes these again). Like migrateIncomeCats,
+     it runs on every load (and after a backup restore): any stored
+     custom Expense name that is now a default is dropped from the
+     stored list (no duplicates — the defaults come from EXPENSE_CATS
+     itself), while genuinely custom Expense names the user added
+     stay. Income categories are never touched here. */
   function migrateExpenseCats(){
     var changed = false;
     var baseNames = EXPENSE_CATS.map(function(c){ return c.name.toLowerCase(); });
