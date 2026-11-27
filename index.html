@@ -1101,7 +1101,13 @@
      Salami, Laag, Eidi), plus 5 more finalized and added the same
      day on his "Add karo" (Bride Feast, Nandra, Bhaji, Puchh,
      Charity & Alms — named in English only, per his instruction;
-     "Charity & Alms" is the Sadqa Khairat tag) — 96 total. Emoji
+     "Charity & Alms" is the Sadqa Khairat tag), plus 24 more
+     finalized and added the same day on his "Add kro" (Donation,
+     Aid, Pregnancy, Dating, Funeral, Graveyard, Land, Tube Well,
+     Wages, Materials, Hardware, Drainage, Wood & Metal Work,
+     Paint & Decor, CCTV, Solar System, Laptop, Mobile,
+     Electronics, Artificial Jewelry, Gold, Girls Accessories,
+     Boys Accessories, Eggs) — 120 total. Emoji
      icons only, in his approved order.
      Note: the Expense "House Rent" (🏡, rent paid) is distinct from
      the Income "House Rent" (🏠, rent received) in INCOME_CATS. */
@@ -1201,7 +1207,31 @@
     {name:"Nandra", icon:"🫶", color:"#00897b"},
     {name:"Bhaji", icon:"💌", color:"#e91e63"},
     {name:"Puchh", icon:"🤒", color:"#ef5350"},
-    {name:"Charity & Alms", icon:"🙏", color:"#2e7d32"}
+    {name:"Charity & Alms", icon:"🙏", color:"#2e7d32"},
+    {name:"Donation", icon:"🤲", color:"#00897b"},
+    {name:"Aid", icon:"🆘", color:"#c62828"},
+    {name:"Pregnancy", icon:"🤰", color:"#ec407a"},
+    {name:"Dating", icon:"💑", color:"#ab47bc"},
+    {name:"Funeral", icon:"⚰️", color:"#455a64"},
+    {name:"Graveyard", icon:"🪦", color:"#616161"},
+    {name:"Land", icon:"🌍", color:"#2e7d32"},
+    {name:"Tube Well", icon:"⛲", color:"#0277bd"},
+    {name:"Wages", icon:"👷", color:"#e65100"},
+    {name:"Materials", icon:"🧱", color:"#6d4c41"},
+    {name:"Hardware", icon:"⚙️", color:"#546e7a"},
+    {name:"Drainage", icon:"🌊", color:"#01579b"},
+    {name:"Wood & Metal Work", icon:"🪚", color:"#795548"},
+    {name:"Paint & Decor", icon:"🎨", color:"#8e24aa"},
+    {name:"CCTV", icon:"📹", color:"#283593"},
+    {name:"Solar System", icon:"☀️", color:"#f9a825"},
+    {name:"Laptop", icon:"💻", color:"#3949ab"},
+    {name:"Mobile", icon:"📲", color:"#00838f"},
+    {name:"Electronics", icon:"💡", color:"#f57f17"},
+    {name:"Artificial Jewelry", icon:"💎", color:"#00acc1"},
+    {name:"Gold", icon:"🥇", color:"#c49000"},
+    {name:"Girls Accessories", icon:"🎀", color:"#e91e63"},
+    {name:"Boys Accessories", icon:"⌚", color:"#5e35b1"},
+    {name:"Eggs", icon:"🥚", color:"#8d6e63"}
   ];
   var INCOME_CATS = [
     {name:"Easypaisa", icon:"💳", color:"#2fa84f"},
@@ -1398,7 +1428,7 @@
     return changed;
   }
   migrateIncomeCats();
-  /* Migration — Expense categories: the 96 finalized categories in
+  /* Migration — Expense categories: the 120 finalized categories in
      EXPENSE_CATS above (the original 11 — Lentils, Ghee & Oil, Rice,
      Sugar, Tea, Milk, Spices, Flour, Corn, Fruits, Dry Fruits — plus
      the 10 added 2026-11-27: Desi Ghee, Cosmetics, Personal Care,
@@ -1420,7 +1450,12 @@
      Fine — plus the 8 added 2026-11-27: Engagement, Nikkah,
      Mehndi, Barat, Waleema, Salami, Laag, Eidi — plus the 5 added
      2026-11-27: Bride Feast, Nandra, Bhaji, Puchh,
-     Charity & Alms). This replaces the earlier one-time clear that
+     Charity & Alms — plus the 24 added 2026-11-27: Donation,
+     Aid, Pregnancy, Dating, Funeral, Graveyard, Land, Tube Well,
+     Wages, Materials, Hardware, Drainage, Wood & Metal Work,
+     Paint & Decor, CCTV, Solar System, Laptop, Mobile,
+     Electronics, Artificial Jewelry, Gold, Girls Accessories,
+     Boys Accessories, Eggs). This replaces the earlier one-time clear that
      emptied stored Expense categories (clearStoredExpenseCats — now
      removed, so nothing wipes these again). Like migrateIncomeCats,
      it runs on every load (and after a backup restore): any stored
