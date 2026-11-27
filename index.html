@@ -1086,13 +1086,16 @@
     {name:"Education", icon:"🎓", color:"#b08968"}
   ];
   var INCOME_CATS = [
+    {name:"Easypaisa", icon:"💳", color:"#2fa84f"},
+    {name:"JazzCash", icon:"💵", color:"#b23a48"},
+    {name:"Online Earnings", icon:"💻", color:"#5b8dd9"},
     {name:"Salary", icon:"💼", color:"#26b6c9"},
+    {name:"Bonus", icon:"💰", color:"#d9a41b"},
+    {name:"Gift Credit", icon:"🎁", color:"#c95d7b"},
     {name:"House Rent", icon:"🏠", color:"#3f9e6e"},
     {name:"Shop Rent", icon:"🏪", color:"#d97c4a"},
-    {name:"Business", icon:"🏢", color:"#e0a458"},
-    {name:"Rent", icon:"🏠", color:"#5b8dd9"},
-    {name:"Gift", icon:"🎁", color:"#c95d7b"},
-    {name:"Other", icon:"•", color:"#8a8f98"}
+    {name:"Business", icon:"📊", color:"#7a68c9"},
+    {name:"Other Credits", icon:"💲", color:"#78909c"}
   ];
   var EXTRA_COLORS = ["#4db3c9","#a3b34d","#d97c4a","#7a68c9","#3f9e6e","#b04a4a"];
 
@@ -1126,7 +1129,7 @@
     var arr = parseJSON(lsGet(LS_ENTRIES), []);
     if(!Array.isArray(arr)) return [];
     arr.forEach(function(e){
-      if(!e.category) e.category = (e.type==="income" ? "Other" : "Misc");
+      if(!e.category) e.category = (e.type==="income" ? "Other Credits" : "Misc");
       if(!Array.isArray(e.tags)) e.tags = [];
       if(!e.account) e.account = "Cash";
     });
@@ -1233,25 +1236,50 @@
   function fmtDateKey(key){ return fmtDateWith(dateFmt, key); }
   var profileName = lsGet(LS_NAME) || "";
   var customCats = loadCustomCats();
-  /* Migration — "House Rent" and "Shop Rent" income categories
-     (added 2026-11-27). They are defaults in INCOME_CATS above, so
-     catsFor("income") already includes them for fresh and existing
-     installs alike. This merge guards existing users whose stored
-     custom categories were saved by an older build: if either name
-     is missing from the stored list AND from the defaults, add it to
-     the stored list and save it, so it shows in the income category
-     picker on this and every later load. No existing category is
-     removed or changed, and no duplicate is created. */
-  (function ensureRentIncomeCats(){
-    var wanted = ["House Rent", "Shop Rent"];
+  /* Migration — Income categories replaced 2026-11-27 with the new
+     10-category list in INCOME_CATS above (Easypaisa, JazzCash, Online
+     Earnings, Salary, Bonus, Gift Credit, House Rent, Shop Rent,
+     Business, Other Credits). The old Income list (Salary, House Rent,
+     Shop Rent, Business, Rent, Gift, Other) is gone: the generic
+     "Rent" category is removed, "Gift" is renamed "Gift Credit" and
+     "Other" is renamed "Other Credits". This runs on every load (and
+     after a backup restore) and replaces existing users' stored
+     Income categories with the new list: any stored custom Income
+     name that is now a default, or is one of the removed/renamed old
+     names, is dropped from the stored list (no duplicates — the new
+     defaults come from INCOME_CATS itself), while genuinely custom
+     Income names the user added stay. Income entries filed under the
+     old names are moved with them: "Gift" → "Gift Credit", and
+     "Other" / the removed generic "Rent" → "Other Credits". "Salary"
+     and "Business" keep their names, so those entries are untouched.
+     Expense categories are never touched here. */
+  function migrateIncomeCats(){
     var changed = false;
-    wanted.forEach(function(name){
-      var inBase = INCOME_CATS.some(function(c){ return c.name.toLowerCase() === name.toLowerCase(); });
-      var inCustom = customCats.income.some(function(n){ return String(n).toLowerCase() === name.toLowerCase(); });
-      if(!inBase && !inCustom){ customCats.income.push(name); changed = true; }
+    var baseNames = INCOME_CATS.map(function(c){ return c.name.toLowerCase(); });
+    var obsolete = ["rent", "gift", "other"];
+    var seen = {};
+    var kept = [];
+    customCats.income.forEach(function(n){
+      var ln = String(n).toLowerCase();
+      if(baseNames.indexOf(ln) !== -1 || obsolete.indexOf(ln) !== -1){ changed = true; return; }
+      if(seen[ln]){ changed = true; return; }
+      seen[ln] = true;
+      kept.push(n);
     });
-    if(changed) lsSet(LS_CUSTOMCATS, JSON.stringify(customCats));
-  })();
+    if(kept.length !== customCats.income.length) customCats.income = kept;
+    entries.forEach(function(e){
+      if(!e || e.type !== "income" || !e.category) return;
+      var ln = String(e.category).toLowerCase();
+      if(ln === "gift" && e.category !== "Gift Credit"){ e.category = "Gift Credit"; changed = true; }
+      else if((ln === "other" || ln === "rent") && e.category !== "Other Credits"){ e.category = "Other Credits"; changed = true; }
+    });
+    if(changed){
+      lsSet(LS_CUSTOMCATS, JSON.stringify(customCats));
+      lsSet(LS_ENTRIES, JSON.stringify(entries));
+    }
+    return changed;
+  }
+  migrateIncomeCats();
   entries.forEach(function(e){ if(e.ledger && ledgerNames.indexOf(e.ledger)===-1) ledgerNames.push(e.ledger); });
 
   function persist(){
@@ -2134,7 +2162,7 @@
     var list = chartEntries();
     var byCat = {}, byAcct = {};
     list.forEach(function(e){
-      var c = e.category || (type==="income" ? "Other" : "Misc");
+      var c = e.category || (type==="income" ? "Other Credits" : "Misc");
       byCat[c] = (byCat[c] || 0) + (+e.amount);
       byAcct[e.account || "Cash"] = (byAcct[e.account || "Cash"] || 0) + (+e.amount);
     });
@@ -2965,7 +2993,7 @@
       var list = reportTypeList(from, to, person, type, account);
       var byCat = {};
       list.forEach(function(e){
-        var c = e.category || (type === "income" ? "Other" : "Misc");
+        var c = e.category || (type === "income" ? "Other Credits" : "Misc");
         byCat[c] = (byCat[c] || 0) + (+e.amount);
       });
       var total = list.reduce(function(t, e){ return t + (+e.amount); }, 0);
@@ -3705,7 +3733,7 @@
       var list = reportTypeList(from, to, person, type, account);
       var byCat = {};
       list.forEach(function(e){
-        var c = e.category || (type === "income" ? "Other" : "Misc");
+        var c = e.category || (type === "income" ? "Other Credits" : "Misc");
         byCat[c] = (byCat[c] || 0) + (+e.amount);
       });
       var total = list.reduce(function(t, e){ return t + (+e.amount); }, 0);
@@ -3971,7 +3999,7 @@
     typeExpense.classList.toggle("sel", t==="expense");
     fromLabel.textContent = t==="income" ? "Credit To" : "Debit From";
     fromType.textContent = t==="income" ? "Credit" : "Debit";
-    var def = t==="income" ? "Other" : "Misc";
+    var def = t==="income" ? "Other Credits" : "Misc";
     if(!catsFor(t).some(function(c){ return c.name===formCategory; })) formCategory = def;
     syncCategoryUI();
   }
@@ -4283,7 +4311,7 @@
       if(e.ledger) ensureLedger(e.ledger);
       formLedger = e.ledger || "";
       hideLedgerField = false;
-      formCategory = e.category || (e.type==="income" ? "Other" : "Misc");
+      formCategory = e.category || (e.type==="income" ? "Other Credits" : "Misc");
       setFormType(e.type);
       deleteBtn.style.display = "";
     } else {
@@ -4797,7 +4825,7 @@
     pendingRestore = null;
     entries = d.entries;
     entries.forEach(function(e){
-      if(!e.category) e.category = (e.type==="income" ? "Other" : "Misc");
+      if(!e.category) e.category = (e.type==="income" ? "Other Credits" : "Misc");
       if(!Array.isArray(e.tags)) e.tags = [];
       if(!e.account) e.account = "Cash";
     });
@@ -4819,6 +4847,9 @@
     }
     profileName = typeof d.name === "string" ? d.name : "";
     if(d.customCats && Array.isArray(d.customCats.expense) && Array.isArray(d.customCats.income)) customCats = d.customCats;
+    /* An old backup can carry the pre-2026-11-27 Income categories —
+       run the same replacement so the restored list matches the new 10. */
+    migrateIncomeCats();
     notes = Array.isArray(d.notes) ? d.notes : [];
     if(typeof d.currency === "string" && CURRENCIES.some(function(c){ return c.code === d.currency; })) currency = d.currency;
     if(typeof d.fiscalMonth === "number" && d.fiscalMonth >= 0 && d.fiscalMonth <= 11) fiscalMonth = d.fiscalMonth;
