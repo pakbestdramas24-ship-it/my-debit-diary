@@ -1083,7 +1083,18 @@
     {name:"Vegetables", icon:"🥕", color:"#2e8b74"},
     {name:"Food and Dining", icon:"✂", color:"#26b6c9"},
     {name:"Misc", icon:"!", color:"#f4511e"},
-    {name:"Education", icon:"🎓", color:"#b08968"}
+    {name:"Education", icon:"🎓", color:"#b08968"},
+    {name:"Lentils", icon:"🫘", color:"#9c6b30"},
+    {name:"Ghee & Oil", icon:"🧈", color:"#c77800"},
+    {name:"Rice", icon:"🍛", color:"#a1887f"},
+    {name:"Sugar", icon:"🍯", color:"#d97ca6"},
+    {name:"Tea", icon:"🫖", color:"#6d4c41"},
+    {name:"Milk", icon:"🐄", color:"#7e9cc4"},
+    {name:"Spices", icon:"🌶️", color:"#c62828"},
+    {name:"Flour", icon:"🌾", color:"#a3b34d"},
+    {name:"Corn", icon:"🌽", color:"#efb920"},
+    {name:"Fruits", icon:"🍎", color:"#e53935"},
+    {name:"Dry Fruits", icon:"🥜", color:"#795548"}
   ];
   var INCOME_CATS = [
     {name:"Easypaisa", icon:"💳", color:"#2fa84f"},
@@ -1280,6 +1291,43 @@
     return changed;
   }
   migrateIncomeCats();
+  /* Migration — Expense categories extended 2026-11-27 with 11 new
+     defaults in EXPENSE_CATS above (Lentils, Ghee & Oil, Rice, Sugar,
+     Tea, Milk, Spices, Flour, Corn, Fruits, Dry Fruits), added AFTER
+     the original 9, which stay exactly as they were. The user's list
+     said "Beans", but that was corrected to "Lentils" (Dalain =
+     Lentils, not Beans), so the new category is "Lentils" and any
+     stored "Beans" name or entry is moved to it. This runs on every
+     load (and after a backup restore): any stored custom Expense
+     name that is now a default is dropped from the stored list (no
+     duplicates — the defaults come from EXPENSE_CATS itself, and
+     catsFor() merges them in for every existing user), while
+     genuinely custom Expense names the user added stay. Income
+     categories are never touched here. */
+  function migrateExpenseCats(){
+    var changed = false;
+    var baseNames = EXPENSE_CATS.map(function(c){ return c.name.toLowerCase(); });
+    var seen = {};
+    var kept = [];
+    customCats.expense.forEach(function(n){
+      var ln = String(n).toLowerCase();
+      if(baseNames.indexOf(ln) !== -1 || ln === "beans"){ changed = true; return; }
+      if(seen[ln]){ changed = true; return; }
+      seen[ln] = true;
+      kept.push(n);
+    });
+    if(kept.length !== customCats.expense.length) customCats.expense = kept;
+    entries.forEach(function(e){
+      if(!e || e.type !== "expense" || !e.category) return;
+      if(String(e.category).toLowerCase() === "beans" && e.category !== "Lentils"){ e.category = "Lentils"; changed = true; }
+    });
+    if(changed){
+      lsSet(LS_CUSTOMCATS, JSON.stringify(customCats));
+      lsSet(LS_ENTRIES, JSON.stringify(entries));
+    }
+    return changed;
+  }
+  migrateExpenseCats();
   entries.forEach(function(e){ if(e.ledger && ledgerNames.indexOf(e.ledger)===-1) ledgerNames.push(e.ledger); });
 
   function persist(){
@@ -4850,6 +4898,9 @@
     /* An old backup can carry the pre-2026-11-27 Income categories —
        run the same replacement so the restored list matches the new 10. */
     migrateIncomeCats();
+    /* Same for Expense: an old backup predates the 11 new defaults —
+       drop any stored duplicates (and move "Beans" to "Lentils"). */
+    migrateExpenseCats();
     notes = Array.isArray(d.notes) ? d.notes : [];
     if(typeof d.currency === "string" && CURRENCIES.some(function(c){ return c.code === d.currency; })) currency = d.currency;
     if(typeof d.fiscalMonth === "number" && d.fiscalMonth >= 0 && d.fiscalMonth <= 11) fiscalMonth = d.fiscalMonth;
