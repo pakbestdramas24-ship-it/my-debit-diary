@@ -81,8 +81,6 @@
   .entry-main{flex:1;min-width:0}
   .entry-text{font-size:13.5px;font-weight:500;overflow-wrap:anywhere}
   .entry-sub{font-size:11.5px;color:var(--muted);margin-top:1px;overflow-wrap:anywhere;display:block}
-  .demo-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;background:#a97b12;color:#fff;border-radius:999px;padding:1px 7px;margin-left:7px;vertical-align:2px;line-height:1.6;white-space:nowrap}
-  .day-entry .demo-badge{font-size:9px;padding:0 5px;margin-left:4px;vertical-align:1px}
   .entry-amt{font-size:13.5px;font-weight:600;white-space:nowrap}
   .entry-amt.credit{color:var(--mint)}
   .entry-amt.debit{color:var(--danger)}
@@ -1604,75 +1602,6 @@
     if(name && ledgerNames.indexOf(name)===-1) ledgerNames.push(name);
   }
 
-  /* ---------- demo data — one full month (October 2026) ----------
-     Sample entries the user can load and remove from Settings →
-     Data Management. Every demo entry carries demo:true so it can be
-     removed in one tap without touching the user's real entries.
-     Totals: income Rs60,000 — expenses Rs38,949 — balance Rs21,051. */
-  var DEMO_ENTRIES = [
-    /* date, type, text, amount, account, category, remarks */
-    ["2026-10-01","income","Monthly Salary",60000,"Bank","Salary","October salary"],
-    ["2026-10-01","expense","Weekly vegetables",900,"Cash","Vegetables",""],
-    ["2026-10-01","expense","Bike petrol",1500,"JazzCash","Petrol/Gas",""],
-    ["2026-10-02","expense","Lunch",700,"Cash","Food and Dining",""],
-    ["2026-10-03","expense","Mobile package",799,"JazzCash","Mobile","Monthly package"],
-    ["2026-10-04","expense","Vegetables",800,"Cash","Vegetables",""],
-    ["2026-10-05","expense","Groceries",1200,"Cash","Food and Dining","Weekly groceries"],
-    ["2026-10-05","expense","Kids snacks",600,"Cash","Kids",""],
-    ["2026-10-06","expense","Household items",450,"Cash","Misc",""],
-    ["2026-10-07","expense","Bike petrol",1500,"Easypaisa","Petrol/Gas",""],
-    ["2026-10-08","expense","Dinner",900,"Cash","Food and Dining",""],
-    ["2026-10-09","expense","Medicines",1100,"Cash","Medicines","Pharmacy"],
-    ["2026-10-10","expense","School fee",4500,"Bank","Education","Kids school fee"],
-    ["2026-10-11","expense","Vegetables",950,"Cash","Vegetables",""],
-    ["2026-10-12","expense","Lunch",750,"Cash","Food and Dining",""],
-    ["2026-10-13","expense","Electricity bill",5200,"Bank","Electricity","October bill"],
-    ["2026-10-14","expense","Kids school supplies",900,"Cash","Kids",""],
-    ["2026-10-15","expense","Bike petrol",1500,"JazzCash","Petrol/Gas",""],
-    ["2026-10-16","expense","Groceries",1050,"Cash","Food and Dining",""],
-    ["2026-10-17","expense","Haircut",550,"Easypaisa","Misc",""],
-    ["2026-10-18","expense","Vegetables",850,"Cash","Vegetables",""],
-    ["2026-10-19","expense","Mobile top-up",400,"JazzCash","Mobile",""],
-    ["2026-10-20","expense","Family dinner",1250,"Cash","Food and Dining",""],
-    ["2026-10-21","expense","Medicines",700,"Cash","Medicines",""],
-    ["2026-10-22","expense","Bike petrol",1300,"Easypaisa","Petrol/Gas",""],
-    ["2026-10-23","expense","Kids toys",500,"Cash","Kids",""],
-    ["2026-10-24","expense","Lunch",950,"Cash","Food and Dining",""],
-    ["2026-10-25","expense","Tuition fee",1800,"Bank","Education",""],
-    ["2026-10-26","expense","Vegetables",900,"Cash","Vegetables",""],
-    ["2026-10-27","expense","Stationery",400,"Cash","Misc",""],
-    ["2026-10-28","expense","Groceries",800,"Cash","Food and Dining",""],
-    ["2026-10-29","expense","Bike petrol",1400,"JazzCash","Petrol/Gas",""],
-    ["2026-10-30","expense","Dinner",1100,"Cash","Food and Dining",""],
-    ["2026-10-31","expense","Vegetables",750,"Cash","Vegetables",""]
-  ];
-  function demoCount(){
-    var n = 0;
-    entries.forEach(function(e){ if(e.demo) n++; });
-    return n;
-  }
-  function loadDemoEntries(){
-    /* Replace any existing demo set so loading twice never duplicates */
-    entries = entries.filter(function(e){ return !e.demo; });
-    var now = Date.now();
-    DEMO_ENTRIES.forEach(function(d, i){
-      entries.push({
-        id: "demo-" + (i + 1),
-        date: d[0], type: d[1], text: d[2], amount: d[3],
-        account: d[4], category: d[5], ledger: "", remarks: d[6] || "",
-        tags: [], demo: true, createdAt: now + i
-      });
-    });
-    persist();
-  }
-  function removeDemoEntries(){
-    entries = entries.filter(function(e){ return !e.demo; });
-    persist();
-  }
-  function demoBadgeHTML(e){
-    return (e && e.demo) ? '<span class="demo-badge">Demo</span>' : '';
-  }
-
   /* ---------- formatting ---------- */
   function pad(n){ return (n<10?"0":"")+n; }
   function toKey(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
@@ -1833,7 +1762,7 @@
        This helper is used only by the Daily view. */
     var desc = (e.remarks || "").trim();
     return '<li><div class="entry-item" data-edit="'+e.id+'" role="button" tabindex="0">' +
-      '<span class="entry-main"><span class="entry-text">'+esc(e.text)+demoBadgeHTML(e)+'</span>' +
+      '<span class="entry-main"><span class="entry-text">'+esc(e.text)+'</span>' +
       (desc ? '<span class="entry-sub">'+esc(desc)+'</span>' : '') + '</span>' +
       '<span class="entry-amt '+(e.type==="income"?"credit":"debit")+'">'+esc(fmt(+e.amount))+'</span>' +
       '</div></li>';
@@ -1970,10 +1899,10 @@
       html += '<div class="day-card"><div class="day-card-date">'+DAYS_S[dd.getDay()]+', '+dd.getDate()+' '+MONTHS_S[dd.getMonth()]+' '+dd.getFullYear()+'</div>';
       html += '<div class="day-cols"><div class="day-col-head">Income (Credit)</div><div class="day-col-head right">Expense (Debit)</div>';
       html += '<div>' + dInc.map(function(e){
-        return '<button class="day-entry" data-edit="'+e.id+'"><span class="nm">'+esc(e.text)+demoBadgeHTML(e)+'</span><span class="am">'+esc(fmtPlain(+e.amount))+'</span></button>';
+        return '<button class="day-entry" data-edit="'+e.id+'"><span class="nm">'+esc(e.text)+'</span><span class="am">'+esc(fmtPlain(+e.amount))+'</span></button>';
       }).join("") + (dInc.length ? '<div class="day-total green">'+esc(fmt(dIncT))+'</div>' : '') + '</div>';
       html += '<div>' + dExp.map(function(e){
-        return '<button class="day-entry" data-edit="'+e.id+'"><span class="nm">'+esc(e.text)+demoBadgeHTML(e)+'</span><span class="am">'+esc(fmtPlain(+e.amount))+'</span></button>';
+        return '<button class="day-entry" data-edit="'+e.id+'"><span class="nm">'+esc(e.text)+'</span><span class="am">'+esc(fmtPlain(+e.amount))+'</span></button>';
       }).join("") + (dExp.length ? '<div class="day-total red">'+esc(fmt(dExpT))+'</div>' : '') + '</div>';
       html += '</div><div class="day-balance"><div class="db-label">Balance</div><div class="db-amt">'+esc(fmt(endBal))+'</div></div></div>';
     });
@@ -2219,10 +2148,10 @@
       cards += '<div class="day-card"><div class="day-card-date">'+DAYS_S[dd.getDay()]+', '+dd.getDate()+' '+MONTHS_S[dd.getMonth()]+' '+dd.getFullYear()+'</div>';
       cards += '<div class="day-cols"><div class="day-col-head">Income (Credit)</div><div class="day-col-head right">Expense (Debit)</div>';
       cards += '<div>' + dInc.map(function(e){
-        return '<button class="day-entry" data-edit="'+e.id+'"><span class="nm">'+esc(e.text)+demoBadgeHTML(e)+'</span><span class="am">'+esc(fmtPlain(+e.amount))+'</span></button>';
+        return '<button class="day-entry" data-edit="'+e.id+'"><span class="nm">'+esc(e.text)+'</span><span class="am">'+esc(fmtPlain(+e.amount))+'</span></button>';
       }).join("") + (dInc.length ? '<div class="day-total green">'+esc(fmt(dIncT))+'</div>' : '') + '</div>';
       cards += '<div>' + dExp.map(function(e){
-        return '<button class="day-entry" data-edit="'+e.id+'"><span class="nm">'+esc(e.text)+demoBadgeHTML(e)+'</span><span class="am">'+esc(fmtPlain(+e.amount))+'</span></button>';
+        return '<button class="day-entry" data-edit="'+e.id+'"><span class="nm">'+esc(e.text)+'</span><span class="am">'+esc(fmtPlain(+e.amount))+'</span></button>';
       }).join("") + (dExp.length ? '<div class="day-total red">'+esc(fmt(dExpT))+'</div>' : '') + '</div>';
       cards += '</div><div class="day-balance"><div class="db-label">Balance</div><div class="db-amt">'+esc(curSym() + fmtPlain(dayEndBal[key]))+'</div></div></div>';
     });
@@ -5403,12 +5332,6 @@
       html += '<div class="data-row"><span class="dr-main">'+esc(n)+'</span><button type="button" class="row-del" data-del-cat-kind="income" data-del-cat-name="'+esc(n)+'" aria-label="Delete category '+esc(n)+'">✕</button></div>';
     });
     html += '<div class="tag-input-row" style="margin-top:10px"><input type="text" id="newIncCatInput" placeholder="New income category" autocomplete="off" /><button type="button" class="tag-add-btn" id="addIncCatBtn">Add</button></div>';
-    html += '<div class="set-section-head">Demo data — October 2026</div>';
-    html += '<p style="color:var(--muted);font-size:14.5px;line-height:1.5;margin:0 0 10px">Load a full month of sample entries for October 2026 — salary of Rs60,000 and daily household expenses of about Rs39,000 — to see how the Monthly view, Charts and the PDF Report look with a complete month. Demo entries carry a small "Demo" badge and can be removed in one tap. Your own entries are never changed.</p>';
-    html += '<div class="stack-actions" style="margin-top:2px">' +
-      '<button class="btn btn-primary" id="loadDemoBtn">Load 1-month demo entries</button>' +
-      '<button class="btn btn-ghost" id="removeDemoBtn">Remove demo entries</button></div>';
-    html += '<p class="hint" style="padding:10px 4px 0">' + (demoCount() ? demoCount() + ' demo entries are currently loaded (October 2026). Open the Monthly view and go to October 2026 to see them.' : 'No demo entries are loaded right now.') + '</p>';
     html += '<div class="set-section-head">Carry forward</div>';
     html += '<div class="field"><label for="dataOpeningInput">Opening Balance — C/F ('+esc(curSym().trim())+')</label>' +
       '<input type="number" id="dataOpeningInput" inputmode="decimal" step="0.01" placeholder="0.00" value="'+(opening ? opening : "")+'" /></div>';
@@ -5457,26 +5380,6 @@
         persist(); render();
         toast("Category deleted");
       });
-    });
-    document.getElementById("loadDemoBtn").addEventListener("click", function(){
-      var already = demoCount() > 0;
-      loadDemoEntries();
-      /* Point the Monthly and Charts views at October 2026 so the full
-         month is one tap away; November (the user's real month) is not
-         touched. */
-      state.monthCursor = "2026-10";
-      state.monthMode = "month";
-      state.chartMonth = "2026-10";
-      state.chartMode = "month";
-      state.chartRangeActive = false; state.chartRangeFrom = ""; state.chartRangeTo = "";
-      render();
-      toast(already ? "Demo entries reloaded for October 2026 ✓" : "Demo entries loaded — October 2026 ✓");
-    });
-    document.getElementById("removeDemoBtn").addEventListener("click", function(){
-      if(!demoCount()){ toast("No demo entries to remove"); return; }
-      removeDemoEntries();
-      render();
-      toast("Demo entries removed ✓");
     });
     document.getElementById("dataOpeningSave").addEventListener("click", function(){
       var v = parseFloat(document.getElementById("dataOpeningInput").value);
