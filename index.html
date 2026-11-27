@@ -1080,8 +1080,11 @@
      earlier the same day), plus 10 more finalized and added the same
      day on his "Add karo", plus 7 more finalized and added the same
      day on his "Add kro" (Dairy Products, Health Drinks, Coffee,
-     Bakery, Fast Food, Desserts, Mithai & Snacks) — 28 total. Emoji
-     icons only, in his approved order. */
+     Bakery, Fast Food, Desserts, Mithai & Snacks), plus 13 more
+     finalized and added the same day on his "Add kro" (Herbal
+     Medicine, Medical, Medicines, Cleaning, Utensils, Crockery,
+     Toys, Clothes, Shoes, Bedding, Bicycle, Motorcycle, Car) —
+     41 total. Emoji icons only, in his approved order. */
   var EXPENSE_CATS = [
     {name:"Lentils", icon:"🫘", color:"#b5651d"},
     {name:"Ghee & Oil", icon:"🧈", color:"#d9a41b"},
@@ -1110,7 +1113,20 @@
     {name:"Bakery", icon:"🍞", color:"#b07d48"},
     {name:"Fast Food", icon:"🍕", color:"#ef476f"},
     {name:"Desserts", icon:"🍦", color:"#9b5de5"},
-    {name:"Mithai & Snacks", icon:"🍬", color:"#ff8500"}
+    {name:"Mithai & Snacks", icon:"🍬", color:"#ff8500"},
+    {name:"Herbal Medicine", icon:"🌿", color:"#66bb6a"},
+    {name:"Medical", icon:"🏥", color:"#29b6f6"},
+    {name:"Medicines", icon:"💊", color:"#ab47bc"},
+    {name:"Cleaning", icon:"🧹", color:"#26c6da"},
+    {name:"Utensils", icon:"🔪", color:"#90a4ae"},
+    {name:"Crockery", icon:"🥣", color:"#ffa726"},
+    {name:"Toys", icon:"🧸", color:"#ff7043"},
+    {name:"Clothes", icon:"👕", color:"#5c6bc0"},
+    {name:"Shoes", icon:"👟", color:"#a1887f"},
+    {name:"Bedding", icon:"🛏️", color:"#7e57c2"},
+    {name:"Bicycle", icon:"🚲", color:"#26a69a"},
+    {name:"Motorcycle", icon:"🏍️", color:"#ef5350"},
+    {name:"Car", icon:"🚗", color:"#42a5f5"}
   ];
   var INCOME_CATS = [
     {name:"Easypaisa", icon:"💳", color:"#2fa84f"},
@@ -1307,14 +1323,16 @@
     return changed;
   }
   migrateIncomeCats();
-  /* Migration — Expense categories: the 28 finalized categories in
+  /* Migration — Expense categories: the 41 finalized categories in
      EXPENSE_CATS above (the original 11 — Lentils, Ghee & Oil, Rice,
      Sugar, Tea, Milk, Spices, Flour, Corn, Fruits, Dry Fruits — plus
      the 10 added 2026-11-27: Desi Ghee, Cosmetics, Personal Care,
      Preserves, Chicken, Beef, Mutton, Soft Drinks, Kids Snacks,
      Distillates — plus the 7 added 2026-11-27: Dairy Products,
      Health Drinks, Coffee, Bakery, Fast Food, Desserts,
-     Mithai & Snacks). This replaces the earlier one-time clear that
+     Mithai & Snacks — plus the 13 added 2026-11-27: Herbal Medicine,
+     Medical, Medicines, Cleaning, Utensils, Crockery, Toys, Clothes,
+     Shoes, Bedding, Bicycle, Motorcycle, Car). This replaces the earlier one-time clear that
      emptied stored Expense categories (clearStoredExpenseCats — now
      removed, so nothing wipes these again). Like migrateIncomeCats,
      it runs on every load (and after a backup restore): any stored
