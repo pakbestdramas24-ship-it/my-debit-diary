@@ -1098,8 +1098,11 @@
      was dropped by the user; Tailor and Sewing are both kept as
      separate tags), plus 8 more finalized and added the same day
      on his "Add kro" (Engagement, Nikkah, Mehndi, Barat, Waleema,
-     Salami, Laag, Eidi) — 91 total. Emoji icons only, in his
-     approved order.
+     Salami, Laag, Eidi), plus 5 more finalized and added the same
+     day on his "Add karo" (Bride Feast, Nandra, Bhaji, Puchh,
+     Charity & Alms — named in English only, per his instruction;
+     "Charity & Alms" is the Sadqa Khairat tag) — 96 total. Emoji
+     icons only, in his approved order.
      Note: the Expense "House Rent" (🏡, rent paid) is distinct from
      the Income "House Rent" (🏠, rent received) in INCOME_CATS. */
   var EXPENSE_CATS = [
@@ -1193,7 +1196,12 @@
     {name:"Waleema", icon:"🎉", color:"#00695c"},
     {name:"Salami", icon:"💸", color:"#558b2f"},
     {name:"Laag", icon:"🤝", color:"#607d8b"},
-    {name:"Eidi", icon:"🌙", color:"#1a237e"}
+    {name:"Eidi", icon:"🌙", color:"#1a237e"},
+    {name:"Bride Feast", icon:"👰", color:"#d81b60"},
+    {name:"Nandra", icon:"🫶", color:"#00897b"},
+    {name:"Bhaji", icon:"💌", color:"#e91e63"},
+    {name:"Puchh", icon:"🤒", color:"#ef5350"},
+    {name:"Charity & Alms", icon:"🙏", color:"#2e7d32"}
   ];
   var INCOME_CATS = [
     {name:"Easypaisa", icon:"💳", color:"#2fa84f"},
@@ -1390,7 +1398,7 @@
     return changed;
   }
   migrateIncomeCats();
-  /* Migration — Expense categories: the 91 finalized categories in
+  /* Migration — Expense categories: the 96 finalized categories in
      EXPENSE_CATS above (the original 11 — Lentils, Ghee & Oil, Rice,
      Sugar, Tea, Milk, Spices, Flour, Corn, Fruits, Dry Fruits — plus
      the 10 added 2026-11-27: Desi Ghee, Cosmetics, Personal Care,
@@ -1410,7 +1418,9 @@
      Trip, Dining Out, Air Travel, Traveling, Cinema, Spa,
      Beautician, Cobbler, Tailor, Sewing, Welder, Shopping,
      Fine — plus the 8 added 2026-11-27: Engagement, Nikkah,
-     Mehndi, Barat, Waleema, Salami, Laag, Eidi). This replaces the earlier one-time clear that
+     Mehndi, Barat, Waleema, Salami, Laag, Eidi — plus the 5 added
+     2026-11-27: Bride Feast, Nandra, Bhaji, Puchh,
+     Charity & Alms). This replaces the earlier one-time clear that
      emptied stored Expense categories (clearStoredExpenseCats — now
      removed, so nothing wipes these again). Like migrateIncomeCats,
      it runs on every load (and after a backup restore): any stored
