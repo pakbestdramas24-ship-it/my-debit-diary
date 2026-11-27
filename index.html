@@ -1096,7 +1096,9 @@
      Dining Out, Air Travel, Traveling, Cinema, Spa, Beautician,
      Cobbler, Tailor, Sewing, Welder, Shopping, Fine — "Bus & Cab"
      was dropped by the user; Tailor and Sewing are both kept as
-     separate tags) — 83 total. Emoji icons only, in his
+     separate tags), plus 8 more finalized and added the same day
+     on his "Add kro" (Engagement, Nikkah, Mehndi, Barat, Waleema,
+     Salami, Laag, Eidi) — 91 total. Emoji icons only, in his
      approved order.
      Note: the Expense "House Rent" (🏡, rent paid) is distinct from
      the Income "House Rent" (🏠, rent received) in INCOME_CATS. */
@@ -1183,7 +1185,15 @@
     {name:"Sewing", icon:"🧵", color:"#0097a7"},
     {name:"Welder", icon:"🛠️", color:"#616161"},
     {name:"Shopping", icon:"🛍️", color:"#c2185b"},
-    {name:"Fine", icon:"⚠️", color:"#d32f2f"}
+    {name:"Fine", icon:"⚠️", color:"#d32f2f"},
+    {name:"Engagement", icon:"💍", color:"#bfa05a"},
+    {name:"Nikkah", icon:"❤️", color:"#b71c1c"},
+    {name:"Mehndi", icon:"✋", color:"#ef6c00"},
+    {name:"Barat", icon:"🐎", color:"#4527a0"},
+    {name:"Waleema", icon:"🎉", color:"#00695c"},
+    {name:"Salami", icon:"💸", color:"#558b2f"},
+    {name:"Laag", icon:"🤝", color:"#607d8b"},
+    {name:"Eidi", icon:"🌙", color:"#1a237e"}
   ];
   var INCOME_CATS = [
     {name:"Easypaisa", icon:"💳", color:"#2fa84f"},
@@ -1380,7 +1390,7 @@
     return changed;
   }
   migrateIncomeCats();
-  /* Migration — Expense categories: the 83 finalized categories in
+  /* Migration — Expense categories: the 91 finalized categories in
      EXPENSE_CATS above (the original 11 — Lentils, Ghee & Oil, Rice,
      Sugar, Tea, Milk, Spices, Flour, Corn, Fruits, Dry Fruits — plus
      the 10 added 2026-11-27: Desi Ghee, Cosmetics, Personal Care,
@@ -1399,7 +1409,8 @@
      Bags, Admission, School Fee, Tuition Fee, Dars, Canteen Bill,
      Trip, Dining Out, Air Travel, Traveling, Cinema, Spa,
      Beautician, Cobbler, Tailor, Sewing, Welder, Shopping,
-     Fine). This replaces the earlier one-time clear that
+     Fine — plus the 8 added 2026-11-27: Engagement, Nikkah,
+     Mehndi, Barat, Waleema, Salami, Laag, Eidi). This replaces the earlier one-time clear that
      emptied stored Expense categories (clearStoredExpenseCats — now
      removed, so nothing wipes these again). Like migrateIncomeCats,
      it runs on every load (and after a backup restore): any stored
