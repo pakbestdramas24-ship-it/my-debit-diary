@@ -1111,7 +1111,7 @@
      "Charity & Alms" is the Sadqa Khairat tag), plus 24 more
      finalized and added the same day on his "Add kro" (Donation,
      Aid, Pregnancy, Dating, Funeral, Graveyard, Land, Tube Well,
-     Wages, Materials, Hardware, Drainage, Wood & Metal Work,
+     Wages, Building Materials, Hardware, Drainage, Wood & Metal Work,
      Paint & Decor, CCTV, Solar System, Laptop, Mobile,
      Electronics, Artificial Jewelry, Gold, Girls Accessories,
      Boys Accessories, Eggs), plus 8 more finalized and added
@@ -1228,7 +1228,7 @@
     {name:"Land", icon:"🌍", color:"#2e7d32"},
     {name:"Tube Well", icon:"⛲", color:"#0277bd"},
     {name:"Wages", icon:"👷", color:"#e65100"},
-    {name:"Materials", icon:"🧱", color:"#6d4c41"},
+    {name:"Building Materials", icon:"🧱", color:"#6d4c41"},
     {name:"Hardware", icon:"⚙️", color:"#546e7a"},
     {name:"Drainage", icon:"🌊", color:"#01579b"},
     {name:"Wood & Metal Work", icon:"🪚", color:"#795548"},
@@ -1273,7 +1273,7 @@
   var CAT_GROUPS = [
     ["Groceries", ["Lentils","Ghee & Oil","Rice","Sugar","Tea","Milk","Spices","Flour","Corn","Fruits","Dry Fruits","Desi Ghee","Preserves","Chicken","Beef","Mutton","Soft Drinks","Kids Snacks","Distillates","Dairy Products","Coffee","Bakery","Fast Food","Desserts","Mithai & Snacks","Vegetables","Eggs","Tandoor","Dining Out"]],
     ["Education", ["Education","Dars","Stationery","Uniform","Canteen Bill"]],
-    ["Construction", ["Materials","Hardware","Drainage","Wood & Metal Work","Paint & Decor","Land","Tube Well","Wages","Welder","Architect","Solar System"]],
+    ["Construction", ["Building Materials","Hardware","Drainage","Wood & Metal Work","Paint & Decor","Land","Tube Well","Wages","Welder","Architect","Solar System"]],
     ["Health", ["Herbal Medicine","Medical","Medicines","Health Drinks","Supplements","Pregnancy"]],
     ["Marriage", ["Engagement","Nikkah","Mehndi","Barat","Waleema","Salami","Laag","Bride Feast","Nandra","Bhaji","Dowry"]],
     ["Home", ["Cleaning","Utensils","Crockery","Bedding","Home Repair","Appliances","Furniture","House Rent","Society Charges","Laundry","Toys"]],
@@ -1493,7 +1493,7 @@
      2026-11-27: Bride Feast, Nandra, Bhaji, Puchh,
      Charity & Alms — plus the 24 added 2026-11-27: Donation,
      Aid, Pregnancy, Dating, Funeral, Graveyard, Land, Tube Well,
-     Wages, Materials, Hardware, Drainage, Wood & Metal Work,
+     Wages, Building Materials, Hardware, Drainage, Wood & Metal Work,
      Paint & Decor, CCTV, Solar System, Laptop, Mobile,
      Electronics, Artificial Jewelry, Gold, Girls Accessories,
      Boys Accessories, Eggs — plus the 8 added 2026-11-27: Dowry,
@@ -1534,14 +1534,25 @@
     var kept = [];
     customCats.expense.forEach(function(n){
       var ln = String(n).toLowerCase();
-      if(baseNames.indexOf(ln) !== -1 || removed.indexOf(ln) !== -1){ changed = true; return; }
+      /* "Materials" was renamed "Building Materials" on the user's
+         request 2026-11-27 — a stored custom copy under the old short
+         name is dropped too, so it does not reappear in the picker. */
+      if(baseNames.indexOf(ln) !== -1 || removed.indexOf(ln) !== -1 || ln === "materials"){ changed = true; return; }
       if(seen[ln]){ changed = true; return; }
       seen[ln] = true;
       kept.push(n);
     });
     if(kept.length !== customCats.expense.length) customCats.expense = kept;
+    /* Rename, not a removal: entries filed under the old short name
+       "Materials" move to the full name "Building Materials" so they
+       keep matching the picker. */
+    entries.forEach(function(e){
+      if(!e || !e.category) return;
+      if(String(e.category).toLowerCase() === "materials" && e.category !== "Building Materials"){ e.category = "Building Materials"; changed = true; }
+    });
     if(changed){
       lsSet(LS_CUSTOMCATS, JSON.stringify(customCats));
+      lsSet(LS_ENTRIES, JSON.stringify(entries));
     }
     return changed;
   }
