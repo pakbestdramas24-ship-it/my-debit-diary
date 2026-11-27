@@ -1120,7 +1120,11 @@
      removed from Expense on the user's request 2026-11-27 (it
      stays in Income only). School Fee, Tuition Fee and
      Admission were removed from Expense on the user's request
-     2026-11-27 too, so 124 total. Emoji
+     2026-11-27 too, so 124 total; Artificial Jewelry and
+     Entertainment were removed the same day (122), and the
+     "Transport" tag was removed the same day too, so 121 total;
+     "Vehicle Wash" was removed the same day as well, so 120
+     total. Emoji
      icons only, in his approved order.
      Note: the Expense "House Rent" (🏡, rent paid) is distinct from
      the Income "House Rent" (🏠, rent received) in INCOME_CATS. */
@@ -1166,7 +1170,6 @@
     {name:"Bicycle", icon:"🚲", color:"#26a69a"},
     {name:"Motorcycle", icon:"🏍️", color:"#ef5350"},
     {name:"Car", icon:"🚗", color:"#42a5f5"},
-    {name:"Vehicle Wash", icon:"🧽", color:"#00897b"},
     {name:"Bike Fuel", icon:"🛵", color:"#fb8c00"},
     {name:"Car Fuel", icon:"⛽", color:"#f4511e"},
     {name:"Mobile Package", icon:"📱", color:"#3949ab"},
@@ -1179,7 +1182,6 @@
     {name:"Society Charges", icon:"🏘️", color:"#546e7a"},
     {name:"Vegetables", icon:"🥦", color:"#43a047"},
     {name:"Education", icon:"📚", color:"#1e88e5"},
-    {name:"Transport", icon:"🚌", color:"#00838f"},
     {name:"Barber/Salon", icon:"💇", color:"#ec407a"},
     {name:"Gifts", icon:"🎁", color:"#ad1457"},
     {name:"Laundry", icon:"🧺", color:"#00acc1"},
@@ -1263,7 +1265,7 @@
     {name:"Borrow", icon:"🤲", color:"#0277bd"},
     {name:"Committee", icon:"👥", color:"#3949ab"}
   ];
-  /* Expense picker groups — the 122 EXPENSE_CATS arranged in one series
+  /* Expense picker groups — the 120 EXPENSE_CATS arranged in one series
      for the category picker: [group title, category names in order].
      Every EXPENSE_CATS name appears in exactly one group; the picker
      looks each name up in EXPENSE_CATS for its icon and color, so this
@@ -1274,9 +1276,9 @@
     ["Construction", ["Materials","Hardware","Drainage","Wood & Metal Work","Paint & Decor","Land","Tube Well","Wages","Welder","Architect","Solar System"]],
     ["Health", ["Herbal Medicine","Medical","Medicines","Health Drinks","Supplements","Pregnancy"]],
     ["Marriage", ["Engagement","Nikkah","Mehndi","Barat","Waleema","Salami","Laag","Bride Feast","Nandra","Bhaji","Dowry"]],
-    ["Home", ["Cleaning","Utensils","Crockery","Bedding","Home Repair","Appliances","Furniture","House Rent","Society Charges","Laundry","Toys","Potter"]],
-    ["Transport", ["Bicycle","Motorcycle","Car","Vehicle Wash","Bike Fuel","Car Fuel","Transport","Trip","Air Travel","Traveling"]],
-    ["Personal Care", ["Cosmetics","Personal Care","Clothes","Shoes","Barber/Salon","Spa","Beautician","Cobbler","Tailor","Sewing","Bags"]],
+    ["Home", ["Cleaning","Utensils","Crockery","Bedding","Home Repair","Appliances","Furniture","House Rent","Society Charges","Laundry","Toys"]],
+    ["Transport", ["Bicycle","Motorcycle","Car","Bike Fuel","Car Fuel","Trip","Air Travel","Traveling"]],
+    ["Personal Care", ["Cosmetics","Personal Care","Clothes","Shoes","Barber/Salon","Potter","Spa","Beautician","Cobbler","Tailor","Sewing","Bags"]],
     ["Bills", ["Mobile Package","Internet Bill","Electricity Bill","Gas Bill","Water Bill"]],
     ["Giving", ["Masjid","Gifts","Eidi","Puchh","Charity & Alms","Donation","Aid","Lend","Committee"]],
     ["Electronics", ["CCTV","Laptop","Mobile","Electronics"]],
@@ -1507,7 +1509,16 @@
      Artificial Jewelry and Entertainment were likewise removed
      from Expense on the user's request 2026-11-27 and are
      filtered out the same way; entries filed under them keep
-     their stored text). This replaces the earlier one-time clear that
+     their stored text. The "Transport" tag was likewise removed
+     from Expense on the user's request 2026-11-27 (the Transport
+     group itself stays) and is filtered out the same way;
+     entries filed under it keep their stored text. "Vehicle Wash"
+     was likewise removed from Expense on the user's request
+     2026-11-27 and is filtered out the same way; entries filed
+     under it keep their stored text. "Potter" was
+     moved from the Home group into the Personal Care group the
+     same day (still in EXPENSE_CATS, so no filter change needed
+     for it). This replaces the earlier one-time clear that
      emptied stored Expense categories (clearStoredExpenseCats — now
      removed, so nothing wipes these again). Like migrateIncomeCats,
      it runs on every load (and after a backup restore): any stored
@@ -1518,7 +1529,7 @@
   function migrateExpenseCats(){
     var changed = false;
     var baseNames = EXPENSE_CATS.map(function(c){ return c.name.toLowerCase(); });
-    var removed = ["borrow","school fee","tuition fee","admission","artificial jewelry","entertainment"];
+    var removed = ["borrow","school fee","tuition fee","admission","artificial jewelry","entertainment","transport","vehicle wash"];
     var seen = {};
     var kept = [];
     customCats.expense.forEach(function(n){
