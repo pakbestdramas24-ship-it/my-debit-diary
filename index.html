@@ -51,6 +51,23 @@
   .tab{flex:1;background:none;border:0;color:#dfe7e0;font-size:19px;font-weight:500;padding:14px 1px 12px;position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:56px}
   .tab.active{color:var(--text);font-weight:700}
   .tab.active::after{content:"";position:absolute;left:8%;right:8%;bottom:0;height:3px;background:var(--mint);border-radius:3px 3px 0 0}
+  /* Top-bar ledger switcher — small avatar at the far left of the top bar;
+     shows the active ledger (person's photo / icon / initial, or the group
+     icon for All Ledgers) and opens the ledger picker on tap */
+  .top-ledger-btn{background:none;border:0;padding:0 0 0 2px;margin-right:2px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;min-height:56px;width:38px}
+  .top-ledger-btn .person-avatar{width:30px;height:30px;font-size:14px}
+  .top-ledger-btn .person-avatar svg{width:17px;height:17px}
+  .top-ledger-btn .person-avatar .avatar-glyph{font-size:15px}
+  .top-ledger-btn:active .person-avatar{opacity:.7}
+  /* Ledger picker sheet rows */
+  .ledger-pick-row{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:9px 4px;min-height:58px;color:var(--text);text-align:left}
+  .ledger-pick-row:active{background:#141a15}
+  .ledger-pick-row .person-avatar{width:40px;height:40px;font-size:17px}
+  .ledger-pick-row .person-avatar svg{width:22px;height:22px}
+  .ledger-pick-row .person-avatar .avatar-glyph{font-size:19px}
+  .ledger-pick-row .lp-name{flex:1;min-width:0;font-size:16.5px;font-weight:600;overflow-wrap:anywhere}
+  .ledger-pick-row .lp-check{color:var(--mint);font-size:19px;font-weight:700;flex:0 0 auto}
+  body.light .ledger-pick-row:active{background:#eef2ee}
 
   main{flex:1;padding:14px 14px 110px}
 
@@ -788,6 +805,7 @@
 <body>
 <div class="app">
   <div class="topbar" id="topbar">
+    <button class="top-ledger-btn" id="topLedgerBtn" aria-label="Ledger: All Ledgers — tap to change" title="Ledger: All Ledgers — tap to change"></button>
     <nav class="tabs" aria-label="Views">
       <button class="tab tab-icon" data-tab="notes" aria-label="Notes" title="Notes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
       <button class="tab active" data-tab="daily">Daily</button>
@@ -1010,6 +1028,15 @@
     <div class="sheet-actions">
       <button class="btn btn-primary" id="balanceOkBtn">OK</button>
     </div>
+  </div>
+</div>
+
+<!-- Ledger picker sheet (opened from the top-bar ledger avatar) -->
+<div class="overlay" id="ledgerPickOverlay" role="dialog" aria-modal="true" aria-label="Choose ledger">
+  <div class="sheet">
+    <button class="sheet-close" id="closeLedgerPickBtn" aria-label="Close"><span>⌄</span></button>
+    <h2 class="sheet-title">Ledger</h2>
+    <div id="ledgerPickList"></div>
   </div>
 </div>
 
@@ -1748,6 +1775,7 @@
     yearRangeActive: false,
     ledgerAccount: "All",
     ledgerNameFilter: "",
+    activeLedger: "",
     ledgerView: "list",
     ledgerPeriod: "month",
     ledgerMonth: todayKey().slice(0,7),
@@ -4232,6 +4260,7 @@
   }
   function render(){
     topbar.classList.toggle("hidden", state.tab === "charts" || state.tab === "report" || state.tab === "pdfpreview" || state.tab === "settings" || state.tab === "help");
+    syncTopLedger();
     document.querySelectorAll(".tab").forEach(function(t){
       t.classList.toggle("active", t.getAttribute("data-tab") === state.tab);
     });
@@ -4775,7 +4804,11 @@
         formLedger = state.ledgerNameFilter;
         hideLedgerField = true;
       } else {
-        formLedger = "";
+        /* The ledger picked from the top bar is the default for a new
+           entry: the Ledger field is prefilled with that person (still
+           shown, so it can be changed). "All Ledgers" leaves it empty —
+           the field shows "Select a person" as before. */
+        formLedger = state.activeLedger || "";
         hideLedgerField = false;
       }
       formCategory = "";
@@ -5227,6 +5260,46 @@
   document.getElementById("closeBalanceBtn").addEventListener("click", closeBalanceSheet);
   document.getElementById("balanceOkBtn").addEventListener("click", closeBalanceSheet);
   balanceOverlay.addEventListener("click", function(ev){ if(ev.target===balanceOverlay) closeBalanceSheet(); });
+
+  /* ---------- top-bar ledger switcher ---------- */
+  var ledgerPickOverlay = document.getElementById("ledgerPickOverlay");
+  var ledgerPickList = document.getElementById("ledgerPickList");
+  var topLedgerBtn = document.getElementById("topLedgerBtn");
+  /* The active ledger picked from the top bar: "" means All Ledgers (no
+     default). It sets the default Ledger of new entries only — the views
+     keep their own filters. syncTopLedger() runs on every render, so the
+     avatar follows photo / icon / rename changes, and a person who no
+     longer exists falls back to All Ledgers. */
+  function syncTopLedger(){
+    if(state.activeLedger && ledgerNames.indexOf(state.activeLedger) === -1) state.activeLedger = "";
+    if(!topLedgerBtn) return;
+    topLedgerBtn.innerHTML = state.activeLedger ? avatarHTML(state.activeLedger) : GROUP_AVATAR_HTML;
+    var label = state.activeLedger ? ("Ledger: " + state.activeLedger) : "Ledger: All Ledgers";
+    topLedgerBtn.setAttribute("aria-label", label + " — tap to change");
+    topLedgerBtn.title = label + " — tap to change";
+  }
+  function openLedgerPicker(){
+    var html = '<button type="button" class="ledger-pick-row" data-pick-ledger="">' + GROUP_AVATAR_HTML +
+      '<span class="lp-name">All Ledgers</span>' + (state.activeLedger ? "" : '<span class="lp-check" aria-hidden="true">✓</span>') + '</button>';
+    ledgerNames.forEach(function(name){
+      html += '<button type="button" class="ledger-pick-row" data-pick-ledger="'+esc(name)+'">' + avatarHTML(name) +
+        '<span class="lp-name">'+esc(name)+'</span>' + (state.activeLedger === name ? '<span class="lp-check" aria-hidden="true">✓</span>' : '') + '</button>';
+    });
+    if(!ledgerNames.length) html += '<p class="empty-note">No people yet. Add a person from the Ledger tab first.</p>';
+    ledgerPickList.innerHTML = html;
+    ledgerPickList.querySelectorAll("[data-pick-ledger]").forEach(function(b){
+      b.addEventListener("click", function(){
+        state.activeLedger = b.getAttribute("data-pick-ledger") || "";
+        closeLedgerPicker();
+        syncTopLedger();
+      });
+    });
+    ledgerPickOverlay.classList.add("open");
+  }
+  function closeLedgerPicker(){ ledgerPickOverlay.classList.remove("open"); }
+  topLedgerBtn.addEventListener("click", openLedgerPicker);
+  document.getElementById("closeLedgerPickBtn").addEventListener("click", closeLedgerPicker);
+  ledgerPickOverlay.addEventListener("click", function(ev){ if(ev.target===ledgerPickOverlay) closeLedgerPicker(); });
 
   /* ---------- person photos ---------- */
   var photoInput = document.getElementById("photoFileInput");
