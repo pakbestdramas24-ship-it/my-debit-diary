@@ -1090,7 +1090,13 @@
      Masjid), plus 11 more finalized and added the same day on his
      "Add kro" (Society Charges, Vegetables, Education, Transport,
      Barber/Salon, Entertainment, Gifts, Laundry, Home Repair,
-     Appliances, Furniture) — 62 total. Emoji icons only, in his
+     Appliances, Furniture), plus 21 more finalized and added the
+     same day on his "Add kro" (Stationery, Uniform, Bags,
+     Admission, School Fee, Tuition Fee, Dars, Canteen Bill, Trip,
+     Dining Out, Air Travel, Traveling, Cinema, Spa, Beautician,
+     Cobbler, Tailor, Sewing, Welder, Shopping, Fine — "Bus & Cab"
+     was dropped by the user; Tailor and Sewing are both kept as
+     separate tags) — 83 total. Emoji icons only, in his
      approved order.
      Note: the Expense "House Rent" (🏡, rent paid) is distinct from
      the Income "House Rent" (🏠, rent received) in INCOME_CATS. */
@@ -1156,7 +1162,28 @@
     {name:"Laundry", icon:"🧺", color:"#00acc1"},
     {name:"Home Repair", icon:"🔧", color:"#757575"},
     {name:"Appliances", icon:"📺", color:"#283593"},
-    {name:"Furniture", icon:"🪑", color:"#5d4037"}
+    {name:"Furniture", icon:"🪑", color:"#5d4037"},
+    {name:"Stationery", icon:"✏️", color:"#9575cd"},
+    {name:"Uniform", icon:"👔", color:"#455a64"},
+    {name:"Bags", icon:"🎒", color:"#e65100"},
+    {name:"Admission", icon:"🎓", color:"#1565c0"},
+    {name:"School Fee", icon:"🧾", color:"#6a1b9a"},
+    {name:"Tuition Fee", icon:"👨‍🏫", color:"#00838f"},
+    {name:"Dars", icon:"📖", color:"#2e7d32"},
+    {name:"Canteen Bill", icon:"🍔", color:"#f57c00"},
+    {name:"Trip", icon:"🧳", color:"#8d6e63"},
+    {name:"Dining Out", icon:"🍲", color:"#c62828"},
+    {name:"Air Travel", icon:"✈️", color:"#0277bd"},
+    {name:"Traveling", icon:"🚂", color:"#37474f"},
+    {name:"Cinema", icon:"🍿", color:"#ad1457"},
+    {name:"Spa", icon:"💆", color:"#26a69a"},
+    {name:"Beautician", icon:"💅", color:"#e91e63"},
+    {name:"Cobbler", icon:"👢", color:"#795548"},
+    {name:"Tailor", icon:"🪡", color:"#7b1fa2"},
+    {name:"Sewing", icon:"🧵", color:"#0097a7"},
+    {name:"Welder", icon:"🛠️", color:"#616161"},
+    {name:"Shopping", icon:"🛍️", color:"#c2185b"},
+    {name:"Fine", icon:"⚠️", color:"#d32f2f"}
   ];
   var INCOME_CATS = [
     {name:"Easypaisa", icon:"💳", color:"#2fa84f"},
@@ -1353,7 +1380,7 @@
     return changed;
   }
   migrateIncomeCats();
-  /* Migration — Expense categories: the 62 finalized categories in
+  /* Migration — Expense categories: the 83 finalized categories in
      EXPENSE_CATS above (the original 11 — Lentils, Ghee & Oil, Rice,
      Sugar, Tea, Milk, Spices, Flour, Corn, Fruits, Dry Fruits — plus
      the 10 added 2026-11-27: Desi Ghee, Cosmetics, Personal Care,
@@ -1368,7 +1395,11 @@
      House Rent, Masjid — plus the 11 added 2026-11-27: Society
      Charges, Vegetables, Education, Transport, Barber/Salon,
      Entertainment, Gifts, Laundry, Home Repair, Appliances,
-     Furniture). This replaces the earlier one-time clear that
+     Furniture — plus the 21 added 2026-11-27: Stationery, Uniform,
+     Bags, Admission, School Fee, Tuition Fee, Dars, Canteen Bill,
+     Trip, Dining Out, Air Travel, Traveling, Cinema, Spa,
+     Beautician, Cobbler, Tailor, Sewing, Welder, Shopping,
+     Fine). This replaces the earlier one-time clear that
      emptied stored Expense categories (clearStoredExpenseCats — now
      removed, so nothing wipes these again). Like migrateIncomeCats,
      it runs on every load (and after a backup restore): any stored
