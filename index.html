@@ -1087,7 +1087,11 @@
      10 more finalized and added the same day on his "Add kro"
      (Vehicle Wash, Bike Fuel, Car Fuel, Mobile Package, Internet
      Bill, Electricity Bill, Gas Bill, Water Bill, House Rent,
-     Masjid) — 51 total. Emoji icons only, in his approved order.
+     Masjid), plus 11 more finalized and added the same day on his
+     "Add kro" (Society Charges, Vegetables, Education, Transport,
+     Barber/Salon, Entertainment, Gifts, Laundry, Home Repair,
+     Appliances, Furniture) — 62 total. Emoji icons only, in his
+     approved order.
      Note: the Expense "House Rent" (🏡, rent paid) is distinct from
      the Income "House Rent" (🏠, rent received) in INCOME_CATS. */
   var EXPENSE_CATS = [
@@ -1141,7 +1145,18 @@
     {name:"Gas Bill", icon:"🔥", color:"#d84315"},
     {name:"Water Bill", icon:"💦", color:"#0288d1"},
     {name:"House Rent", icon:"🏡", color:"#7cb342"},
-    {name:"Masjid", icon:"🕌", color:"#2e7d32"}
+    {name:"Masjid", icon:"🕌", color:"#2e7d32"},
+    {name:"Society Charges", icon:"🏘️", color:"#546e7a"},
+    {name:"Vegetables", icon:"🥦", color:"#43a047"},
+    {name:"Education", icon:"📚", color:"#1e88e5"},
+    {name:"Transport", icon:"🚌", color:"#00838f"},
+    {name:"Barber/Salon", icon:"💇", color:"#ec407a"},
+    {name:"Entertainment", icon:"🎬", color:"#5e35b1"},
+    {name:"Gifts", icon:"🎁", color:"#ad1457"},
+    {name:"Laundry", icon:"🧺", color:"#00acc1"},
+    {name:"Home Repair", icon:"🔧", color:"#757575"},
+    {name:"Appliances", icon:"📺", color:"#283593"},
+    {name:"Furniture", icon:"🪑", color:"#5d4037"}
   ];
   var INCOME_CATS = [
     {name:"Easypaisa", icon:"💳", color:"#2fa84f"},
@@ -1338,7 +1353,7 @@
     return changed;
   }
   migrateIncomeCats();
-  /* Migration — Expense categories: the 51 finalized categories in
+  /* Migration — Expense categories: the 62 finalized categories in
      EXPENSE_CATS above (the original 11 — Lentils, Ghee & Oil, Rice,
      Sugar, Tea, Milk, Spices, Flour, Corn, Fruits, Dry Fruits — plus
      the 10 added 2026-11-27: Desi Ghee, Cosmetics, Personal Care,
@@ -1350,7 +1365,10 @@
      Shoes, Bedding, Bicycle, Motorcycle, Car — plus the 10 added
      2026-11-27: Vehicle Wash, Bike Fuel, Car Fuel, Mobile Package,
      Internet Bill, Electricity Bill, Gas Bill, Water Bill,
-     House Rent, Masjid). This replaces the earlier one-time clear that
+     House Rent, Masjid — plus the 11 added 2026-11-27: Society
+     Charges, Vegetables, Education, Transport, Barber/Salon,
+     Entertainment, Gifts, Laundry, Home Repair, Appliances,
+     Furniture). This replaces the earlier one-time clear that
      emptied stored Expense categories (clearStoredExpenseCats — now
      removed, so nothing wipes these again). Like migrateIncomeCats,
      it runs on every load (and after a backup restore): any stored
@@ -4956,7 +4974,7 @@
        run the same replacement so the restored list matches the new 10. */
     migrateIncomeCats();
     /* Same for Expense: a restored backup's stored Expense names
-       that are now defaults are de-duplicated so the 51 finalized
+       that are now defaults are de-duplicated so the 62 finalized
        categories show once, from EXPENSE_CATS. */
     migrateExpenseCats();
     notes = Array.isArray(d.notes) ? d.notes : [];
