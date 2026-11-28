@@ -35,9 +35,23 @@
 
   .app{max-width:680px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg)}
 
-  /* Top bar */
-  .topbar{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid #1c241e;display:flex;align-items:stretch;gap:2px;padding:0 6px}
+  /* Top bar — two rows: a header row (ledger avatar, app name, Search,
+     ⋮ menu) above the tabs row (Notes pencil, Daily, Monthly, Yearly,
+     Ledger), matching the reference app's top setting */
+  .topbar{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid #1c241e;display:flex;flex-direction:column;align-items:stretch;padding:0}
   .topbar.hidden{display:none}
+  .header-row{display:flex;align-items:center;gap:4px;padding:0 6px;min-height:50px}
+  .header-row .icon-btn{min-height:50px;width:44px}
+  .app-title{flex:1;min-width:0;font-size:20px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:2px}
+  .tabs-row{display:flex;align-items:stretch;padding:0 6px}
+  /* Search bar — opens below the header row when the Search icon is tapped */
+  .search-bar{display:none;align-items:center;gap:8px;padding:2px 10px 8px}
+  .search-bar.open{display:flex}
+  .search-input-wrap{flex:1;min-width:0;display:flex;align-items:center;gap:8px;background:#141815;border:1.5px solid #39423c;border-radius:999px;padding:0 14px;min-height:42px}
+  .search-input-wrap svg{width:19px;height:19px;fill:var(--muted);flex:0 0 auto}
+  .search-input-wrap input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--text);font-size:16px;min-height:40px;padding:0}
+  .search-cancel{background:none;border:0;color:var(--mint);font-size:15.5px;font-weight:600;padding:8px 4px;min-height:42px;flex:0 0 auto}
+  .search-head{font-size:13px;color:var(--muted);font-weight:600;margin:0 2px 6px}
   .icon-btn{background:none;border:0;color:var(--text);width:46px;min-height:56px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
   .icon-btn svg{width:25px;height:25px;fill:var(--text)}
   .menu-wrap{position:relative;flex:0 0 auto;display:flex}
@@ -48,13 +62,13 @@
   .top-menu-item:active{background:#2c352f}
   .top-menu-item svg{width:20px;height:20px;fill:var(--muted);flex:0 0 auto}
   .tabs{display:flex;flex:1;min-width:0}
-  .tab{flex:1;background:none;border:0;color:#dfe7e0;font-size:19px;font-weight:500;padding:14px 1px 12px;position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:56px}
+  .tab{flex:1;background:none;border:0;color:#dfe7e0;font-size:19px;font-weight:500;padding:12px 1px 10px;position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:50px}
   .tab.active{color:var(--text);font-weight:700}
   .tab.active::after{content:"";position:absolute;left:8%;right:8%;bottom:0;height:3px;background:var(--mint);border-radius:3px 3px 0 0}
   /* Top-bar ledger switcher — small avatar at the far left of the top bar;
      shows the active ledger (person's photo / icon / initial, or the group
      icon for All Ledgers) and opens the ledger picker on tap */
-  .top-ledger-btn{background:none;border:0;padding:0 0 0 2px;margin-right:2px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;min-height:56px;width:38px}
+  .top-ledger-btn{background:none;border:0;padding:0 0 0 2px;margin-right:2px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;min-height:50px;width:38px}
   .top-ledger-btn .person-avatar{width:30px;height:30px;font-size:14px}
   .top-ledger-btn .person-avatar svg{width:17px;height:17px}
   .top-ledger-btn .person-avatar .avatar-glyph{font-size:15px}
@@ -76,7 +90,9 @@
   .nav-arrow{background:none;border:0;color:var(--text);font-size:30px;line-height:1;width:44px;height:52px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
   .date-card .nav-arrow{width:34px;height:36px;font-size:23px}
   .date-main{flex:1;display:flex;align-items:center;gap:8px;min-width:0}
-  .day-num{font-size:27px;font-weight:400;line-height:1;padding-left:2px}
+  /* The day number sits inside a bordered rounded rectangle box,
+     like the reference app's date card (the "green box" setting) */
+  .day-num{font-size:27px;font-weight:400;line-height:1;padding:8px 7px;border:1.5px solid rgba(255,255,255,.85);border-radius:7px;min-width:52px;text-align:center;flex:0 0 auto}
   .date-texts{min-width:0}
   .date-line1{font-size:15.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .date-line2{font-size:13.5px;color:#d7e0d8;margin-top:1px}
@@ -751,6 +767,8 @@
   body.light .date-box{background:#ffffff}
   body.light .date-box:active{background:#eef2ee}
   body.light .ndc-box{border-color:#43534a}
+  body.light .day-num{border-color:#43534a}
+  body.light .search-input-wrap{background:#ffffff;border-color:#b9c8bc}
   body.light .note-item{border-bottom-color:#d3dcd4}
   body.light .rep-chip{border-color:#b9c8bc}
   body.light .range-inputs input{background:#ffffff;border-color:#b9c8bc}
@@ -805,23 +823,36 @@
 <body>
 <div class="app">
   <div class="topbar" id="topbar">
-    <button class="top-ledger-btn" id="topLedgerBtn" aria-label="Ledger: All Ledgers — tap to change" title="Ledger: All Ledgers — tap to change"></button>
-    <nav class="tabs" aria-label="Views">
-      <button class="tab tab-icon" data-tab="notes" aria-label="Notes" title="Notes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
-      <button class="tab active" data-tab="daily">Daily</button>
-      <button class="tab" data-tab="monthly">Monthly</button>
-      <button class="tab" data-tab="yearly">Yearly</button>
-      <button class="tab" data-tab="ledger">Ledger</button>
-    </nav>
-    <div class="menu-wrap">
-      <button class="icon-btn" id="menuBtn" aria-label="Menu" title="Menu" aria-haspopup="true" aria-expanded="false"><span class="menu-dots" aria-hidden="true">⋮</span></button>
-      <div class="top-menu" id="topMenu" role="menu">
-        <button class="top-menu-item" id="menuChartsItem" role="menuitem">Charts</button>
-        <button class="top-menu-item" id="menuBalanceItem" role="menuitem">View Balance</button>
-        <button class="top-menu-item" id="menuHelpItem" role="menuitem">Help and Feedback</button>
-        <button class="top-menu-item" id="menuSettingsItem" role="menuitem">Settings</button>
-        <button class="top-menu-item" id="menuBackupItem" role="menuitem">Backup</button>
+    <div class="header-row">
+      <button class="top-ledger-btn" id="topLedgerBtn" aria-label="Ledger: All Ledgers — tap to change" title="Ledger: All Ledgers — tap to change"></button>
+      <span class="app-title">My Debit Diary</span>
+      <button class="icon-btn" id="searchBtn" aria-label="Search entries" title="Search entries"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg></button>
+      <div class="menu-wrap">
+        <button class="icon-btn" id="menuBtn" aria-label="Menu" title="Menu" aria-haspopup="true" aria-expanded="false"><span class="menu-dots" aria-hidden="true">⋮</span></button>
+        <div class="top-menu" id="topMenu" role="menu">
+          <button class="top-menu-item" id="menuChartsItem" role="menuitem">Charts</button>
+          <button class="top-menu-item" id="menuBalanceItem" role="menuitem">View Balance</button>
+          <button class="top-menu-item" id="menuHelpItem" role="menuitem">Help and Feedback</button>
+          <button class="top-menu-item" id="menuSettingsItem" role="menuitem">Settings</button>
+          <button class="top-menu-item" id="menuBackupItem" role="menuitem">Backup</button>
+        </div>
       </div>
+    </div>
+    <div class="search-bar" id="searchBar">
+      <div class="search-input-wrap">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
+        <input type="text" id="searchInput" placeholder="Search entries" autocomplete="off" aria-label="Search entries" />
+      </div>
+      <button type="button" class="search-cancel" id="searchCancelBtn">Cancel</button>
+    </div>
+    <div class="tabs-row">
+      <nav class="tabs" aria-label="Views">
+        <button class="tab tab-icon" data-tab="notes" aria-label="Notes" title="Notes"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
+        <button class="tab active" data-tab="daily">Daily</button>
+        <button class="tab" data-tab="monthly">Monthly</button>
+        <button class="tab" data-tab="yearly">Yearly</button>
+        <button class="tab" data-tab="ledger">Ledger</button>
+      </nav>
     </div>
   </div>
   <main id="mainView" aria-live="polite"></main>
@@ -1035,7 +1066,6 @@
 <div class="overlay" id="ledgerPickOverlay" role="dialog" aria-modal="true" aria-label="Choose ledger">
   <div class="sheet">
     <button class="sheet-close" id="closeLedgerPickBtn" aria-label="Close"><span>⌄</span></button>
-    <h2 class="sheet-title">Ledger</h2>
     <div id="ledgerPickList"></div>
   </div>
 </div>
@@ -1776,6 +1806,8 @@
     ledgerAccount: "All",
     ledgerNameFilter: "",
     activeLedger: "",
+    searchActive: false,
+    searchQuery: "",
     ledgerView: "list",
     ledgerPeriod: "month",
     ledgerMonth: todayKey().slice(0,7),
@@ -1911,6 +1943,42 @@
       });
     });
   }
+
+  /* ---------- SEARCH ----------
+     Tapping the header Search icon opens the search bar; typing filters
+     ALL entries by their text (and Description), case-insensitive
+     substring match, newest first. Each result shows its date, text and
+     amount (green Income / red Expense); tapping one opens its edit
+     form. No match shows "No results found." Clearing the text or
+     tapping Cancel closes the search and returns to the normal view. */
+  function searchItemHTML(e){
+    var sub = fmtKeyLong(e.date);
+    var desc = (e.remarks || "").trim();
+    if(desc) sub += " · " + desc;
+    return '<li><div class="entry-item" data-edit="'+e.id+'" role="button" tabindex="0">' +
+      '<span class="entry-main"><span class="entry-text">'+esc(e.text)+'</span>' +
+      '<span class="entry-sub">'+esc(sub)+'</span></span>' +
+      '<span class="entry-amt '+(e.type==="income"?"credit":"debit")+'">'+esc(fmt(+e.amount))+'</span>' +
+      '</div></li>';
+  }
+  function renderSearchResults(){
+    var q = state.searchQuery.trim().toLowerCase();
+    if(!q){ renderDailyFallbackForSearch(); return; }
+    var matches = entries.filter(function(e){
+      return String(e.text || "").toLowerCase().indexOf(q) !== -1 ||
+             String(e.remarks || "").toLowerCase().indexOf(q) !== -1;
+    });
+    matches.sort(function(a, b){
+      if(a.date !== b.date) return a.date < b.date ? 1 : -1;
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+    var html = '<p class="search-head">'+matches.length+(matches.length === 1 ? " result" : " results")+' for &ldquo;'+esc(state.searchQuery.trim())+'&rdquo;</p>';
+    if(matches.length) html += '<ul class="entry-list">' + matches.map(searchItemHTML).join("") + '</ul>';
+    else html += '<p class="empty-note">No results found.</p>';
+    main.innerHTML = html;
+    bindEditButtons();
+  }
+  function renderDailyFallbackForSearch(){ renderDaily(); }
 
   /* ---------- DAILY ---------- */
   function renderDaily(){
@@ -4241,6 +4309,7 @@
 
   /* ---------- render / tabs / FAB ---------- */
   function updateFab(){
+    if(state.searchActive){ fab.classList.add("hidden"); return; }
     if(state.tab === "report" || state.tab === "pdfpreview" || state.tab === "settings" || state.tab === "help"){ fab.classList.add("hidden"); return; }
     if(state.tab === "notes" && state.noteMode === "edit"){ fab.classList.add("hidden"); return; }
     fab.classList.remove("hidden");
@@ -4264,6 +4333,7 @@
     document.querySelectorAll(".tab").forEach(function(t){
       t.classList.toggle("active", t.getAttribute("data-tab") === state.tab);
     });
+    if(state.searchActive){ renderSearchResults(); updateFab(); return; }
     if(state.tab === "notes"){ if(state.noteMode === "edit") renderNoteEditor(); else renderNotesList(); }
     else if(state.tab === "daily") renderDaily();
     else if(state.tab === "monthly") renderMonthly();
@@ -4276,7 +4346,7 @@
     else if(state.tab === "help") renderHelp();
     updateFab();
   }
-  function setTab(tab){ state.tab = tab; state.noteMode = "list"; state.noteEditId = null; state.noteDraft = ""; if(tab === "report") state.reportGenerated = makeGenStamp(); render(); window.scrollTo(0,0); }
+  function setTab(tab){ closeSearch(); state.tab = tab; state.noteMode = "list"; state.noteEditId = null; state.noteDraft = ""; if(tab === "report") state.reportGenerated = makeGenStamp(); render(); window.scrollTo(0,0); }
   document.querySelectorAll(".tab").forEach(function(t){
     t.addEventListener("click", function(){ setTab(t.getAttribute("data-tab")); });
   });
@@ -5204,6 +5274,39 @@
   document.getElementById("menuSettingsItem").addEventListener("click", function(){ closeTopMenu(); openSettings(); });
   document.getElementById("menuBackupItem").addEventListener("click", function(){ closeTopMenu(); openBackupExport(); });
 
+  /* ---------- header Search ---------- */
+  var searchBar = document.getElementById("searchBar");
+  var searchInput = document.getElementById("searchInput");
+  var searchBtn = document.getElementById("searchBtn");
+  function openSearch(){
+    state.searchActive = true;
+    searchBar.classList.add("open");
+    updateFab();
+    setTimeout(function(){ searchInput.focus(); }, 40);
+  }
+  function closeSearch(){
+    if(!state.searchActive && !searchBar.classList.contains("open")) return;
+    state.searchActive = false;
+    state.searchQuery = "";
+    searchInput.value = "";
+    searchBar.classList.remove("open");
+  }
+  searchBtn.addEventListener("click", function(){
+    if(state.searchActive){ closeSearch(); render(); }
+    else openSearch();
+  });
+  document.getElementById("searchCancelBtn").addEventListener("click", function(){ closeSearch(); render(); });
+  searchInput.addEventListener("input", function(){
+    state.searchQuery = searchInput.value;
+    /* Clearing the text closes the search and returns to the normal view. */
+    if(!searchInput.value.trim()){ closeSearch(); render(); return; }
+    renderSearchResults();
+    updateFab();
+  });
+  searchInput.addEventListener("keydown", function(ev){
+    if(ev.key === "Escape"){ closeSearch(); render(); }
+  });
+
   /* ---------- View Balance sheet ---------- */
   var balanceOverlay = document.getElementById("balanceOverlay");
   var balanceLedgerSelEl = document.getElementById("balanceLedgerSel");
@@ -5279,8 +5382,9 @@
     topLedgerBtn.title = label + " — tap to change";
   }
   function openLedgerPicker(){
-    var html = '<button type="button" class="ledger-pick-row" data-pick-ledger="">' + GROUP_AVATAR_HTML +
-      '<span class="lp-name">All Ledgers</span>' + (state.activeLedger ? "" : '<span class="lp-check" aria-hidden="true">✓</span>') + '</button>';
+    /* People only — no title and no "All Ledgers" row in this sheet
+       (removed at the user's request). */
+    var html = "";
     ledgerNames.forEach(function(name){
       html += '<button type="button" class="ledger-pick-row" data-pick-ledger="'+esc(name)+'">' + avatarHTML(name) +
         '<span class="lp-name">'+esc(name)+'</span>' + (state.activeLedger === name ? '<span class="lp-check" aria-hidden="true">✓</span>' : '') + '</button>';
