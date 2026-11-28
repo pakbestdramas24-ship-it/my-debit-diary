@@ -684,6 +684,9 @@
   .desc-row .field{flex:1}
   .sheet-actions{display:flex;gap:10px;margin-top:8px}
   .btn-danger{background:transparent;border:1.5px solid #a05a4e;color:var(--danger);flex:1;border-radius:999px;padding:13px;font-size:16.5px;font-weight:600;min-height:50px}
+  /* Settings → Data Management — Clear All Data (danger zone) */
+  .clear-all-note{color:var(--muted);font-size:14.5px;line-height:1.5;margin:0 2px 10px}
+  .clear-all-btn{width:100%;flex:none;min-height:46px;padding:10px 13px;font-size:15.5px}
   .error-msg{display:none;background:#4a2c26;color:#ffd9d2;border-radius:8px;padding:10px 12px;font-size:14.5px;margin-bottom:12px}
   .error-msg.show{display:block}
   .picker-list{list-style:none;margin:0;padding:0}
@@ -1016,6 +1019,18 @@
     <div class="dup-actions">
       <button type="button" class="btn btn-ghost" id="bulkDelCancelBtn">Cancel</button>
       <button type="button" class="btn-danger" id="bulkDelConfirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Clear All Data confirmation popup (Settings → Data Management) -->
+<div class="dup-overlay" id="clearAllOverlay" role="alertdialog" aria-modal="true" aria-labelledby="clearAllTitle" aria-describedby="clearAllMsg">
+  <div class="dup-card">
+    <h2 id="clearAllTitle">Clear All Data?</h2>
+    <p id="clearAllMsg">This will permanently delete ALL entries, all ledgers (people), their photos and notes, all Notes, the opening balance (C/F), custom accounts, custom categories and remembered categories. This cannot be undone.</p>
+    <div class="dup-actions">
+      <button type="button" class="btn btn-ghost" id="clearAllCancelBtn">Cancel</button>
+      <button type="button" class="btn-danger" id="clearAllConfirmBtn">Delete All</button>
     </div>
   </div>
 </div>
@@ -1476,6 +1491,7 @@
 
   function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
   function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+  function lsRemove(k){ try{ localStorage.removeItem(k); }catch(e){} }
   function parseJSON(raw, fallback){ try{ var v = raw ? JSON.parse(raw) : null; return v==null ? fallback : v; }catch(e){ return fallback; } }
 
   /* ---------- data ---------- */
@@ -6286,6 +6302,9 @@
     html += '<div class="field"><label for="dataOpeningInput">Opening Balance — C/F ('+esc(curSym().trim())+')</label>' +
       '<input type="number" id="dataOpeningInput" inputmode="decimal" step="0.01" placeholder="0.00" value="'+(opening ? opening : "")+'" /></div>';
     html += '<div style="text-align:right;margin:-6px 0 2px"><button type="button" class="tag-add-btn" id="dataOpeningSave">Save</button></div>';
+    html += '<div class="set-section-head" style="color:var(--danger)">Clear All Data</div>';
+    html += '<p class="clear-all-note">Delete everything and start fresh: all entries, all ledgers (people) with their photos and remarks, all notes, the opening balance (C/F), custom accounts, custom categories and remembered entry categories. The default categories and accounts stay, and your currency, theme, date format and app lock stay as they are.</p>';
+    html += '<button type="button" class="btn-danger clear-all-btn" id="clearAllBtn">Clear All Data</button>';
     main.innerHTML = html;
     bindSetBack();
     document.getElementById("dataNameSave").addEventListener("click", function(){
@@ -6336,7 +6355,67 @@
       opening = isNaN(v) ? 0 : Math.round(v*100)/100;
       persist(); toast("Opening balance saved ✓");
     });
+    document.getElementById("clearAllBtn").addEventListener("click", function(){
+      document.getElementById("clearAllOverlay").classList.add("open");
+    });
   }
+  /* ---------- Clear All Data ----------
+     Wipes ONLY the user's own data so the app starts completely
+     fresh for a new trial: every entry, every ledger (person) with
+     its photo / icon / remarks, every note (the Notes tab's notes
+     and the per-person notes), the opening balance / C/F (back to
+     0), custom accounts, custom categories and the remembered
+     entry-text → category pairings. KEPT on purpose: the built-in
+     default categories (EXPENSE_CATS / INCOME_CATS) and default
+     accounts (ACCOUNTS) — they live in code, not in storage — and
+     the app preferences: currency, theme, date format, fiscal
+     month, the app-lock PIN and the profile name. Nothing is wiped
+     on load: this runs only from the confirmed Clear All Data
+     button in Settings → Data Management. */
+  function clearAllData(){
+    entries = [];
+    ledgerNames = [];
+    personNotes = {};
+    personPhotos = {};
+    personIcons = {};
+    notes = [];
+    opening = 0;
+    customAccounts = [];
+    customCats = {expense: [], income: []};
+    textCat = {income: {}, expense: {}};
+    /* Legacy storage keys the loaders still merge in (old ledger
+       names, old opening balances) must go too, or deleted people
+       would come back on the next load. */
+    lsRemove(LS_LEDGERS_OLD);
+    lsRemove(LS_OPENINGS);
+    lsRemove(LS_OPENING_OLD);
+    /* No view may keep pointing at a person or account that no
+       longer exists. */
+    clearSelection();
+    state.activeLedger = "";
+    state.ledgerNameFilter = "";
+    state.ledgerView = "list";
+    state.searchLedger = "";
+    state.searchQuery = "";
+    state.monthLedger = ""; state.yearLedger = ""; state.chartLedger = "";
+    state.reportLedger = ""; state.pdfPerson = "";
+    state.monthAccount = "All"; state.yearAccount = "All"; state.chartAccount = "All";
+    state.reportAccount = "All"; state.pdfAccount = "All"; state.ledgerAccount = "All";
+    state.date = todayKey();
+    state.notesMonth = todayKey().slice(0,7);
+    state.noteMode = "list"; state.noteEditId = null; state.noteDraft = "";
+    persist(); persistNotes();
+  }
+  var clearAllOverlay = document.getElementById("clearAllOverlay");
+  function closeClearAll(){ clearAllOverlay.classList.remove("open"); }
+  document.getElementById("clearAllCancelBtn").addEventListener("click", closeClearAll);
+  clearAllOverlay.addEventListener("click", function(ev){ if(ev.target === clearAllOverlay) closeClearAll(); });
+  document.getElementById("clearAllConfirmBtn").addEventListener("click", function(){
+    clearAllData();
+    closeClearAll();
+    setTab("daily");
+    toast("All data cleared ✓");
+  });
   function renderSetPreferences(){
     var html = setHeadHTML("Preferences");
     html += '<div class="set-section-head" style="margin-top:2px">Theme</div>';
@@ -6456,7 +6535,7 @@
   });
 
   document.addEventListener("keydown", function(ev){
-    if(ev.key==="Escape"){ closeCalendar(); closeRangeCalendar(); closeSheet(); closeTopMenu(); closePersonSheet(); closeBackup(); closeBalanceSheet(); closePinSheet(); accountOverlay.classList.remove("open"); categoryOverlay.classList.remove("open"); }
+    if(ev.key==="Escape"){ closeCalendar(); closeRangeCalendar(); closeSheet(); closeTopMenu(); closePersonSheet(); closeBackup(); closeBalanceSheet(); closePinSheet(); closeClearAll(); closeBulkDel(); accountOverlay.classList.remove("open"); categoryOverlay.classList.remove("open"); }
   });
 
   /* ---------- init ---------- */
