@@ -2065,7 +2065,11 @@
      cleared), so it works no matter how long after the tick appears
      the finger is lifted — the old 600ms window alone let a slow
      release toggle the just-made selection back off, which is why
-     the tick seemed to work only once. */
+     the tick seemed to work only once. The click is actually
+     swallowed by ONE capture-phase document listener (registered
+     just after bindDaySelect below): two card click handlers used
+     to race over this flag — the first consumed it and the second
+     (tap-to-open-Daily) then navigated away on slow releases. */
   var lpSuppressClick = false;
   function selCount(){ return Object.keys(selectedIds).length; }
   function isSel(id){ return !!selectedIds[id]; }
@@ -2089,12 +2093,29 @@
      carrying data-day-sel="<date key>": the Monthly and Ledger
      detail day cards and the Daily date card. Presses that start on
      an entry row or on a control (nav arrows, selects) are ignored —
-     entry rows keep their own tap / long-press behaviour. */
+     entry rows keep their own tap / long-press behaviour.
+     A hold is judged by the finger's REAL travel, never by the
+     browser's gesture bookkeeping: on a real phone no finger stays
+     pixel-still for 2 seconds, and once its small drift passes the
+     browser's touch slop the browser claims the gesture for
+     scrolling and fires pointercancel (stopping pointermove too) —
+     cancelling the timer there killed almost every real hold while
+     perfectly still synthetic presses in tests kept passing. So
+     pointercancel / pointerleave no longer cancel anything; the
+     timer is cancelled only by an early release (pointerup /
+     touchend) or by genuine travel — more than 24px of finger
+     movement (tracked through touchmove, which keeps arriving
+     after pointercancel) or of page scroll, re-checked once more
+     at the moment the timer fires. */
   function bindDaySelect(){
     main.querySelectorAll("[data-day-sel]").forEach(function(card){
       var key = card.getAttribute("data-day-sel");
-      var timer = null, startX = 0, startY = 0;
+      var timer = null, startX = 0, startY = 0, startScrollY = 0;
       function cancel(){ if(timer){ clearTimeout(timer); timer = null; } }
+      function travelled(x, y){
+        return Math.abs(x - startX) > 24 || Math.abs(y - startY) > 24 ||
+               Math.abs(window.scrollY - startScrollY) > 24;
+      }
       function onControl(ev){
         return !!(ev.target.closest && (ev.target.closest("[data-edit]") || ev.target.closest("button, select, input, a, textarea")));
       }
@@ -2103,10 +2124,13 @@
            guard or timer from the previous press may eat this one. */
         lpSuppressClick = false;
         if(onControl(ev)) return;
-        startX = ev.clientX; startY = ev.clientY;
+        startX = ev.clientX; startY = ev.clientY; startScrollY = window.scrollY;
         cancel();
         timer = setTimeout(function(){
           timer = null;
+          /* The finger is still down but the page scrolled under
+             it: that was a scroll, not a hold — select nothing. */
+          if(Math.abs(window.scrollY - startScrollY) > 24) return;
           lpFiredAt = Date.now();
           lpSuppressClick = true;
           var ids = daySelLists[key] || [];
@@ -2139,11 +2163,21 @@
         }, 2000);
       });
       card.addEventListener("pointermove", function(ev){
-        if(timer && (Math.abs(ev.clientX - startX) > 10 || Math.abs(ev.clientY - startY) > 10)) cancel();
+        if(timer && travelled(ev.clientX, ev.clientY)) cancel();
       });
-      ["pointerup","pointerleave","pointercancel"].forEach(function(evName){
-        card.addEventListener(evName, cancel);
-      });
+      /* After a pointercancel the browser stops sending pointermove
+         but keeps sending touchmove — that stream is what follows
+         the finger for the rest of the hold. Listening only (never
+         preventDefault), so normal scrolling is untouched. */
+      card.addEventListener("touchmove", function(ev){
+        if(timer && ev.touches && ev.touches.length && travelled(ev.touches[0].clientX, ev.touches[0].clientY)) cancel();
+      }, {passive:true});
+      /* Release before the 2 seconds are up cancels the hold.
+         pointercancel and pointerleave are deliberately NOT in
+         this list — see the note above bindDaySelect. */
+      card.addEventListener("pointerup", cancel);
+      card.addEventListener("touchend", cancel);
+      card.addEventListener("touchcancel", cancel);
       card.addEventListener("contextmenu", function(ev){ ev.preventDefault(); });
       card.addEventListener("click", function(ev){
         /* The release click of a 2-second hold: swallow it exactly
@@ -2157,6 +2191,25 @@
       });
     });
   }
+  /* The release click of a fired 2-second hold is swallowed HERE,
+     once, in the capture phase — before it can reach ANY card click
+     handler — so it can neither toggle the just-made selection back
+     off nor open the day in Daily view, however long the finger
+     stayed down after the tick appeared. (When the browser ate the
+     release click itself after a pointercancel, the flag simply
+     stays set until the next press clears it below, so no later
+     genuine tap is ever eaten.) */
+  document.addEventListener("click", function(ev){
+    if(lpSuppressClick){
+      lpSuppressClick = false;
+      ev.stopPropagation();
+      ev.preventDefault();
+    }
+  }, true);
+  /* Every new press anywhere starts from a clean slate, so a guard
+     left over from a hold whose release click never arrived can
+     never eat the first click of the next press. */
+  document.addEventListener("pointerdown", function(){ lpSuppressClick = false; }, true);
   var selBar = document.getElementById("selBar");
   var selCountEl = document.getElementById("selCount");
   function updateSelBar(){
