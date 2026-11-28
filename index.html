@@ -44,14 +44,15 @@
   .header-row .icon-btn{min-height:50px;width:44px}
   .app-title{flex:1;min-width:0;font-size:20px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:2px}
   .tabs-row{display:flex;align-items:stretch;padding:0 6px}
-  /* Search bar — opens below the header row when the Search icon is tapped */
-  .search-bar{display:none;align-items:center;gap:8px;padding:2px 10px 8px}
-  .search-bar.open{display:flex}
+  /* Search page — Search opens as its own full-screen page (like
+     Settings / Charts): a Back button, one search input, results below */
+  .search-page-bar{display:flex;align-items:center;gap:8px;padding:0 2px 10px}
   .search-input-wrap{flex:1;min-width:0;display:flex;align-items:center;gap:8px;background:#141815;border:1.5px solid #39423c;border-radius:999px;padding:0 14px;min-height:42px}
   .search-input-wrap svg{width:19px;height:19px;fill:var(--muted);flex:0 0 auto}
   .search-input-wrap input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--text);font-size:16px;min-height:40px;padding:0}
-  .search-cancel{background:none;border:0;color:var(--mint);font-size:15.5px;font-weight:600;padding:8px 4px;min-height:42px;flex:0 0 auto}
   .search-head{font-size:13px;color:var(--muted);font-weight:600;margin:0 2px 6px}
+  /* Ledger tag on a Search result row — the person this entry belongs to */
+  .entry-ledger{display:inline-block;margin-top:3px;font-size:11px;font-weight:600;color:var(--mint);border:1px solid #39423c;border-radius:999px;padding:1px 8px;line-height:1.5}
   .icon-btn{background:none;border:0;color:var(--text);width:46px;min-height:56px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
   .icon-btn svg{width:25px;height:25px;fill:var(--text)}
   .menu-wrap{position:relative;flex:0 0 auto;display:flex}
@@ -792,6 +793,7 @@
   body.light .ndc-box{border-color:#43534a}
   body.light .day-num{border-color:#43534a}
   body.light .search-input-wrap{background:#ffffff;border-color:#b9c8bc}
+  body.light .entry-ledger{border-color:#b9c8bc}
   body.light .note-item{border-bottom-color:#d3dcd4}
   body.light .rep-chip{border-color:#b9c8bc}
   body.light .range-inputs input{background:#ffffff;border-color:#b9c8bc}
@@ -860,13 +862,6 @@
           <button class="top-menu-item" id="menuBackupItem" role="menuitem">Backup</button>
         </div>
       </div>
-    </div>
-    <div class="search-bar" id="searchBar">
-      <div class="search-input-wrap">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
-        <input type="text" id="searchInput" placeholder="Search entries" autocomplete="off" aria-label="Search entries" />
-      </div>
-      <button type="button" class="search-cancel" id="searchCancelBtn">Cancel</button>
     </div>
     <div class="tabs-row">
       <nav class="tabs" aria-label="Views">
@@ -2096,29 +2091,41 @@
   }
 
   /* ---------- SEARCH ----------
-     Tapping the header Search icon opens the search bar; typing filters
-     the ACTIVE ledger person's entries by their text (and Description),
-     case-insensitive substring match, newest first — the same scoping
-     as the Daily view. Each result shows its date, text and
-     amount (green Income / red Expense); tapping one opens its edit
-     form. No match shows "No results found." Clearing the text or
-     tapping Cancel closes the search and returns to the normal view. */
+     Tapping the header Search icon opens Search as its own full-screen
+     page (like Settings / Charts): a small Back button, one search
+     input and the results below it. Search is the ONE place that looks
+     across ALL data — every entry of every ledger person, plus entries
+     with no ledger — NOT just the top-bar active ledger; Daily,
+     Monthly, Yearly, Charts, View Balance and the PDF Report still
+     follow the active ledger only. Matching is on the entry text (and
+     its Description), case-insensitive substring, newest first, so
+     "pet" finds "Petrol". Each result shows its date, text, amount
+     (green Income / red Expense) and a tag naming the ledger it
+     belongs to ("No ledger" when it has none); tapping a result opens
+     its edit form. Before anything is typed an empty hint shows —
+     entries are not listed by default. No match shows "No results
+     found." Back returns to the screen Search was opened from. */
   function searchItemHTML(e){
     var sub = fmtKeyLong(e.date);
     var acctDesc = entrySubText(e);
     if(acctDesc) sub += " · " + acctDesc;
+    var led = (e.ledger || "").trim();
     return '<li><div class="entry-item" data-edit="'+e.id+'" role="button" tabindex="0">' +
       '<span class="entry-main"><span class="entry-text">'+esc(e.text)+'</span>' +
-      '<span class="entry-sub">'+esc(sub)+'</span></span>' +
+      '<span class="entry-sub">'+esc(sub)+'</span>' +
+      '<span class="entry-ledger">'+esc(led ? led : "No ledger")+'</span></span>' +
       '<span class="entry-amt '+(e.type==="income"?"credit":"debit")+'">'+esc(fmt(+e.amount))+'</span>' +
       '</div></li>';
   }
   function renderSearchResults(){
+    var box = document.getElementById("searchResults");
+    if(!box) return;
     var q = state.searchQuery.trim().toLowerCase();
-    if(!q){ renderDailyFallbackForSearch(); return; }
-    var searchLed = activePerson();
+    if(!q){
+      box.innerHTML = '<p class="empty-note">Type an item name — for example &ldquo;Petrol&rdquo; — to search all entries in every ledger.</p>';
+      return;
+    }
     var matches = entries.filter(function(e){
-      if(searchLed && (e.ledger || "") !== searchLed) return false;
       return String(e.text || "").toLowerCase().indexOf(q) !== -1 ||
              String(e.remarks || "").toLowerCase().indexOf(q) !== -1;
     });
@@ -2129,10 +2136,28 @@
     var html = '<p class="search-head">'+matches.length+(matches.length === 1 ? " result" : " results")+' for &ldquo;'+esc(state.searchQuery.trim())+'&rdquo;</p>';
     if(matches.length) html += '<ul class="entry-list">' + matches.map(searchItemHTML).join("") + '</ul>';
     else html += '<p class="empty-note">No results found.</p>';
-    main.innerHTML = html;
+    box.innerHTML = html;
     bindEditButtons();
   }
-  function renderDailyFallbackForSearch(){ renderDaily(); }
+  function renderSearchPage(){
+    main.innerHTML =
+      '<div class="sub-head"><button class="back-btn" id="searchBackBtn" aria-label="Back">Back</button><h2>Search</h2></div>' +
+      '<div class="search-page-bar"><div class="search-input-wrap">' +
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>' +
+      '<input type="text" id="searchPageInput" placeholder="Search all entries" autocomplete="off" aria-label="Search all entries" value="'+esc(state.searchQuery)+'" />' +
+      '</div></div>' +
+      '<div id="searchResults"></div>';
+    document.getElementById("searchBackBtn").addEventListener("click", function(){ setTab(state.prevTab || "daily"); });
+    var inp = document.getElementById("searchPageInput");
+    inp.addEventListener("input", function(){
+      state.searchQuery = inp.value;
+      renderSearchResults();
+    });
+    inp.addEventListener("keydown", function(ev){
+      if(ev.key === "Escape"){ setTab(state.prevTab || "daily"); }
+    });
+    renderSearchResults();
+  }
 
   /* ---------- DAILY ---------- */
   function renderDaily(){
@@ -4499,7 +4524,7 @@
   /* ---------- render / tabs / FAB ---------- */
   function updateFab(){
     if(state.searchActive){ fab.classList.add("hidden"); return; }
-    if(state.tab === "report" || state.tab === "pdfpreview" || state.tab === "settings" || state.tab === "help"){ fab.classList.add("hidden"); return; }
+    if(state.tab === "report" || state.tab === "pdfpreview" || state.tab === "settings" || state.tab === "help" || state.tab === "search"){ fab.classList.add("hidden"); return; }
     if(state.tab === "notes" && state.noteMode === "edit"){ fab.classList.add("hidden"); return; }
     fab.classList.remove("hidden");
     if(state.tab === "notes"){
@@ -4518,13 +4543,13 @@
   }
   function render(){
     dayCheckLists = {};
-    topbar.classList.toggle("hidden", state.tab === "charts" || state.tab === "report" || state.tab === "pdfpreview" || state.tab === "settings" || state.tab === "help");
+    topbar.classList.toggle("hidden", state.tab === "charts" || state.tab === "report" || state.tab === "pdfpreview" || state.tab === "settings" || state.tab === "help" || state.tab === "search");
     syncTopLedger();
     document.querySelectorAll(".tab").forEach(function(t){
       t.classList.toggle("active", t.getAttribute("data-tab") === state.tab);
     });
-    if(state.searchActive){ renderSearchResults(); updateFab(); updateSelBar(); return; }
-    if(state.tab === "notes"){ if(state.noteMode === "edit") renderNoteEditor(); else renderNotesList(); }
+    if(state.tab === "search") renderSearchPage();
+    else if(state.tab === "notes"){ if(state.noteMode === "edit") renderNoteEditor(); else renderNotesList(); }
     else if(state.tab === "daily") renderDaily();
     else if(state.tab === "monthly") renderMonthly();
     else if(state.tab === "yearly") renderYearly();
@@ -5474,39 +5499,26 @@
   document.getElementById("menuSettingsItem").addEventListener("click", function(){ closeTopMenu(); openSettings(); });
   document.getElementById("menuBackupItem").addEventListener("click", function(){ closeTopMenu(); openBackupExport(); });
 
-  /* ---------- header Search ---------- */
-  var searchBar = document.getElementById("searchBar");
-  var searchInput = document.getElementById("searchInput");
+  /* ---------- header Search ----------
+     The Search icon opens Search as a separate full-screen page (see
+     renderSearchPage); the screen it was opened from is kept in
+     state.prevTab so the page's Back button returns there. setTab()
+     calls closeSearch(), which just resets the search state. */
   var searchBtn = document.getElementById("searchBtn");
   function openSearch(){
     clearSelection();
+    if(state.tab !== "search") state.prevTab = state.tab;
+    state.tab = "search";
     state.searchActive = true;
-    searchBar.classList.add("open");
-    updateFab();
-    setTimeout(function(){ searchInput.focus(); }, 40);
+    state.searchQuery = "";
+    render(); window.scrollTo(0,0);
+    setTimeout(function(){ var i = document.getElementById("searchPageInput"); if(i) i.focus(); }, 40);
   }
   function closeSearch(){
-    if(!state.searchActive && !searchBar.classList.contains("open")) return;
     state.searchActive = false;
     state.searchQuery = "";
-    searchInput.value = "";
-    searchBar.classList.remove("open");
   }
-  searchBtn.addEventListener("click", function(){
-    if(state.searchActive){ closeSearch(); render(); }
-    else openSearch();
-  });
-  document.getElementById("searchCancelBtn").addEventListener("click", function(){ closeSearch(); render(); });
-  searchInput.addEventListener("input", function(){
-    state.searchQuery = searchInput.value;
-    /* Clearing the text closes the search and returns to the normal view. */
-    if(!searchInput.value.trim()){ closeSearch(); render(); return; }
-    renderSearchResults();
-    updateFab();
-  });
-  searchInput.addEventListener("keydown", function(ev){
-    if(ev.key === "Escape"){ closeSearch(); render(); }
-  });
+  searchBtn.addEventListener("click", openSearch);
 
   /* ---------- View Balance sheet ---------- */
   var balanceOverlay = document.getElementById("balanceOverlay");
