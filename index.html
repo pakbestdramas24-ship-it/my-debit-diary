@@ -51,6 +51,11 @@
   .search-input-wrap svg{width:19px;height:19px;fill:var(--muted);flex:0 0 auto}
   .search-input-wrap input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--text);font-size:16px;min-height:40px;padding:0}
   .search-head{font-size:13px;color:var(--muted);font-weight:600;margin:0 2px 6px}
+  /* Ledger selector inside the Search page — Search shows ONE ledger
+     at a time; this select switches that ledger locally, without
+     touching the top-bar active ledger */
+  .search-ledger-row{display:flex;align-items:center;gap:8px;padding:0 2px 10px}
+  .search-ledger-row .acct-select{flex:1 1 0;min-width:0;max-width:none;min-height:42px;font-size:15.5px;border-radius:999px;padding:6px 14px}
   /* Ledger tag on a Search result row — the person this entry belongs to */
   .entry-ledger{display:inline-block;margin-top:3px;font-size:11px;font-weight:600;color:var(--mint);border:1px solid #39423c;border-radius:999px;padding:1px 8px;line-height:1.5}
   .icon-btn{background:none;border:0;color:var(--text);width:46px;min-height:56px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
@@ -1844,6 +1849,7 @@
     activeLedger: "",
     searchActive: false,
     searchQuery: "",
+    searchLedger: "",
     ledgerView: "list",
     ledgerPeriod: "month",
     ledgerMonth: todayKey().slice(0,7),
@@ -2093,18 +2099,22 @@
   /* ---------- SEARCH ----------
      Tapping the header Search icon opens Search as its own full-screen
      page (like Settings / Charts): a small Back button, one search
-     input and the results below it. Search is the ONE place that looks
-     across ALL data — every entry of every ledger person, plus entries
-     with no ledger — NOT just the top-bar active ledger; Daily,
-     Monthly, Yearly, Charts, View Balance and the PDF Report still
-     follow the active ledger only. Matching is on the entry text (and
-     its Description), case-insensitive substring, newest first, so
-     "pet" finds "Petrol". Each result shows its date, text, amount
-     (green Income / red Expense) and a tag naming the ledger it
-     belongs to ("No ledger" when it has none); tapping a result opens
-     its edit form. Before anything is typed an empty hint shows —
-     entries are not listed by default. No match shows "No results
-     found." Back returns to the screen Search was opened from. */
+     input, a Ledger selector and the results below them. Search shows
+     entries of ONE ledger at a time: the page's own Ledger selector
+     (state.searchLedger) picks which person's entries are searched.
+     It opens on the top-bar active ledger, and changing the selector
+     re-filters the results to that ledger right away, keeping the
+     typed text — but it is LOCAL to Search: it never changes the
+     top-bar active ledger, so Daily, Monthly, Yearly, Charts, View
+     Balance and the PDF Report keep following the top bar. Matching
+     is on the entry text (and its Description), case-insensitive
+     substring, newest first, so "pet" finds "Petrol". Each result
+     shows its date, text, amount (green Income / red Expense) and a
+     tag naming the ledger it belongs to ("No ledger" when it has
+     none); tapping a result opens its edit form. Before anything is
+     typed an empty hint shows — entries are not listed by default.
+     No match shows "No results found." Back returns to the screen
+     Search was opened from. */
   function searchItemHTML(e){
     var sub = fmtKeyLong(e.date);
     var acctDesc = entrySubText(e);
@@ -2121,11 +2131,15 @@
     var box = document.getElementById("searchResults");
     if(!box) return;
     var q = state.searchQuery.trim().toLowerCase();
+    /* One ledger only: the Search page's own selector (falling back to
+       the top-bar active ledger when unset or no longer a person). */
+    var led = resolveLedger(state.searchLedger);
     if(!q){
-      box.innerHTML = '<p class="empty-note">Type an item name — for example &ldquo;Petrol&rdquo; — to search all entries in every ledger.</p>';
+      box.innerHTML = '<p class="empty-note">Type an item name — for example &ldquo;Petrol&rdquo; — to search entries in '+(led ? 'the ledger of '+esc(led)+'.' : 'this ledger.')+'</p>';
       return;
     }
     var matches = entries.filter(function(e){
+      if((e.ledger || "") !== led) return false;
       return String(e.text || "").toLowerCase().indexOf(q) !== -1 ||
              String(e.remarks || "").toLowerCase().indexOf(q) !== -1;
     });
@@ -2133,21 +2147,35 @@
       if(a.date !== b.date) return a.date < b.date ? 1 : -1;
       return (b.createdAt || 0) - (a.createdAt || 0);
     });
-    var html = '<p class="search-head">'+matches.length+(matches.length === 1 ? " result" : " results")+' for &ldquo;'+esc(state.searchQuery.trim())+'&rdquo;</p>';
+    var html = '<p class="search-head">'+matches.length+(matches.length === 1 ? " result" : " results")+' for &ldquo;'+esc(state.searchQuery.trim())+'&rdquo;'+(led ? ' in '+esc(led) : '')+'</p>';
     if(matches.length) html += '<ul class="entry-list">' + matches.map(searchItemHTML).join("") + '</ul>';
     else html += '<p class="empty-note">No results found.</p>';
     box.innerHTML = html;
     bindEditButtons();
   }
   function renderSearchPage(){
+    /* The Search page's own ledger: the stored pick when it is still a
+       person, otherwise the top-bar active ledger. */
+    var selLed = resolveLedger(state.searchLedger);
+    state.searchLedger = selLed;
     main.innerHTML =
       '<div class="sub-head"><button class="back-btn" id="searchBackBtn" aria-label="Back">Back</button><h2>Search</h2></div>' +
       '<div class="search-page-bar"><div class="search-input-wrap">' +
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>' +
-      '<input type="text" id="searchPageInput" placeholder="Search all entries" autocomplete="off" aria-label="Search all entries" value="'+esc(state.searchQuery)+'" />' +
+      '<input type="text" id="searchPageInput" placeholder="Search entries" autocomplete="off" aria-label="Search entries" value="'+esc(state.searchQuery)+'" />' +
       '</div></div>' +
+      (ledgerNames.length ?
+        '<div class="search-ledger-row"><select class="acct-select" id="searchLedgerSel" aria-label="Ledger to search">'+ledgerOptionsHTML(selLed)+'</select></div>' : '') +
       '<div id="searchResults"></div>';
     document.getElementById("searchBackBtn").addEventListener("click", function(){ setTab(state.prevTab || "daily"); });
+    var ledSel = document.getElementById("searchLedgerSel");
+    if(ledSel) ledSel.addEventListener("change", function(){
+      /* Local to Search only — the top-bar active ledger is untouched,
+         so Daily / Monthly / Yearly / Charts / View Balance / PDF keep
+         following it. The typed text stays; results re-filter at once. */
+      state.searchLedger = ledSel.value;
+      renderSearchResults();
+    });
     var inp = document.getElementById("searchPageInput");
     inp.addEventListener("input", function(){
       state.searchQuery = inp.value;
@@ -5511,12 +5539,16 @@
     state.tab = "search";
     state.searchActive = true;
     state.searchQuery = "";
+    /* Search opens on the top-bar active ledger; its own selector can
+       then switch the searched ledger without moving the top bar. */
+    state.searchLedger = activePerson();
     render(); window.scrollTo(0,0);
     setTimeout(function(){ var i = document.getElementById("searchPageInput"); if(i) i.focus(); }, 40);
   }
   function closeSearch(){
     state.searchActive = false;
     state.searchQuery = "";
+    state.searchLedger = "";
   }
   searchBtn.addEventListener("click", openSearch);
 
@@ -5570,8 +5602,9 @@
   var topLedgerBtn = document.getElementById("topLedgerBtn");
   /* The active ledger picked from the top bar is always ONE person:
      there is no overall mode. It owns new entries and scopes every
-     view (Daily, Monthly, Yearly, Charts, View Balance, Search and
-     the PDF Report all follow it through resolveLedger). syncTopLedger()
+     view (Daily, Monthly, Yearly, Charts, View Balance and the PDF
+     Report all follow it through resolveLedger; Search opens on it
+     but has its own local ledger selector). syncTopLedger()
      runs on every render, so the avatar follows photo / icon / rename
      changes, and an active person who no longer exists falls back to
      the first person in the list. */
