@@ -66,8 +66,8 @@
   .tab.active{color:var(--text);font-weight:700}
   .tab.active::after{content:"";position:absolute;left:8%;right:8%;bottom:0;height:3px;background:var(--mint);border-radius:3px 3px 0 0}
   /* Top-bar ledger switcher — small avatar at the far left of the top bar;
-     shows the active ledger (person's photo / icon / initial, or the group
-     icon for All Ledgers) and opens the ledger picker on tap */
+     shows the active ledger person's photo / icon / initial and opens
+     the ledger picker on tap */
   .top-ledger-btn{background:none;border:0;padding:0 0 0 2px;margin-right:2px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;min-height:50px;width:38px}
   .top-ledger-btn .person-avatar{width:30px;height:30px;font-size:14px}
   .top-ledger-btn .person-avatar svg{width:17px;height:17px}
@@ -470,8 +470,8 @@
   .pdf-page{background:#ffffff;color:#1c1c1c;border-radius:4px;padding:16px 8px 24px;margin:0 -8px}
   .pdf-page h3{margin:0;text-align:center;color:#0e8a75;font-size:19px;font-weight:700;line-height:1.15}
   .pdf-page .pp-name{text-align:center;color:#6a1fa2;font-size:13px;font-weight:600;margin-top:1px;line-height:1.2}
-  /* "Bakhshal" (the All Ledgers name in the PDF title block): stylish
-     script look in red — a person's own name keeps the purple style. */
+  /* Legacy script-style name in the PDF title block (kept unused: every
+     report is now for one person, whose name keeps the purple style). */
   .pdf-page .pp-name.bakhshal{color:#d81f26;font-family:"Dancing Script","Segoe Script","Brush Script MT","Lucida Handwriting",cursive;font-size:20px;font-weight:700;font-style:italic;letter-spacing:.4px;line-height:1.15}
   .pdf-page .pp-period{text-align:center;font-weight:700;font-size:14.5px;margin-top:2px;line-height:1.2;color:#222}
   .pdf-page .pp-generated{text-align:left;color:#777;font-size:11px;margin-top:5px;line-height:1.25}
@@ -829,7 +829,7 @@
 <div class="app">
   <div class="topbar" id="topbar">
     <div class="header-row">
-      <button class="top-ledger-btn" id="topLedgerBtn" aria-label="Ledger: All Ledgers — tap to change" title="Ledger: All Ledgers — tap to change"></button>
+      <button class="top-ledger-btn" id="topLedgerBtn" aria-label="Ledger — tap to change" title="Ledger — tap to change"></button>
       <span class="app-title">My Debit Diary</span>
       <button class="icon-btn" id="searchBtn" aria-label="Search entries" title="Search entries"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg></button>
       <div class="menu-wrap">
@@ -1799,12 +1799,12 @@
     monthAccount: "All",
     monthMode: "month",
     monthYear: new Date().getFullYear(),
-    monthLedger: "All",
+    monthLedger: "",
     monthRangeFrom: "",
     monthRangeTo: "",
     monthRangeActive: false,
     yearAccount: "All",
-    yearLedger: "All",
+    yearLedger: "",
     yearRangeFrom: "",
     yearRangeTo: "",
     yearRangeActive: false,
@@ -1829,7 +1829,7 @@
     chartType: "expense",
     chartMode: "month",
     chartYear: new Date().getFullYear(),
-    chartLedger: "All",
+    chartLedger: "",
     chartMonth: todayKey().slice(0,7),
     chartRangeFrom: "",
     chartRangeTo: "",
@@ -1842,7 +1842,7 @@
     reportFrom: "",
     reportTo: "",
     reportFilter: "all",
-    reportLedger: "All",
+    reportLedger: "",
     reportMode: "month",
     reportMonth: todayKey().slice(0,7),
     reportAccount: "All",
@@ -1878,7 +1878,7 @@
      that person's entries count, and the opening balance is not included
      (it is not tied to a person — same rule as the Yearly ledger filter). */
   function monthBalanceBefore(key, account, ledger){
-    if(!ledger || ledger === "All") return balanceBefore(key, account);
+    if(!ledger) return balanceBefore(key, account);
     var total = 0;
     entries.forEach(function(e){
       if(e.date < key && (e.ledger||"") === ledger && (!account || account === "All" || e.account === account)) total += signed(e);
@@ -1914,8 +1914,26 @@
     allAccounts().forEach(function(a){ h += '<option value="'+esc(a)+'"'+(sel===a?" selected":"")+'>'+esc(a)+'</option>'; });
     return h;
   }
+  /* There is no overall / combined ledger mode: the app always works
+     in ONE person's ledger. activePerson() is that person — the
+     top-bar active ledger when it is still a known person, otherwise
+     the first person in the list ("" only when no people exist yet).
+     resolveLedger() maps a view's stored Ledger-dropdown value to the
+     person that view follows: the stored name when it is still a
+     person, otherwise the active person — so every view follows the
+     active ledger until a different person is picked inside that view,
+     and picking a person in the top bar (which clears the stored
+     values) moves every view to the new person. */
+  function activePerson(){
+    if(state.activeLedger && ledgerNames.indexOf(state.activeLedger) !== -1) return state.activeLedger;
+    return ledgerNames.length ? ledgerNames[0] : "";
+  }
+  function resolveLedger(sel){
+    if(sel && ledgerNames.indexOf(sel) !== -1) return sel;
+    return activePerson();
+  }
   function ledgerOptionsHTML(sel){
-    var h = '<option value="All"'+(sel==="All"?" selected":"")+'>All Ledgers</option>';
+    var h = "";
     ledgerNames.forEach(function(n){ h += '<option value="'+esc(n)+'"'+(sel===n?" selected":"")+'>'+esc(n)+'</option>'; });
     return h;
   }
@@ -1951,8 +1969,9 @@
 
   /* ---------- SEARCH ----------
      Tapping the header Search icon opens the search bar; typing filters
-     ALL entries by their text (and Description), case-insensitive
-     substring match, newest first. Each result shows its date, text and
+     the ACTIVE ledger person's entries by their text (and Description),
+     case-insensitive substring match, newest first — the same scoping
+     as the Daily view. Each result shows its date, text and
      amount (green Income / red Expense); tapping one opens its edit
      form. No match shows "No results found." Clearing the text or
      tapping Cancel closes the search and returns to the normal view. */
@@ -1969,7 +1988,9 @@
   function renderSearchResults(){
     var q = state.searchQuery.trim().toLowerCase();
     if(!q){ renderDailyFallbackForSearch(); return; }
+    var searchLed = activePerson();
     var matches = entries.filter(function(e){
+      if(searchLed && (e.ledger || "") !== searchLed) return false;
       return String(e.text || "").toLowerCase().indexOf(q) !== -1 ||
              String(e.remarks || "").toLowerCase().indexOf(q) !== -1;
     });
@@ -1988,16 +2009,16 @@
   /* ---------- DAILY ---------- */
   function renderDaily(){
     var d = parseKey(state.date);
-    /* The Daily view follows the top-bar active ledger: when a person is
-       active, only that person's entries show, and the C/F, the Income
+    /* The Daily view follows the top-bar active ledger: only that
+       person's entries show, and the C/F, the Income
        (Credit) total, the Expense (Debit) total and the date-card Balance
        are all computed from that person's entries only. Their C/F is
        their own running balance before this day (the opening balance is
        not tied to a person, so it is not included — the same rule as
        monthBalanceBefore), and Balance = C/F + Income − Expense, shown
-       WITHOUT a minus sign like the ledger detail screen. With All
-       Ledgers active the view is overall, exactly as before. */
-    var activeLed = state.activeLedger || "";
+       WITHOUT a minus sign like the ledger detail screen. (Only when
+       no people exist yet is the view overall.) */
+    var activeLed = activePerson();
     var cf = activeLed ? monthBalanceBefore(state.date, "All", activeLed) : balanceBefore(state.date);
     var list = dayEntries(state.date);
     if(activeLed) list = list.filter(function(e){ return (e.ledger||"") === activeLed; });
@@ -2031,9 +2052,7 @@
 
   /* ---------- MONTHLY ---------- */
   function monthLedgerSel(){
-    var led = state.monthLedger;
-    if(led !== "All" && ledgerNames.indexOf(led) === -1) led = "All";
-    return led;
+    return resolveLedger(state.monthLedger);
   }
   function renderMonthly(){
     var parts = state.monthCursor.split("-");
@@ -2053,7 +2072,7 @@
     var cf = monthBalanceBefore(firstKey, acct, led);
     var monthEntries = entries.filter(function(e){
       if(acct !== "All" && e.account !== acct) return false;
-      if(led !== "All" && (e.ledger || "") !== led) return false;
+      if(led && (e.ledger || "") !== led) return false;
       if(mode === "year") return e.date.slice(0,4) === String(state.monthYear);
       if(mode === "range") return rangeOn ? (e.date >= state.monthRangeFrom && e.date <= state.monthRangeTo) : true;
       return e.date.slice(0,7) === state.monthCursor;
@@ -2158,12 +2177,11 @@
   /* ---------- YEARLY ---------- */
   function renderYearly(){
     var y = state.yearCursor, acct = state.yearAccount;
-    var led = state.yearLedger;
-    if(led !== "All" && ledgerNames.indexOf(led) === -1) led = "All";
+    var led = resolveLedger(state.yearLedger);
     var rangeOn = state.yearRangeActive && state.yearRangeFrom && state.yearRangeTo;
     var cfStart = rangeOn ? state.yearRangeFrom : (y+"-01-01");
     var cf;
-    if(led === "All"){
+    if(!led){
       cf = balanceBefore(cfStart, acct);
     } else {
       /* C/F from this person's entries only (the opening balance is not
@@ -2205,7 +2223,7 @@
       var list = entries.filter(function(e){
         if(e.date.slice(0,7) !== mk) return false;
         if(acct !== "All" && e.account !== acct) return false;
-        if(led !== "All" && (e.ledger||"") !== led) return false;
+        if(led && (e.ledger||"") !== led) return false;
         if(rangeOn && (e.date < state.yearRangeFrom || e.date > state.yearRangeTo)) return false;
         return true;
       });
@@ -2479,9 +2497,7 @@
 
   /* ---------- CHARTS ---------- */
   function chartLedgerSel(){
-    var led = state.chartLedger;
-    if(led !== "All" && ledgerNames.indexOf(led) === -1) led = "All";
-    return led;
+    return resolveLedger(state.chartLedger);
   }
   function chartRangeOn(){
     return state.chartMode === "range" && state.chartRangeActive && state.chartRangeFrom && state.chartRangeTo;
@@ -2493,7 +2509,7 @@
     var rangeOn = chartRangeOn();
     return entries.filter(function(e){
       if(e.type !== type) return false;
-      if(led !== "All" && (e.ledger || "") !== led) return false;
+      if(led && (e.ledger || "") !== led) return false;
       if(acct !== "All" && e.account !== acct) return false;
       if(rangeOn) return e.date >= state.chartRangeFrom && e.date <= state.chartRangeTo;
       if(state.chartMode === "year") return e.date.slice(0,4) === String(state.chartYear);
@@ -2522,7 +2538,7 @@
     var acct = state.chartAccount;
     var led = chartLedgerSel();
     function acctLed(e){
-      return (acct==="All" || e.account===acct) && (led==="All" || (e.ledger||"")===led);
+      return (acct==="All" || e.account===acct) && (!led || (e.ledger||"")===led);
     }
     var perDay = [];
     var maxV = 0;
@@ -3088,7 +3104,7 @@
        tab (Month / Year / Date range), the Account dropdown and the
        Ledger dropdown (a selected person scopes the report to them). */
     var led = monthLedgerSel();
-    var person = led === "All" ? "" : led;
+    var person = led;
     var rangeOn = state.monthMode === "range" && state.monthRangeActive && state.monthRangeFrom && state.monthRangeTo;
     var p = state.monthCursor.split("-");
     if(state.monthMode === "year"){
@@ -3210,10 +3226,10 @@
     if(ctx.year) state.pdfYear = ctx.year;
     state.pdfRangeFrom = ctx.rangeFrom || "";
     state.pdfRangeTo = ctx.rangeTo || "";
-    /* If the context names a person (the Monthly view's Ledger dropdown,
-       or a person's ledger open on the Ledger tab), the report is for
-       that person only; otherwise it is the general report. */
-    state.pdfPerson = ctx.person !== undefined ? ctx.person : (state.ledgerNameFilter || "");
+    /* The report is always for ONE person: the context names them
+       (the Monthly view's Ledger dropdown, or a person's ledger open
+       on the Ledger tab); otherwise it is the active ledger person. */
+    state.pdfPerson = ctx.person !== undefined ? ctx.person : resolveLedger(state.ledgerNameFilter);
     state.pdfGenerated = makeGenStamp();
     state.tab = "pdfpreview";
     render(); window.scrollTo(0,0);
@@ -3241,14 +3257,13 @@
   }
   function renderPdfPreview(){
     /* Account + Ledger dropdown values for this screen: the account
-       comes from state.pdfAccount, the ledger from state.pdfPerson
-       ("" means All Ledgers). A saved name that no longer exists
-       falls back to All, like the Monthly / Charts filters. */
+       comes from state.pdfAccount, the ledger from state.pdfPerson,
+       resolved like the Monthly / Charts filters — a stored value
+       that is not a person follows the active ledger person. */
     var pdfAcct = state.pdfAccount || "All";
     if(pdfAcct !== "All" && allAccounts().indexOf(pdfAcct) === -1) pdfAcct = "All";
-    var pdfLed = state.pdfPerson || "All";
-    if(pdfLed !== "All" && ledgerNames.indexOf(pdfLed) === -1) pdfLed = "All";
-    var person = pdfLed === "All" ? "" : pdfLed;
+    var pdfLed = resolveLedger(state.pdfPerson);
+    var person = pdfLed;
     var rng = pdfCurrentRange();
     state.pdfFrom = rng.from; state.pdfTo = rng.to; state.pdfHeading = rng.heading;
     var model = pdfModel(rng.from, rng.to, pdfAcct, state.pdfFilter, person, state.pdfPeriod === "year");
@@ -3307,7 +3322,7 @@
       b.addEventListener("click", function(){ state.pdfFilter = b.getAttribute("data-pdf-filter"); render(); });
     });
     document.getElementById("pdfAcctSel").addEventListener("change", function(ev){ state.pdfAccount = ev.target.value; render(); });
-    document.getElementById("pdfLedgerSel").addEventListener("change", function(ev){ state.pdfPerson = ev.target.value === "All" ? "" : ev.target.value; render(); });
+    document.getElementById("pdfLedgerSel").addEventListener("change", function(ev){ state.pdfPerson = ev.target.value; render(); });
     bindPdfFabs(model, rng.heading, dispName, state.pdfGenerated);
   }
   /* ---------- CHARTS REPORT (the Report screen opened from Charts) ----------
@@ -3323,9 +3338,7 @@
      same charts — not the table. The Notes chip still shows the notes
      paper for the period. */
   function reportLedgerSel(){
-    var led = state.reportLedger;
-    if(led !== "All" && ledgerNames.indexOf(led) === -1) led = "All";
-    return led;
+    return resolveLedger(state.reportLedger);
   }
   function reportTypeList(from, to, person, type, account){
     return entries.filter(function(e){
@@ -3468,7 +3481,7 @@
   function renderReport(){
     var r = reportRange();
     var led = reportLedgerSel();
-    var person = led === "All" ? "" : led;
+    var person = led;
     var acct = reportAccountSel();
     var dispName = person || "Bakhshal";
     var heading = r.heading;
@@ -3604,8 +3617,8 @@
   }
   function padR(s, n){ s = String(s); while(s.length < n) s += " "; return s.slice(0, n); }
   function padL(s, n){ s = String(s); while(s.length < n) s = " " + s; return s.length > n ? s.slice(s.length - n) : s; }
-  /* ---------- "Bakhshal" in the downloaded PDFs ----------
-     The preview shows the All Ledgers name in the Dancing Script
+  /* ---------- legacy script name image for downloaded PDFs ----------
+     An older overall report showed its name in the Dancing Script
      webfont, but the hand-built PDFs only carry Helvetica — so the
      name is rendered once in that same webfont on a canvas and
      embedded in the PDF as a JPEG image (white background; the PDF
@@ -3802,8 +3815,7 @@
     if(dispName){
       if(dispName === "Bakhshal"){
         if(bakhImg){
-          /* All Ledgers name in the true script font: "Bakhshal"
-             rendered in the Dancing Script webfont (the same look
+          /* Legacy script-font name image: rendered in the Dancing Script webfont (the same look
              as the preview) and embedded as an image — centred on
              the title block, its baseline sitting on headY. */
           ops.push("q " + n2(bakhImg.wPt) + " 0 0 " + n2(bakhImg.hPt) + " " + n2(PW/2 - bakhImg.inkWPt/2 - bakhImg.inkLeftPt) + " " + n2(headY - bakhImg.basePt) + " cm /ImB Do Q");
@@ -4141,8 +4153,7 @@
     if(dispName){
       if(dispName === "Bakhshal"){
         if(bakhImg){
-          /* All Ledgers name in the true script font: "Bakhshal"
-             rendered in the Dancing Script webfont (the same look
+          /* Legacy script-font name image: rendered in the Dancing Script webfont (the same look
              as the preview) and embedded as an image — centred on
              the title block, its baseline sitting on headY. */
           ops.push("q " + n2(bakhImg.wPt) + " 0 0 " + n2(bakhImg.hPt) + " " + n2(PW / 2 - bakhImg.inkWPt / 2 - bakhImg.inkLeftPt) + " " + n2(headY - bakhImg.basePt) + " cm /ImB Do Q");
@@ -4412,10 +4423,10 @@
   /* The entry form has a Ledger field listing only people (added from the
      Ledger tab). For a NEW entry it is hidden and fixed whenever one
      person owns the entry being added — opened from that person's ledger
-     detail screen, or while that person is the top-bar active ledger —
-     so the entry is saved under them and the ledger cannot be changed in
-     the form. With "All Ledgers" active, and when editing an entry, the
-     field is shown. */
+     detail screen, or while that person is the top-bar active ledger
+     (a person is always active) — so the entry is saved under them and
+     the ledger cannot be changed in the form. When editing an entry,
+     the field is shown with that entry's own ledger. */
   var formLedger = "";
   var fLedger = document.getElementById("fLedger");
   var ledgerField = document.getElementById("ledgerField");
@@ -4904,16 +4915,18 @@
       if(state.tab === "ledger" && state.ledgerNameFilter){
         formLedger = state.ledgerNameFilter;
         hideLedgerField = true;
-      } else if(state.activeLedger){
-        /* A person is the top-bar active ledger: a new entry goes into
-           that person's ledger — the Ledger field is hidden and fixed
-           to them (exactly like the ledger detail screen), so the
-           entry cannot be saved under anyone else. */
-        formLedger = state.activeLedger;
+      } else if(activePerson()){
+        /* The top-bar active ledger person — activePerson() resolves
+           an unset active ledger to the first person, so a new entry
+           always lands in one person's ledger (never "overall"): the
+           entry goes into that person's ledger — the Ledger field is
+           hidden and fixed to them (exactly like the ledger detail
+           screen), so the entry cannot be saved under anyone else. */
+        formLedger = activePerson();
         hideLedgerField = true;
       } else {
-        /* "All Ledgers" is active: the Ledger field shows as before,
-           empty — "Select a person". */
+        /* No people exist yet: the Ledger field shows, empty —
+           "Select a person". */
         formLedger = "";
         hideLedgerField = false;
       }
@@ -5346,15 +5359,15 @@
   /* ---------- View Balance sheet ---------- */
   var balanceOverlay = document.getElementById("balanceOverlay");
   var balanceLedgerSelEl = document.getElementById("balanceLedgerSel");
-  /* The sheet's Ledger dropdown value: "All" = All Ledgers (overall
-     totals), anything else is that person's name — the dropdown lists
-     people only, there is no "General" option. There is no per-ledger
-     list anymore — picking a ledger re-shows the four rows for that
-     ledger only. */
-  var balanceLedger = "All";
+  /* The sheet's Ledger dropdown value: a person's name, or "" to
+     follow the active ledger person — the dropdown lists people
+     only. There is no per-ledger list anymore — picking a ledger
+     re-shows the four rows for that ledger only. */
+  var balanceLedger = "";
   function renderBalanceBox(){
     var html;
-    if(balanceLedger === "All"){
+    var bl = resolveLedger(balanceLedger);
+    if(!bl){
       var totIn = sumType(entries, "income"), totOut = sumType(entries, "expense");
       html =
         '<div class="summary-line"><span class="bal"><strong>Balance</strong></span><span class="bal"><strong>' + esc(fmt(totalBalance("All"))) + '</strong></span></div>' +
@@ -5367,7 +5380,7 @@
          as in that person's ledger detail screen (money given minus
          money received, via personBalance) and is shown WITHOUT a
          minus sign, in the detail screen's format (curSym + fmtPlain). */
-      var personKey = balanceLedger;
+      var personKey = bl;
       var lIn = 0, lOut = 0;
       entries.forEach(function(e){
         if((e.ledger || "") !== personKey) return;
@@ -5383,14 +5396,11 @@
   }
   function openBalanceSheet(){
     /* Rebuild the dropdown each time the sheet opens (people may have
-       been added since), keeping the current pick when it still exists. */
-    if(balanceLedger !== "All" && ledgerNames.indexOf(balanceLedger) === -1) balanceLedger = "All";
-    var opts = '<option value="All"' + (balanceLedger === "All" ? " selected" : "") + '>All Ledgers</option>';
-    ledgerNames.forEach(function(name){
-      opts += '<option value="' + esc(name) + '"' + (balanceLedger === name ? " selected" : "") + '>' + esc(name) + '</option>';
-    });
-    balanceLedgerSelEl.innerHTML = opts;
-    balanceLedgerSelEl.value = balanceLedger;
+       been added since); it lists people only and shows the person
+       this sheet currently follows. */
+    var bl = resolveLedger(balanceLedger);
+    balanceLedgerSelEl.innerHTML = ledgerOptionsHTML(bl);
+    balanceLedgerSelEl.value = bl;
     renderBalanceBox();
     balanceOverlay.classList.add("open");
   }
@@ -5404,38 +5414,50 @@
   var ledgerPickOverlay = document.getElementById("ledgerPickOverlay");
   var ledgerPickList = document.getElementById("ledgerPickList");
   var topLedgerBtn = document.getElementById("topLedgerBtn");
-  /* The active ledger picked from the top bar: "" means All Ledgers (no
-     default). It sets the default Ledger of new entries and scopes the
-     Daily view to that person (their entries, C/F and Balance only);
-     Monthly / Yearly keep their own Ledger dropdowns. syncTopLedger()
+  /* The active ledger picked from the top bar is always ONE person:
+     there is no overall mode. It owns new entries and scopes every
+     view (Daily, Monthly, Yearly, Charts, View Balance, Search and
+     the PDF Report all follow it through resolveLedger). syncTopLedger()
      runs on every render, so the avatar follows photo / icon / rename
-     changes, and a person who no longer exists falls back to All
-     Ledgers. */
+     changes, and an active person who no longer exists falls back to
+     the first person in the list. */
   function syncTopLedger(){
-    if(state.activeLedger && ledgerNames.indexOf(state.activeLedger) === -1) state.activeLedger = "";
+    /* Safety net: keep the stored active ledger in step with the
+       resolved active person (an unset or unknown value becomes the
+       first person), then render the avatar FROM that resolved
+       person — never from the raw stored value — so the button can
+       never show the group icon while people exist. The group icon
+       remains only for the no-people-yet state. */
+    var ap = activePerson();
+    if(state.activeLedger !== ap) state.activeLedger = ap;
     if(!topLedgerBtn) return;
-    topLedgerBtn.innerHTML = state.activeLedger ? avatarHTML(state.activeLedger) : GROUP_AVATAR_HTML;
-    var label = state.activeLedger ? ("Ledger: " + state.activeLedger) : "Ledger: All Ledgers";
+    topLedgerBtn.innerHTML = ap ? avatarHTML(ap) : GROUP_AVATAR_HTML;
+    var label = ap ? ("Ledger: " + ap) : "Ledger";
     topLedgerBtn.setAttribute("aria-label", label + " — tap to change");
     topLedgerBtn.title = label + " — tap to change";
   }
   function openLedgerPicker(){
-    /* People only — no title and no "All Ledgers" row in this sheet
-       (removed at the user's request). */
+    /* People only — no title and no combined row in this sheet. */
     var html = "";
     ledgerNames.forEach(function(name){
       html += '<button type="button" class="ledger-pick-row" data-pick-ledger="'+esc(name)+'">' + avatarHTML(name) +
-        '<span class="lp-name">'+esc(name)+'</span>' + (state.activeLedger === name ? '<span class="lp-check" aria-hidden="true">✓</span>' : '') + '</button>';
+        '<span class="lp-name">'+esc(name)+'</span>' + (activePerson() === name ? '<span class="lp-check" aria-hidden="true">✓</span>' : '') + '</button>';
     });
     if(!ledgerNames.length) html += '<p class="empty-note">No people yet. Add a person from the Ledger tab first.</p>';
     ledgerPickList.innerHTML = html;
     ledgerPickList.querySelectorAll("[data-pick-ledger]").forEach(function(b){
       b.addEventListener("click", function(){
         state.activeLedger = b.getAttribute("data-pick-ledger") || "";
+        /* Every view follows the newly picked person: clear each
+           view's own Ledger-dropdown pick (and the PDF Report's and
+           the View Balance sheet's) so they all resolve to the new
+           active ledger. */
+        state.monthLedger = ""; state.yearLedger = ""; state.chartLedger = "";
+        state.reportLedger = ""; state.pdfPerson = ""; balanceLedger = "";
         closeLedgerPicker();
         syncTopLedger();
-        /* The Daily view follows the active ledger, so re-render to show
-           the newly picked person's entries and balance right away. */
+        /* Re-render so the current view shows the newly picked
+           person's entries and balance right away. */
         render();
       });
     });
