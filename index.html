@@ -1901,7 +1901,7 @@
       '<div class="date-texts"><div class="date-line1">'+esc(opts.line1)+'</div>' +
       '<div class="date-line2">'+esc(opts.line2)+'</div></div></div>' +
       '<div class="balance-box"><div class="balance-label">Balance</div>' +
-      '<div class="balance-amt">'+esc(fmt(opts.balance))+'</div></div>' +
+      '<div class="balance-amt">'+esc(opts.balanceText != null ? opts.balanceText : fmt(opts.balance))+'</div></div>' +
       '<button class="nav-arrow" data-nav="1" aria-label="Next">›</button></div>';
   }
   function accountOptionsHTML(sel){
@@ -1983,8 +1983,19 @@
   /* ---------- DAILY ---------- */
   function renderDaily(){
     var d = parseKey(state.date);
-    var cf = balanceBefore(state.date);
+    /* The Daily view follows the top-bar active ledger: when a person is
+       active, only that person's entries show, and the C/F, the Income
+       (Credit) total, the Expense (Debit) total and the date-card Balance
+       are all computed from that person's entries only. Their C/F is
+       their own running balance before this day (the opening balance is
+       not tied to a person, so it is not included — the same rule as
+       monthBalanceBefore), and Balance = C/F + Income − Expense, shown
+       WITHOUT a minus sign like the ledger detail screen. With All
+       Ledgers active the view is overall, exactly as before. */
+    var activeLed = state.activeLedger || "";
+    var cf = activeLed ? monthBalanceBefore(state.date, "All", activeLed) : balanceBefore(state.date);
     var list = dayEntries(state.date);
+    if(activeLed) list = list.filter(function(e){ return (e.ledger||"") === activeLed; });
     var inc = list.filter(function(e){ return e.type==="income"; });
     var exp = list.filter(function(e){ return e.type==="expense"; });
     var incTotal = sumType(list,"income"), expTotal = sumType(list,"expense");
@@ -1995,7 +2006,8 @@
       big: d.getDate(),
       line1: MONTHS[d.getMonth()] + ", " + d.getFullYear(),
       line2: DAYS[d.getDay()],
-      balance: balance
+      balance: balance,
+      balanceText: activeLed ? (curSym() + fmtPlain(balance)) : null
     });
     html += '<div class="cf-row"><span>C/F</span><span class="amt">'+esc(fmt(cf))+'</span></div>';
     html += '<div class="section-head"><h2>Income (Credit)</h2><span class="total">'+esc(fmt(incTotal))+'</span></div>';
@@ -5369,10 +5381,12 @@
   var ledgerPickList = document.getElementById("ledgerPickList");
   var topLedgerBtn = document.getElementById("topLedgerBtn");
   /* The active ledger picked from the top bar: "" means All Ledgers (no
-     default). It sets the default Ledger of new entries only — the views
-     keep their own filters. syncTopLedger() runs on every render, so the
-     avatar follows photo / icon / rename changes, and a person who no
-     longer exists falls back to All Ledgers. */
+     default). It sets the default Ledger of new entries and scopes the
+     Daily view to that person (their entries, C/F and Balance only);
+     Monthly / Yearly keep their own Ledger dropdowns. syncTopLedger()
+     runs on every render, so the avatar follows photo / icon / rename
+     changes, and a person who no longer exists falls back to All
+     Ledgers. */
   function syncTopLedger(){
     if(state.activeLedger && ledgerNames.indexOf(state.activeLedger) === -1) state.activeLedger = "";
     if(!topLedgerBtn) return;
@@ -5396,6 +5410,9 @@
         state.activeLedger = b.getAttribute("data-pick-ledger") || "";
         closeLedgerPicker();
         syncTopLedger();
+        /* The Daily view follows the active ledger, so re-render to show
+           the newly picked person's entries and balance right away. */
+        render();
       });
     });
     ledgerPickOverlay.classList.add("open");
