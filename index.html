@@ -192,6 +192,11 @@
   .ledger-pdf-btn:active{background:#22352b}
   body.light .ledger-pdf-btn:active{background:#dce8df}
   .day-card{border:1.5px solid #39423c;border-radius:10px;padding:8px 10px 7px;margin-bottom:10px}
+  /* Monthly day cards: a tap on the card (outside an entry row) opens
+     that date in the Daily view */
+  .day-card.tap-day{cursor:pointer}
+  .day-card.tap-day:active{background:#141a15}
+  body.light .day-card.tap-day:active{background:#eef2ee}
   .day-card-date{text-align:center;font-size:15.5px;font-weight:600;margin-bottom:6px}
   .day-cols{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px}
   .day-cols>div{min-width:0}
@@ -2103,7 +2108,7 @@
       // balanceBefore(key) is the balance at the start of that day
       // (excluding that day's entries), so the day-end Balance adds them:
       var endBal = monthBalanceBefore(key, acct, led) + dIncT - dExpT;
-      html += '<div class="day-card"><div class="day-card-date">'+DAYS_S[dd.getDay()]+', '+dd.getDate()+' '+MONTHS_S[dd.getMonth()]+' '+dd.getFullYear()+'</div>';
+      html += '<div class="day-card tap-day" data-goto-day="'+key+'" role="button" aria-label="Open this date in Daily view"><div class="day-card-date">'+DAYS_S[dd.getDay()]+', '+dd.getDate()+' '+MONTHS_S[dd.getMonth()]+' '+dd.getFullYear()+'</div>';
       html += '<div class="day-cols"><div class="day-col-head">Income (Credit)</div><div class="day-col-head right">Expense (Debit)</div>';
       html += '<div>' + dInc.map(function(e){
         return '<button class="day-entry" data-edit="'+e.id+'"><span class="nm">'+esc(e.text)+'</span><span class="am">'+esc(fmtPlain(+e.amount))+'</span></button>';
@@ -2136,6 +2141,18 @@
       state.monthRangeActive = false; state.monthRangeFrom = ""; state.monthRangeTo = ""; render();
     });
     bindEditButtons();
+    /* A single tap anywhere on a day card EXCEPT an entry row (the blank
+       area, the date header, the totals / Balance block) opens that date
+       fully in the Daily view — date card, C/F, Income, Expense and the
+       day's entries, following the active-ledger scoping as usual.
+       Tapping an entry row still opens its edit form (bindEditButtons). */
+    main.querySelectorAll("[data-goto-day]").forEach(function(card){
+      card.addEventListener("click", function(ev){
+        if(ev.target.closest("[data-edit]")) return;
+        state.date = card.getAttribute("data-goto-day");
+        setTab("daily");
+      });
+    });
   }
 
   /* ---------- YEARLY ---------- */
