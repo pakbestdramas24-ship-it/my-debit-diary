@@ -141,7 +141,7 @@
   .period-row.monthly-compact .acct-select,.period-row.yearly-compact .acct-select{min-height:40px;font-size:15px;padding:4px 8px;border-radius:8px}
   /* Yearly top row — smaller year selector with a Ledger dropdown between it and All Accounts */
   .period-row.yearly-top{gap:6px}
-  .period-row.yearly-top .period-nav{flex:0 0 auto;min-height:34px;padding:1px 2px}
+  .period-row.yearly-top .period-nav{flex:1 1 0;min-width:0;min-height:34px;padding:1px 2px}
   .period-row.yearly-top .period-nav .nav-arrow{width:24px;height:28px;min-height:28px;font-size:19px}
   .period-row.yearly-top .period-nav .period-label{font-size:14.5px;padding:0 1px}
   .period-row.yearly-top .acct-select{flex:1 1 0;min-width:0;max-width:none;min-height:34px;font-size:13.5px;padding:3px 5px}
@@ -212,14 +212,17 @@
   .day-entry .nm{overflow-wrap:anywhere;min-width:0}
   .day-entry .nm-wrap{display:flex;flex-direction:column;min-width:0}
   .day-entry .sub{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
-  /* Multi-select: circular checkmark at a day card's top-right selects
-     all of that date's entries; selected rows highlight; a bottom
-     action bar (n selected / Delete / Cancel) appears while any entry
-     is selected, and the FAB hides behind it. */
+  /* Multi-select: NO selection control is shown on a card by default.
+     Pressing and holding a day card (Monthly / Ledger detail) or the
+     Daily date card for 2 seconds selects all of that date's entries,
+     and only then does a filled tick appear at the card's top-right.
+     Selected rows highlight; a bottom action bar (n selected /
+     Delete / Cancel) appears while any entry is selected, and the
+     FAB hides behind it. */
   .day-card{position:relative;padding-top:12px}
-  .day-check{position:absolute;top:7px;right:8px;width:26px;height:26px;border-radius:50%;border:2px solid var(--muted);background:transparent;color:transparent;font-size:15px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;z-index:2;flex:none}
-  .day-check.on{background:var(--mint-btn);border-color:var(--mint-btn);color:#12241a}
-  .day-check.in-row{position:static;margin-left:2px}
+  .day-card,.date-card{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+  .day-tick{position:absolute;top:7px;right:8px;width:26px;height:26px;border-radius:50%;background:var(--mint-btn);color:#12241a;font-size:15px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:2}
+  .day-tick.in-row{position:static;margin-left:2px;flex:none}
   .entry-item.selected{background:rgba(131,226,192,.14)}
   .day-entry.selected{background:rgba(131,226,192,.14);border-radius:6px}
   .sel-bar{position:fixed;left:0;right:0;bottom:0;z-index:45;display:none;align-items:center;gap:10px;background:var(--sheet);border-top:1px solid var(--line);padding:10px 14px calc(10px + env(safe-area-inset-bottom));box-shadow:0 -6px 18px rgba(0,0,0,.4)}
@@ -442,6 +445,20 @@
   .month-range-row.report-range .range-clear-btn{width:32px;height:32px;min-height:32px}
   .report-filter-row{display:flex;gap:8px;margin-bottom:8px}
   .report-filter-row .acct-select{flex:1 1 0;min-width:0;max-width:none;min-height:34px;font-size:13.5px;padding:3px 5px;border-radius:8px}
+  /* Account + period selector in ONE row (user's layout request):
+     the Accounts dropdown on the LEFT, the date / period cell on the
+     RIGHT, sharing the row — Monthly (Month / Year / Date range),
+     Charts, PDF Report preview and Charts Report. Pure layout: the
+     controls, ids and behaviour are unchanged. */
+  .sel-row{display:flex;gap:8px;align-items:stretch;margin-bottom:8px}
+  .sel-row>.acct-select{flex:1 1 0;min-width:0;max-width:none;min-height:34px;font-size:13.5px;padding:3px 5px;border-radius:8px}
+  .sel-row>.period-row{flex:1.18 1 0;min-width:0;margin-bottom:0}
+  .sel-row>.month-range-row{flex:1.18 1 0;min-width:0;margin-bottom:0}
+  .sel-row .period-nav{width:100%;min-width:0}
+  .sel-row .period-nav .nav-arrow{width:22px}
+  .sel-row .period-label{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sel-row .range-btn{font-size:12.5px;padding:4px 6px;gap:5px}
+  .sel-row .range-btn svg{width:15px;height:15px}
   /* Charts Report — chart page (white paper, replaces the entries table) */
   .cr-sec{margin-top:16px}
   .cr-sec-title{font-size:14.5px;font-weight:700;color:#075e52;margin:0 0 6px}
@@ -1937,7 +1954,7 @@
   var fab = document.getElementById("fab");
 
   function dateCardHTML(opts){
-    return '<div class="date-card">' +
+    return '<div class="date-card"'+(opts.dayKey ? ' data-day-sel="'+esc(opts.dayKey)+'"' : "")+'>' +
       '<button class="nav-arrow" data-nav="-1" aria-label="Previous">‹</button>' +
       '<div class="date-main"><div class="day-num">'+esc(opts.big)+'</div>' +
       '<div class="date-texts"><div class="date-line1">'+esc(opts.line1)+'</div>' +
@@ -1945,7 +1962,7 @@
       '<div class="balance-box"><div class="balance-label">Balance</div>' +
       '<div class="balance-amt">'+esc(opts.balanceText != null ? opts.balanceText : fmt(opts.balance))+'</div></div>' +
       '<button class="nav-arrow" data-nav="1" aria-label="Next">›</button>' +
-      (opts.checkHtml || "") + '</div>';
+      (opts.tickHtml || "") + '</div>';
   }
   function accountOptionsHTML(sel){
     var h = '<option value="All"'+(sel==="All"?" selected":"")+'>All Accounts</option>';
@@ -2009,37 +2026,81 @@
     });
   }
   /* ---------- MULTI-SELECT + BULK DELETE ----------
-     A circular checkmark on a day card (Monthly view, Ledger detail)
-     or on the Daily date card selects ALL entries of that date;
-     tapping it again deselects them. While at least one entry is
-     selected, tapping an entry row toggles just that entry instead of
-     opening the edit form (long-press still opens the edit form), and
-     a bottom bar shows "n selected" with Delete / Cancel. Delete asks
-     for confirmation, then removes every selected entry at once.
-     Switching tabs or opening Search clears the selection. Selection
-     is in-memory only and only ever covers entries the current view
-     shows (the active ledger person's entries). */
+     No selection circle is shown on any card by default. Pressing
+     and holding a day card (Monthly view, Ledger detail) or the
+     Daily date card — the whole date box, not an entry row — for
+     2 seconds selects ALL entries of that date and a filled tick
+     appears on the card; a short tap never selects. While at least
+     one entry is selected (selection mode), tapping a day card
+     toggles that whole date, and tapping an entry row toggles just
+     that entry instead of opening the edit form (long-press on an
+     entry row still opens the edit form). A bottom bar shows
+     "n selected" with Delete / Cancel; Delete asks for confirmation,
+     then removes every selected entry at once. Switching tabs or
+     opening Search clears the selection. Selection is in-memory
+     only and only ever covers entries the current view shows (the
+     active ledger person's entries). */
   var selectedIds = {};
-  var dayCheckLists = {};
+  var daySelLists = {};
+  /* Timestamp of the last long-press selection: the click that the
+     same press produces on release (possibly on the freshly
+     re-rendered card) must not toggle or navigate right back. */
+  var lpFiredAt = 0;
   function selCount(){ return Object.keys(selectedIds).length; }
   function isSel(id){ return !!selectedIds[id]; }
   function clearSelection(){ selectedIds = {}; }
-  /* Checkmark button for a day card / date card; registers the entry
-     ids it controls so bindDayChecks() can toggle them as one group.
-     The button is "on" (filled) when every listed entry is selected. */
-  function dayCheckHTML(key, list, inRow){
-    dayCheckLists[key] = list.map(function(e){ return e.id; });
+  /* Tick indicator for a day card / date card; registers the entry
+     ids of that date so bindDaySelect() can select them as one
+     group. The tick is rendered ONLY when every listed entry is
+     already selected — otherwise the card shows nothing. */
+  function dayTickHTML(key, list, inRow){
+    daySelLists[key] = list.map(function(e){ return e.id; });
     var all = list.length > 0 && list.every(function(e){ return !!selectedIds[e.id]; });
-    return '<button type="button" class="day-check'+(inRow ? " in-row" : "")+(all ? " on" : "")+'" data-day-check="'+key+'" aria-label="Select all entries of this date" aria-pressed="'+(all ? "true" : "false")+'">✓</button>';
+    return all ? '<span class="day-tick'+(inRow ? " in-row" : "")+'" aria-hidden="true">✓</span>' : "";
   }
-  function bindDayChecks(){
-    main.querySelectorAll("[data-day-check]").forEach(function(b){
-      b.addEventListener("click", function(ev){
-        ev.stopPropagation();
-        var ids = dayCheckLists[b.getAttribute("data-day-check")] || [];
-        var all = ids.length > 0 && ids.every(function(id){ return !!selectedIds[id]; });
-        ids.forEach(function(id){ if(all) delete selectedIds[id]; else selectedIds[id] = true; });
-        render();
+  function toggleDaySelection(key){
+    var ids = daySelLists[key] || [];
+    var all = ids.length > 0 && ids.every(function(id){ return !!selectedIds[id]; });
+    ids.forEach(function(id){ if(all) delete selectedIds[id]; else selectedIds[id] = true; });
+    render();
+  }
+  /* Long-press (2s) + selection-mode tap handling for every element
+     carrying data-day-sel="<date key>": the Monthly and Ledger
+     detail day cards and the Daily date card. Presses that start on
+     an entry row or on a control (nav arrows, selects) are ignored —
+     entry rows keep their own tap / long-press behaviour. */
+  function bindDaySelect(){
+    main.querySelectorAll("[data-day-sel]").forEach(function(card){
+      var key = card.getAttribute("data-day-sel");
+      var timer = null, startX = 0, startY = 0;
+      function cancel(){ if(timer){ clearTimeout(timer); timer = null; } }
+      function onControl(ev){
+        return !!(ev.target.closest && (ev.target.closest("[data-edit]") || ev.target.closest("button, select, input, a, textarea")));
+      }
+      card.addEventListener("pointerdown", function(ev){
+        if(onControl(ev)) return;
+        startX = ev.clientX; startY = ev.clientY;
+        cancel();
+        timer = setTimeout(function(){
+          timer = null;
+          lpFiredAt = Date.now();
+          var ids = daySelLists[key] || [];
+          ids.forEach(function(id){ selectedIds[id] = true; });
+          if(ids.length) render();
+        }, 2000);
+      });
+      card.addEventListener("pointermove", function(ev){
+        if(timer && (Math.abs(ev.clientX - startX) > 10 || Math.abs(ev.clientY - startY) > 10)) cancel();
+      });
+      ["pointerup","pointerleave","pointercancel"].forEach(function(evName){
+        card.addEventListener(evName, cancel);
+      });
+      card.addEventListener("contextmenu", function(ev){ ev.preventDefault(); });
+      card.addEventListener("click", function(ev){
+        if(Date.now() - lpFiredAt < 600) return;
+        if(selCount() === 0) return;
+        if(onControl(ev)) return;
+        toggleDaySelection(key);
       });
     });
   }
@@ -2215,9 +2276,12 @@
       line2: DAYS[d.getDay()],
       balance: balance,
       balanceText: activeLed ? (curSym() + fmtPlain(balance)) : null,
-      /* Checkmark on the date card selects all of this date's shown
-         entries at once (bulk delete); hidden when the day is empty. */
-      checkHtml: list.length ? dayCheckHTML(state.date, list, true) : ""
+      /* No circle is shown on the date card. Pressing and holding
+         the date card for 2 seconds selects all of this date's shown
+         entries at once (bulk delete) and only then does a tick
+         appear here; nothing is rendered when the day is empty. */
+      dayKey: state.date,
+      tickHtml: list.length ? dayTickHTML(state.date, list, true) : ""
     });
     html += '<div class="cf-row"><span>C/F</span><span class="amt">'+esc(fmt(cf))+'</span></div>';
     html += '<div class="section-head"><h2>Income (Credit)</h2><span class="total">'+esc(fmt(incTotal))+'</span></div>';
@@ -2231,7 +2295,7 @@
       var nd = parseKey(state.date); nd.setDate(nd.getDate()+dir);
       state.date = toKey(nd); render();
     });
-    bindDayChecks();
+    bindDaySelect();
     bindEditButtons();
   }
 
@@ -2276,26 +2340,30 @@
       '<button type="button" data-mmode="month"'+(mode==="month"?' class="sel"':"")+'>Month</button>' +
       '<button type="button" data-mmode="year"'+(mode==="year"?' class="sel"':"")+'>Year</button>' +
       '<button type="button" data-mmode="range"'+(mode==="range"?' class="sel"':"")+'>Date range</button></div>';
+    /* Account dropdown and the period selector share ONE row:
+       Accounts on the LEFT, the date cell on the RIGHT (user's
+       layout). The account filters the whole Monthly view (summary
+       card, day cards and C/F). The ledger is the top-bar active
+       person; there is no per-view Ledger dropdown. */
+    var periodBlock = "";
     if(mode === "month"){
-      html += '<div class="period-row monthly-compact month-period"><div class="period-nav">' +
+      periodBlock = '<div class="period-row monthly-compact month-period"><div class="period-nav">' +
         '<button class="nav-arrow" data-mnav="-1" aria-label="Previous month">‹</button>' +
         '<span class="period-label">'+MONTHS[m]+' '+y+'</span>' +
         '<button class="nav-arrow" data-mnav="1" aria-label="Next month">›</button></div></div>';
     } else if(mode === "year"){
-      html += '<div class="period-row yearly-compact month-period"><div class="period-nav">' +
+      periodBlock = '<div class="period-row yearly-compact month-period"><div class="period-nav">' +
         '<button class="nav-arrow" data-mynav="-1" aria-label="Previous year">‹</button>' +
         '<span class="period-label">'+state.monthYear+'</span>' +
         '<button class="nav-arrow" data-mynav="1" aria-label="Next year">›</button></div></div>';
     } else {
-      html += '<div class="month-range-row month-range"><button type="button" class="range-btn'+(rangeOn?" active":"")+'" id="monthRangeBtn" aria-label="Pick a date range">' +
+      periodBlock = '<div class="month-range-row month-range"><button type="button" class="range-btn'+(rangeOn?" active":"")+'" id="monthRangeBtn" aria-label="Pick a date range">' +
         '<span class="rb-label">Date range</span><span class="rb-value">'+esc(rangeLabel)+'</span>' + calSvg + '</button>' +
         (rangeOn ? '<button type="button" class="range-clear-btn" id="monthRangeClear" aria-label="Clear date range" title="Clear date range">✕</button>' : '') + '</div>';
     }
-    /* Account dropdown only, full width — it filters the whole Monthly
-       view (summary card, day cards and C/F). The ledger is the
-       top-bar active person; there is no per-view Ledger dropdown. */
-    html += '<div class="month-filter-row">' +
-      '<select class="acct-select" id="monthAcctSel" aria-label="Account filter">'+accountOptionsHTML(acct)+'</select></div>';
+    html += '<div class="sel-row">' +
+      '<select class="acct-select" id="monthAcctSel" aria-label="Account filter">'+accountOptionsHTML(acct)+'</select>' +
+      periodBlock + '</div>';
     html += '<div class="summary-card">' +
       '<div><div class="sc-label">Total Income (Credit)</div><div class="sc-amt credit">'+esc(fmt(incTotal))+'</div></div>' +
       '<div class="right"><div class="sc-label">Total Expense (Debit)</div><div class="sc-amt debit">'+esc(fmt(expTotal))+'</div></div>' +
@@ -2315,7 +2383,7 @@
       // balanceBefore(key) is the balance at the start of that day
       // (excluding that day's entries), so the day-end Balance adds them:
       var endBal = monthBalanceBefore(key, acct, led) + dIncT - dExpT;
-      html += '<div class="day-card tap-day" data-goto-day="'+key+'" role="button" aria-label="Open this date in Daily view">' + dayCheckHTML(key, list) + '<div class="day-card-date">'+DAYS_S[dd.getDay()]+', '+dd.getDate()+' '+MONTHS_S[dd.getMonth()]+' '+dd.getFullYear()+'</div>';
+      html += '<div class="day-card tap-day" data-goto-day="'+key+'" data-day-sel="'+key+'" role="button" aria-label="Open this date in Daily view">' + dayTickHTML(key, list) + '<div class="day-card-date">'+DAYS_S[dd.getDay()]+', '+dd.getDate()+' '+MONTHS_S[dd.getMonth()]+' '+dd.getFullYear()+'</div>';
       html += '<div class="day-cols"><div class="day-col-head">Income (Credit)</div><div class="day-col-head right">Expense (Debit)</div>';
       html += '<div>' + dInc.map(function(e){
         return dayEntryHTML(e);
@@ -2340,7 +2408,7 @@
       b.addEventListener("click", function(){ state.monthYear += +b.getAttribute("data-mynav"); render(); });
     });
     document.getElementById("monthAcctSel").addEventListener("change", function(ev){ state.monthAccount = ev.target.value; render(); });
-    bindDayChecks();
+    bindDaySelect();
     var rangeBtn = document.getElementById("monthRangeBtn");
     if(rangeBtn) rangeBtn.addEventListener("click", function(){ openRangeCalendar(); });
     var clearBtn = document.getElementById("monthRangeClear");
@@ -2352,14 +2420,14 @@
        area, the date header, the totals / Balance block) opens that date
        fully in the Daily view — date card, C/F, Income, Expense and the
        day's entries, following the active-ledger scoping as usual.
-       Tapping an entry row still opens its edit form (bindEditButtons). */
+       Tapping an entry row still opens its edit form (bindEditButtons).
+       While a selection is active the tap instead toggles that date's
+       selection (bindDaySelect) and never navigates, and the click
+       that follows a 2-second long-press is ignored here too. */
     main.querySelectorAll("[data-goto-day]").forEach(function(card){
       card.addEventListener("click", function(ev){
         if(ev.target.closest("[data-edit]")) return;
-        /* The checkmark only selects the day's entries — it never
-           navigates — and while a selection is active a blank-area
-           tap does not leave the Monthly view either. */
-        if(ev.target.closest("[data-day-check]")) return;
+        if(Date.now() - lpFiredAt < 600) return;
         if(selCount() > 0) return;
         state.date = card.getAttribute("data-goto-day");
         setTab("daily");
@@ -2388,11 +2456,13 @@
     }
     var rangeLabel = rangeOn ? (keyToDisplay(state.yearRangeFrom) + " – " + keyToDisplay(state.yearRangeTo)) : "Full year";
     var calSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/></svg>';
+    /* One row, left-right: Accounts dropdown on the LEFT, the year
+       selector on the RIGHT (user's layout, same as Monthly). */
     var html = '<div class="period-row yearly-compact yearly-top">' +
+      '<select class="acct-select" id="yearAcctSel" aria-label="Account filter">'+accountOptionsHTML(acct)+'</select>' +
       '<div class="period-nav"><button class="nav-arrow" data-ynav="-1" aria-label="Previous year">‹</button>' +
       '<span class="period-label">'+y+'</span>' +
-      '<button class="nav-arrow" data-ynav="1" aria-label="Next year">›</button></div>' +
-      '<select class="acct-select" id="yearAcctSel" aria-label="Account filter">'+accountOptionsHTML(acct)+'</select></div>';
+      '<button class="nav-arrow" data-ynav="1" aria-label="Next year">›</button></div></div>';
     html += '<div class="month-range-row"><button type="button" class="range-btn'+(rangeOn?" active":"")+'" id="yearRangeBtn" aria-label="Pick a date range">' +
       '<span class="rb-label">Date range</span><span class="rb-value">'+esc(rangeLabel)+'</span>' + calSvg + '</button>' +
       (rangeOn ? '<button type="button" class="range-clear-btn" id="yearRangeClear" aria-label="Clear date range" title="Clear date range">✕</button>' : '') + '</div>';
@@ -2581,7 +2651,7 @@
       var dInc = dList.filter(function(e){ return e.type==="income"; });
       var dExp = dList.filter(function(e){ return e.type==="expense"; });
       var dIncT = sumType(dList,"income"), dExpT = sumType(dList,"expense");
-      cards += '<div class="day-card">' + dayCheckHTML(key, dList) + '<div class="day-card-date">'+DAYS_S[dd.getDay()]+', '+dd.getDate()+' '+MONTHS_S[dd.getMonth()]+' '+dd.getFullYear()+'</div>';
+      cards += '<div class="day-card" data-day-sel="'+key+'">' + dayTickHTML(key, dList) + '<div class="day-card-date">'+DAYS_S[dd.getDay()]+', '+dd.getDate()+' '+MONTHS_S[dd.getMonth()]+' '+dd.getFullYear()+'</div>';
       cards += '<div class="day-cols"><div class="day-col-head">Income (Credit)</div><div class="day-col-head right">Expense (Debit)</div>';
       cards += '<div>' + dInc.map(function(e){
         return dayEntryHTML(e);
@@ -2686,13 +2756,16 @@
     if(lRangeClear) lRangeClear.addEventListener("click", function(){
       state.ledgerRangeActive = false; state.ledgerRangeFrom = ""; state.ledgerRangeTo = ""; render();
     });
-    bindDayChecks();
+    bindDaySelect();
     bindEditButtons();
   }
 
   /* ---------- CHARTS ---------- */
-  /* No per-view Ledger dropdown: Charts follow the top-bar active
-     ledger person, like every other view. */
+  /* Charts is the ONE view with a Ledger dropdown (user's request):
+     it shows the active ledger person, and changing it switches the
+     ACTIVE ledger itself — exactly like picking the person in the
+     top-bar avatar — so the charts and every other view move to
+     that person. No other view has this dropdown. */
   function chartLedgerSel(){
     return activePerson();
   }
@@ -2836,6 +2909,7 @@
       '<button type="button" data-cmode="month"'+(mode==="month"?' class="sel"':"")+'>Month</button>' +
       '<button type="button" data-cmode="year"'+(mode==="year"?' class="sel"':"")+'>Year</button>' +
       '<button type="button" data-cmode="range"'+(mode==="range"?' class="sel"':"")+'>Date range</button></div>';
+    /* The period selector keeps its own full-width row ... */
     if(mode === "month"){
       html += '<div class="period-row monthly-compact charts-period"><div class="period-nav">' +
         '<button class="nav-arrow" data-cnav="-1" aria-label="Previous month">‹</button>' +
@@ -2851,11 +2925,16 @@
         '<span class="rb-label">Date range</span><span class="rb-value">'+esc(rangeLabel)+'</span>' + calSvg + '</button>' +
         (rangeOn ? '<button type="button" class="range-clear-btn" id="chartRangeClear" aria-label="Clear date range" title="Clear date range">✕</button>' : '') + '</div>';
     }
-    /* Account dropdown only, full width — it filters every chart on
-       this screen (donut, breakdown, category list and bar chart).
-       The ledger is the top-bar active person. */
-    html += '<div class="chart-filter-row">' +
-      '<select class="acct-select" id="chartAcctTopSel" aria-label="Account filter">'+accountOptionsHTML(state.chartAccount)+'</select></div>';
+    /* ... and below it ONE row with the Account dropdown on the LEFT
+       and the Ledger dropdown on the RIGHT (Charts only, user's
+       request). The account filters every chart on this screen
+       (donut, breakdown, category list and bar chart); the Ledger
+       dropdown shows the active person and switches the active
+       ledger itself, like the top-bar avatar. */
+    html += '<div class="sel-row">' +
+      '<select class="acct-select" id="chartAcctTopSel" aria-label="Account filter">'+accountOptionsHTML(state.chartAccount)+'</select>' +
+      (ledgerNames.length ? '<select class="acct-select" id="chartLedgerSel" aria-label="Ledger">'+ledgerOptionsHTML(chartLedgerSel())+'</select>' : '') +
+      '</div>';
     html += '<div class="info-note"><span class="info-ic">!</span><span>Fund transfers between the accounts are excluded from calculation</span></div>';
 
     html += '<div class="chart-card"><div class="seg-toggle charts-seg" role="group" aria-label="Chart type">' +
@@ -2930,6 +3009,19 @@
     });
 
     document.getElementById("chartAcctTopSel").addEventListener("change", function(ev){ state.chartAccount = ev.target.value; render(); });
+    /* Charts Ledger dropdown: switching it switches the ACTIVE
+       ledger (the same thing the top-bar avatar picker does),
+       so the charts — and Daily, Monthly and every other view —
+       move to the picked person, and the top-bar avatar follows. */
+    var chartLedEl = document.getElementById("chartLedgerSel");
+    if(chartLedEl) chartLedEl.addEventListener("change", function(){
+      clearSelection();
+      state.activeLedger = chartLedEl.value;
+      state.monthLedger = ""; state.yearLedger = ""; state.chartLedger = "";
+      state.reportLedger = ""; state.pdfPerson = "";
+      syncTopLedger();
+      render();
+    });
     main.querySelectorAll("[data-ctype]").forEach(function(b){
       b.addEventListener("click", function(){ state.chartType = b.getAttribute("data-ctype"); state.chartExpandedCat = ""; render(); });
     });
@@ -3472,31 +3564,33 @@
       '<button type="button" data-pdf-period="month"' + (state.pdfPeriod === "month" ? ' class="sel"' : "") + '>Month</button>' +
       '<button type="button" data-pdf-period="year"' + (state.pdfPeriod === "year" ? ' class="sel"' : "") + '>Year</button>' +
       '<button type="button" data-pdf-period="range"' + (state.pdfPeriod === "range" ? ' class="sel"' : "") + '>Date Range</button></div>';
-    /* Selector for the active period tab */
+    /* Account dropdown and the period selector share ONE row:
+       Accounts LEFT, date cell RIGHT (user's layout). The account
+       filters the whole report (preview table, C/F, totals,
+       Balance, Notes and the downloaded PDF, which is built from
+       this same model). The person is the one this report was
+       opened for (the top-bar active person, or the person whose
+       ledger detail opened it); there is no Ledger dropdown here. */
+    var pdfPeriodBlock = "";
     if(state.pdfPeriod === "month"){
       var pp2 = (state.pdfMonth || todayKey().slice(0,7)).split("-");
-      html += '<div class="period-row monthly-compact ledger-period"><div class="period-nav">' +
+      pdfPeriodBlock = '<div class="period-row monthly-compact ledger-period"><div class="period-nav">' +
         '<button class="nav-arrow" data-pdf-mnav="-1" aria-label="Previous month">‹</button>' +
         '<span class="period-label">' + MONTHS[+pp2[1]-1] + ' ' + pp2[0] + '</span>' +
         '<button class="nav-arrow" data-pdf-mnav="1" aria-label="Next month">›</button></div></div>';
     } else if(state.pdfPeriod === "year"){
-      html += '<div class="period-row yearly-compact ledger-period"><div class="period-nav">' +
+      pdfPeriodBlock = '<div class="period-row yearly-compact ledger-period"><div class="period-nav">' +
         '<button class="nav-arrow" data-pdf-ynav="-1" aria-label="Previous year">‹</button>' +
         '<span class="period-label">' + state.pdfYear + '</span>' +
         '<button class="nav-arrow" data-pdf-ynav="1" aria-label="Next year">›</button></div></div>';
     } else {
       var calSvgP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5z"/></svg>';
-      html += '<div class="month-range-row ledger-range"><button type="button" class="range-btn active" id="pdfRangeBtn" aria-label="Pick a date range">' +
+      pdfPeriodBlock = '<div class="month-range-row ledger-range"><button type="button" class="range-btn active" id="pdfRangeBtn" aria-label="Pick a date range">' +
         '<span class="rb-label">Date range</span><span class="rb-value">' + esc(keyToDisplay(rng.from) + " – " + keyToDisplay(rng.to)) + '</span>' + calSvgP + '</button></div>';
     }
-    /* Account dropdown only, full width — it filters the whole report
-       (preview table, C/F, totals, Balance, Notes and the downloaded
-       PDF, which is built from this same model). The person is the one
-       this report was opened for (the top-bar active person, or the
-       person whose ledger detail opened it); there is no Ledger
-       dropdown here anymore. */
-    html += '<div class="pdf-filter-row">' +
-      '<select class="acct-select" id="pdfAcctSel" aria-label="Account filter">' + accountOptionsHTML(pdfAcct) + '</select></div>';
+    html += '<div class="sel-row">' +
+      '<select class="acct-select" id="pdfAcctSel" aria-label="Account filter">' + accountOptionsHTML(pdfAcct) + '</select>' +
+      pdfPeriodBlock + '</div>';
     html += pdfFilterChipsHTML(state.pdfFilter, "data-pdf-filter");
     html += pdfPreviewHTML(model, rng.heading, dispName, state.pdfGenerated);
     html += pdfFabsHTML();
@@ -3701,27 +3795,30 @@
       '<button type="button" data-rmode="month"' + (mode === "month" ? ' class="sel"' : "") + '>Month</button>' +
       '<button type="button" data-rmode="year"' + (mode === "year" ? ' class="sel"' : "") + '>Year</button>' +
       '<button type="button" data-rmode="range"' + (mode === "range" ? ' class="sel"' : "") + '>Date range</button></div>';
+    /* Account dropdown and the period selector share ONE row:
+       Accounts LEFT, date cell RIGHT (user's layout). The account
+       filters the chart below (donut, category breakdown and bar
+       chart) and its PDF. The ledger is the top-bar active person. */
+    var rPeriodBlock = "";
     if(mode === "month"){
       var rp = (state.reportMonth || todayKey().slice(0,7)).split("-");
-      html += '<div class="period-row monthly-compact report-period"><div class="period-nav">' +
+      rPeriodBlock = '<div class="period-row monthly-compact report-period"><div class="period-nav">' +
         '<button class="nav-arrow" data-rmnav="-1" aria-label="Previous month">‹</button>' +
         '<span class="period-label">' + MONTHS[+rp[1]-1] + ' ' + rp[0] + '</span>' +
         '<button class="nav-arrow" data-rmnav="1" aria-label="Next month">›</button></div></div>';
     } else if(mode === "year"){
-      html += '<div class="period-row yearly-compact report-period"><div class="period-nav">' +
+      rPeriodBlock = '<div class="period-row yearly-compact report-period"><div class="period-nav">' +
         '<button class="nav-arrow" data-rynav="-1" aria-label="Previous year">‹</button>' +
         '<span class="period-label">' + state.reportYear + '</span>' +
         '<button class="nav-arrow" data-rynav="1" aria-label="Next year">›</button></div></div>';
     } else {
-      html += '<div class="month-range-row report-range"><button type="button" class="range-btn active" id="reportRangeBtn" aria-label="Pick a date range">' +
+      rPeriodBlock = '<div class="month-range-row report-range"><button type="button" class="range-btn active" id="reportRangeBtn" aria-label="Pick a date range">' +
         '<span class="rb-label">Date range</span><span class="rb-value">' + esc(keyToDisplay(r.from) + " – " + keyToDisplay(r.to)) + '</span>' + calSvg + '</button>' +
         (rangeOn ? '<button type="button" class="range-clear-btn" id="reportRangeClear" aria-label="Clear date range" title="Clear date range">✕</button>' : '') + '</div>';
     }
-    /* Account dropdown only, full width — it filters the chart below
-       (donut, category breakdown and bar chart) and its PDF. The
-       ledger is the top-bar active person. */
-    html += '<div class="report-filter-row">' +
-      '<select class="acct-select" id="reportAcctSel" aria-label="Account filter">' + accountOptionsHTML(acct) + '</select></div>';
+    html += '<div class="sel-row">' +
+      '<select class="acct-select" id="reportAcctSel" aria-label="Account filter">' + accountOptionsHTML(acct) + '</select>' +
+      rPeriodBlock + '</div>';
     html += pdfFilterChipsHTML(state.reportFilter, "data-rep-filter");
     if(notesMode) html += pdfPreviewHTML(notesModel, heading, dispName, state.reportGenerated);
     else html += chartReportHTML(r.from, r.to, heading, dispName, state.reportGenerated, state.reportFilter, person, acct, r.monthly);
@@ -4570,7 +4667,7 @@
     }
   }
   function render(){
-    dayCheckLists = {};
+    daySelLists = {};
     topbar.classList.toggle("hidden", state.tab === "charts" || state.tab === "report" || state.tab === "pdfpreview" || state.tab === "settings" || state.tab === "help" || state.tab === "search");
     syncTopLedger();
     document.querySelectorAll(".tab").forEach(function(t){
