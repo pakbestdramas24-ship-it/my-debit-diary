@@ -204,6 +204,24 @@
   .day-col-head.right{text-align:right}
   .day-entry{display:flex;justify-content:space-between;gap:6px;font-size:13px;line-height:1.3;padding:1px 0;width:100%;background:none;border:0;color:var(--text);text-align:left;min-height:0}
   .day-entry .nm{overflow-wrap:anywhere;min-width:0}
+  .day-entry .nm-wrap{display:flex;flex-direction:column;min-width:0}
+  .day-entry .sub{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+  /* Multi-select: circular checkmark at a day card's top-right selects
+     all of that date's entries; selected rows highlight; a bottom
+     action bar (n selected / Delete / Cancel) appears while any entry
+     is selected, and the FAB hides behind it. */
+  .day-card{position:relative;padding-top:12px}
+  .day-check{position:absolute;top:7px;right:8px;width:26px;height:26px;border-radius:50%;border:2px solid var(--muted);background:transparent;color:transparent;font-size:15px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;z-index:2;flex:none}
+  .day-check.on{background:var(--mint-btn);border-color:var(--mint-btn);color:#12241a}
+  .day-check.in-row{position:static;margin-left:2px}
+  .entry-item.selected{background:rgba(131,226,192,.14)}
+  .day-entry.selected{background:rgba(131,226,192,.14);border-radius:6px}
+  .sel-bar{position:fixed;left:0;right:0;bottom:0;z-index:45;display:none;align-items:center;gap:10px;background:var(--sheet);border-top:1px solid var(--line);padding:10px 14px calc(10px + env(safe-area-inset-bottom));box-shadow:0 -6px 18px rgba(0,0,0,.4)}
+  .sel-bar.show{display:flex}
+  .sel-bar .sel-count{flex:1;font-size:15.5px;font-weight:700}
+  .sel-bar .btn,.sel-bar .btn-danger{flex:none;min-height:42px;padding:8px 20px;font-size:15px}
+  body.sel-active .fab{display:none}
+  body.sel-active main{padding-bottom:84px}
   .day-entry .am{white-space:nowrap}
   .day-total{text-align:right;font-size:13px;font-weight:700;margin-top:1px;line-height:1.3}
   .day-total.red{color:var(--exp-red)}
@@ -960,6 +978,25 @@
   </div>
 </div>
 
+<!-- Bulk delete confirmation popup -->
+<div class="dup-overlay" id="bulkDelOverlay" role="alertdialog" aria-modal="true" aria-labelledby="bulkDelTitle" aria-describedby="bulkDelMsg">
+  <div class="dup-card">
+    <h2 id="bulkDelTitle">Delete Entries?</h2>
+    <p id="bulkDelMsg"></p>
+    <div class="dup-actions">
+      <button type="button" class="btn btn-ghost" id="bulkDelCancelBtn">Cancel</button>
+      <button type="button" class="btn-danger" id="bulkDelConfirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Multi-select action bar: shown while entries are selected -->
+<div class="sel-bar" id="selBar">
+  <span class="sel-count" id="selCount"></span>
+  <button type="button" class="btn btn-ghost" id="selCancelBtn">Cancel</button>
+  <button type="button" class="btn-danger" id="selDeleteBtn">Delete</button>
+</div>
+
 <!-- Calendar popup -->
 <div class="cal-overlay" id="calOverlay" role="dialog" aria-modal="true" aria-label="Choose date">
   <div class="cal-card">
@@ -1059,7 +1096,6 @@
   <div class="sheet">
     <button class="sheet-close" id="closeBalanceBtn" aria-label="Close"><span>⌄</span></button>
     <h2 class="sheet-title">View Balance</h2>
-    <div class="balance-ledger-row"><select class="acct-select" id="balanceLedgerSel" aria-label="Ledger filter"></select></div>
     <div class="summary-box" id="balanceBox" style="margin-top:0"></div>
     <div class="sheet-actions">
       <button class="btn btn-primary" id="balanceOkBtn">OK</button>
@@ -1907,7 +1943,8 @@
       '<div class="date-line2">'+esc(opts.line2)+'</div></div></div>' +
       '<div class="balance-box"><div class="balance-label">Balance</div>' +
       '<div class="balance-amt">'+esc(opts.balanceText != null ? opts.balanceText : fmt(opts.balance))+'</div></div>' +
-      '<button class="nav-arrow" data-nav="1" aria-label="Next">›</button></div>';
+      '<button class="nav-arrow" data-nav="1" aria-label="Next">›</button>' +
+      (opts.checkHtml || "") + '</div>';
   }
   function accountOptionsHTML(sel){
     var h = '<option value="All"'+(sel==="All"?" selected":"")+'>All Accounts</option>';
@@ -1937,15 +1974,31 @@
     ledgerNames.forEach(function(n){ h += '<option value="'+esc(n)+'"'+(sel===n?" selected":"")+'>'+esc(n)+'</option>'; });
     return h;
   }
-  function entryItemHTML(e, showDate){
-    /* Daily view subtext shows ONLY the entry's Description (remarks) —
-       Category, Account and Ledger are no longer shown (user's request).
-       When there is no Description, no subtext line is rendered at all.
-       This helper is used only by the Daily view. */
+  /* Entry-row subtext: the Account (Debit From / Credit To) comes FIRST,
+     then the Description (remarks), joined with " • " — e.g. "Bank • HBL".
+     Account only → just the account; Description only → just the
+     description; neither → "" (no subtext line is rendered at all). */
+  function entrySubText(e){
+    var acct = (e.account || "").trim();
     var desc = (e.remarks || "").trim();
-    return '<li><div class="entry-item" data-edit="'+e.id+'" role="button" tabindex="0">' +
+    if(acct && desc) return acct + " • " + desc;
+    return acct || desc;
+  }
+  /* Day-card entry row (Monthly view + Ledger detail): entry text with
+     the Account • Description subtext under it (see entrySubText),
+     amount on the right. */
+  function dayEntryHTML(e){
+    var sub = entrySubText(e);
+    return '<button class="day-entry'+(isSel(e.id) ? " selected" : "")+'" data-edit="'+e.id+'"><span class="nm-wrap"><span class="nm">'+esc(e.text)+'</span>' +
+      (sub ? '<span class="sub">'+esc(sub)+'</span>' : '') + '</span><span class="am">'+esc(fmtPlain(+e.amount))+'</span></button>';
+  }
+  function entryItemHTML(e, showDate){
+    /* Daily view subtext: Account first, then Description (see
+       entrySubText). Category and Ledger are not shown. */
+    var sub = entrySubText(e);
+    return '<li><div class="entry-item'+(isSel(e.id) ? " selected" : "")+'" data-edit="'+e.id+'" role="button" tabindex="0">' +
       '<span class="entry-main"><span class="entry-text">'+esc(e.text)+'</span>' +
-      (desc ? '<span class="entry-sub">'+esc(desc)+'</span>' : '') + '</span>' +
+      (sub ? '<span class="entry-sub">'+esc(sub)+'</span>' : '') + '</span>' +
       '<span class="entry-amt '+(e.type==="income"?"credit":"debit")+'">'+esc(fmt(+e.amount))+'</span>' +
       '</div></li>';
   }
@@ -1954,9 +2007,84 @@
       b.addEventListener("click", function(){ fn(+b.getAttribute("data-nav")); });
     });
   }
+  /* ---------- MULTI-SELECT + BULK DELETE ----------
+     A circular checkmark on a day card (Monthly view, Ledger detail)
+     or on the Daily date card selects ALL entries of that date;
+     tapping it again deselects them. While at least one entry is
+     selected, tapping an entry row toggles just that entry instead of
+     opening the edit form (long-press still opens the edit form), and
+     a bottom bar shows "n selected" with Delete / Cancel. Delete asks
+     for confirmation, then removes every selected entry at once.
+     Switching tabs or opening Search clears the selection. Selection
+     is in-memory only and only ever covers entries the current view
+     shows (the active ledger person's entries). */
+  var selectedIds = {};
+  var dayCheckLists = {};
+  function selCount(){ return Object.keys(selectedIds).length; }
+  function isSel(id){ return !!selectedIds[id]; }
+  function clearSelection(){ selectedIds = {}; }
+  /* Checkmark button for a day card / date card; registers the entry
+     ids it controls so bindDayChecks() can toggle them as one group.
+     The button is "on" (filled) when every listed entry is selected. */
+  function dayCheckHTML(key, list, inRow){
+    dayCheckLists[key] = list.map(function(e){ return e.id; });
+    var all = list.length > 0 && list.every(function(e){ return !!selectedIds[e.id]; });
+    return '<button type="button" class="day-check'+(inRow ? " in-row" : "")+(all ? " on" : "")+'" data-day-check="'+key+'" aria-label="Select all entries of this date" aria-pressed="'+(all ? "true" : "false")+'">✓</button>';
+  }
+  function bindDayChecks(){
+    main.querySelectorAll("[data-day-check]").forEach(function(b){
+      b.addEventListener("click", function(ev){
+        ev.stopPropagation();
+        var ids = dayCheckLists[b.getAttribute("data-day-check")] || [];
+        var all = ids.length > 0 && ids.every(function(id){ return !!selectedIds[id]; });
+        ids.forEach(function(id){ if(all) delete selectedIds[id]; else selectedIds[id] = true; });
+        render();
+      });
+    });
+  }
+  var selBar = document.getElementById("selBar");
+  var selCountEl = document.getElementById("selCount");
+  function updateSelBar(){
+    var n = selCount();
+    if(n > 0){
+      selCountEl.textContent = n + " selected";
+      selBar.classList.add("show");
+      document.body.classList.add("sel-active");
+    } else {
+      selBar.classList.remove("show");
+      document.body.classList.remove("sel-active");
+    }
+  }
+  document.getElementById("selCancelBtn").addEventListener("click", function(){ clearSelection(); render(); });
+  var bulkDelOverlay = document.getElementById("bulkDelOverlay");
+  var bulkDelMsg = document.getElementById("bulkDelMsg");
+  function closeBulkDel(){ bulkDelOverlay.classList.remove("open"); }
+  document.getElementById("selDeleteBtn").addEventListener("click", function(){
+    var n = selCount();
+    if(!n) return;
+    bulkDelMsg.textContent = (n === 1 ? "Delete 1 entry?" : "Delete " + n + " entries?") + " This cannot be undone.";
+    bulkDelOverlay.classList.add("open");
+  });
+  document.getElementById("bulkDelCancelBtn").addEventListener("click", closeBulkDel);
+  bulkDelOverlay.addEventListener("click", function(ev){ if(ev.target === bulkDelOverlay) closeBulkDel(); });
+  document.getElementById("bulkDelConfirmBtn").addEventListener("click", function(){
+    entries = entries.filter(function(e){ return !selectedIds[e.id]; });
+    clearSelection();
+    persist(); closeBulkDel(); render(); toast("Entries deleted");
+  });
+
   function bindEditButtons(){
     main.querySelectorAll("[data-edit]").forEach(function(b){
-      b.addEventListener("click", function(){ openSheet(b.getAttribute("data-edit")); });
+      b.addEventListener("click", function(){
+        var id = b.getAttribute("data-edit");
+        /* While a selection is active, a tap toggles just this entry
+           instead of opening its edit form. */
+        if(selCount() > 0){
+          if(selectedIds[id]) delete selectedIds[id]; else selectedIds[id] = true;
+          render(); return;
+        }
+        openSheet(id);
+      });
       var timer = null;
       b.addEventListener("pointerdown", function(){
         timer = setTimeout(function(){ openSheet(b.getAttribute("data-edit")); }, 550);
@@ -1977,8 +2105,8 @@
      tapping Cancel closes the search and returns to the normal view. */
   function searchItemHTML(e){
     var sub = fmtKeyLong(e.date);
-    var desc = (e.remarks || "").trim();
-    if(desc) sub += " · " + desc;
+    var acctDesc = entrySubText(e);
+    if(acctDesc) sub += " · " + acctDesc;
     return '<li><div class="entry-item" data-edit="'+e.id+'" role="button" tabindex="0">' +
       '<span class="entry-main"><span class="entry-text">'+esc(e.text)+'</span>' +
       '<span class="entry-sub">'+esc(sub)+'</span></span>' +
@@ -2033,7 +2161,10 @@
       line1: MONTHS[d.getMonth()] + ", " + d.getFullYear(),
       line2: DAYS[d.getDay()],
       balance: balance,
-      balanceText: activeLed ? (curSym() + fmtPlain(balance)) : null
+      balanceText: activeLed ? (curSym() + fmtPlain(balance)) : null,
+      /* Checkmark on the date card selects all of this date's shown
+         entries at once (bulk delete); hidden when the day is empty. */
+      checkHtml: list.length ? dayCheckHTML(state.date, list, true) : ""
     });
     html += '<div class="cf-row"><span>C/F</span><span class="amt">'+esc(fmt(cf))+'</span></div>';
     html += '<div class="section-head"><h2>Income (Credit)</h2><span class="total">'+esc(fmt(incTotal))+'</span></div>';
@@ -2047,12 +2178,16 @@
       var nd = parseKey(state.date); nd.setDate(nd.getDate()+dir);
       state.date = toKey(nd); render();
     });
+    bindDayChecks();
     bindEditButtons();
   }
 
   /* ---------- MONTHLY ---------- */
+  /* The Monthly view has no Ledger dropdown anymore (removed at the
+     user's request): it always follows the top-bar active ledger
+     person, like every other view. */
   function monthLedgerSel(){
-    return resolveLedger(state.monthLedger);
+    return activePerson();
   }
   function renderMonthly(){
     var parts = state.monthCursor.split("-");
@@ -2103,11 +2238,11 @@
         '<span class="rb-label">Date range</span><span class="rb-value">'+esc(rangeLabel)+'</span>' + calSvg + '</button>' +
         (rangeOn ? '<button type="button" class="range-clear-btn" id="monthRangeClear" aria-label="Clear date range" title="Clear date range">✕</button>' : '') + '</div>';
     }
-    /* Account + Ledger dropdowns, side by side — both filter the whole
-       Monthly view (summary card, day cards and C/F). */
+    /* Account dropdown only, full width — it filters the whole Monthly
+       view (summary card, day cards and C/F). The ledger is the
+       top-bar active person; there is no per-view Ledger dropdown. */
     html += '<div class="month-filter-row">' +
-      '<select class="acct-select" id="monthAcctSel" aria-label="Account filter">'+accountOptionsHTML(acct)+'</select>' +
-      '<select class="acct-select" id="monthLedgerSel" aria-label="Ledger filter">'+ledgerOptionsHTML(led)+'</select></div>';
+      '<select class="acct-select" id="monthAcctSel" aria-label="Account filter">'+accountOptionsHTML(acct)+'</select></div>';
     html += '<div class="summary-card">' +
       '<div><div class="sc-label">Total Income (Credit)</div><div class="sc-amt credit">'+esc(fmt(incTotal))+'</div></div>' +
       '<div class="right"><div class="sc-label">Total Expense (Debit)</div><div class="sc-amt debit">'+esc(fmt(expTotal))+'</div></div>' +
@@ -2127,13 +2262,13 @@
       // balanceBefore(key) is the balance at the start of that day
       // (excluding that day's entries), so the day-end Balance adds them:
       var endBal = monthBalanceBefore(key, acct, led) + dIncT - dExpT;
-      html += '<div class="day-card tap-day" data-goto-day="'+key+'" role="button" aria-label="Open this date in Daily view"><div class="day-card-date">'+DAYS_S[dd.getDay()]+', '+dd.getDate()+' '+MONTHS_S[dd.getMonth()]+' '+dd.getFullYear()+'</div>';
+      html += '<div class="day-card tap-day" data-goto-day="'+key+'" role="button" aria-label="Open this date in Daily view">' + dayCheckHTML(key, list) + '<div class="day-card-date">'+DAYS_S[dd.getDay()]+', '+dd.getDate()+' '+MONTHS_S[dd.getMonth()]+' '+dd.getFullYear()+'</div>';
       html += '<div class="day-cols"><div class="day-col-head">Income (Credit)</div><div class="day-col-head right">Expense (Debit)</div>';
       html += '<div>' + dInc.map(function(e){
-        return '<button class="day-entry" data-edit="'+e.id+'"><span class="nm">'+esc(e.text)+'</span><span class="am">'+esc(fmtPlain(+e.amount))+'</span></button>';
+        return dayEntryHTML(e);
       }).join("") + (dInc.length ? '<div class="day-total green">'+esc(fmt(dIncT))+'</div>' : '') + '</div>';
       html += '<div>' + dExp.map(function(e){
-        return '<button class="day-entry" data-edit="'+e.id+'"><span class="nm">'+esc(e.text)+'</span><span class="am">'+esc(fmtPlain(+e.amount))+'</span></button>';
+        return dayEntryHTML(e);
       }).join("") + (dExp.length ? '<div class="day-total red">'+esc(fmt(dExpT))+'</div>' : '') + '</div>';
       html += '</div><div class="day-balance"><div class="db-label">Balance</div><div class="db-amt">'+esc(fmt(endBal))+'</div></div></div>';
     });
@@ -2152,7 +2287,7 @@
       b.addEventListener("click", function(){ state.monthYear += +b.getAttribute("data-mynav"); render(); });
     });
     document.getElementById("monthAcctSel").addEventListener("change", function(ev){ state.monthAccount = ev.target.value; render(); });
-    document.getElementById("monthLedgerSel").addEventListener("change", function(ev){ state.monthLedger = ev.target.value; render(); });
+    bindDayChecks();
     var rangeBtn = document.getElementById("monthRangeBtn");
     if(rangeBtn) rangeBtn.addEventListener("click", function(){ openRangeCalendar(); });
     var clearBtn = document.getElementById("monthRangeClear");
@@ -2168,6 +2303,11 @@
     main.querySelectorAll("[data-goto-day]").forEach(function(card){
       card.addEventListener("click", function(ev){
         if(ev.target.closest("[data-edit]")) return;
+        /* The checkmark only selects the day's entries — it never
+           navigates — and while a selection is active a blank-area
+           tap does not leave the Monthly view either. */
+        if(ev.target.closest("[data-day-check]")) return;
+        if(selCount() > 0) return;
         state.date = card.getAttribute("data-goto-day");
         setTab("daily");
       });
@@ -2177,7 +2317,9 @@
   /* ---------- YEARLY ---------- */
   function renderYearly(){
     var y = state.yearCursor, acct = state.yearAccount;
-    var led = resolveLedger(state.yearLedger);
+    /* No per-view Ledger dropdown: the Yearly view follows the
+       top-bar active ledger person. */
+    var led = activePerson();
     var rangeOn = state.yearRangeActive && state.yearRangeFrom && state.yearRangeTo;
     var cfStart = rangeOn ? state.yearRangeFrom : (y+"-01-01");
     var cf;
@@ -2197,7 +2339,6 @@
       '<div class="period-nav"><button class="nav-arrow" data-ynav="-1" aria-label="Previous year">‹</button>' +
       '<span class="period-label">'+y+'</span>' +
       '<button class="nav-arrow" data-ynav="1" aria-label="Next year">›</button></div>' +
-      '<select class="acct-select" id="yearLedgerSel" aria-label="Ledger filter">'+ledgerOptionsHTML(led)+'</select>' +
       '<select class="acct-select" id="yearAcctSel" aria-label="Account filter">'+accountOptionsHTML(acct)+'</select></div>';
     html += '<div class="month-range-row"><button type="button" class="range-btn'+(rangeOn?" active":"")+'" id="yearRangeBtn" aria-label="Pick a date range">' +
       '<span class="rb-label">Date range</span><span class="rb-value">'+esc(rangeLabel)+'</span>' + calSvg + '</button>' +
@@ -2245,7 +2386,7 @@
       });
     });
     document.getElementById("yearAcctSel").addEventListener("change", function(ev){ state.yearAccount = ev.target.value; render(); });
-    document.getElementById("yearLedgerSel").addEventListener("change", function(ev){ state.yearLedger = ev.target.value; render(); });
+
     document.getElementById("yearRangeBtn").addEventListener("click", function(){ openRangeCalendar("year"); });
     var yClearBtn = document.getElementById("yearRangeClear");
     if(yClearBtn) yClearBtn.addEventListener("click", function(){
@@ -2387,13 +2528,13 @@
       var dInc = dList.filter(function(e){ return e.type==="income"; });
       var dExp = dList.filter(function(e){ return e.type==="expense"; });
       var dIncT = sumType(dList,"income"), dExpT = sumType(dList,"expense");
-      cards += '<div class="day-card"><div class="day-card-date">'+DAYS_S[dd.getDay()]+', '+dd.getDate()+' '+MONTHS_S[dd.getMonth()]+' '+dd.getFullYear()+'</div>';
+      cards += '<div class="day-card">' + dayCheckHTML(key, dList) + '<div class="day-card-date">'+DAYS_S[dd.getDay()]+', '+dd.getDate()+' '+MONTHS_S[dd.getMonth()]+' '+dd.getFullYear()+'</div>';
       cards += '<div class="day-cols"><div class="day-col-head">Income (Credit)</div><div class="day-col-head right">Expense (Debit)</div>';
       cards += '<div>' + dInc.map(function(e){
-        return '<button class="day-entry" data-edit="'+e.id+'"><span class="nm">'+esc(e.text)+'</span><span class="am">'+esc(fmtPlain(+e.amount))+'</span></button>';
+        return dayEntryHTML(e);
       }).join("") + (dInc.length ? '<div class="day-total green">'+esc(fmt(dIncT))+'</div>' : '') + '</div>';
       cards += '<div>' + dExp.map(function(e){
-        return '<button class="day-entry" data-edit="'+e.id+'"><span class="nm">'+esc(e.text)+'</span><span class="am">'+esc(fmtPlain(+e.amount))+'</span></button>';
+        return dayEntryHTML(e);
       }).join("") + (dExp.length ? '<div class="day-total red">'+esc(fmt(dExpT))+'</div>' : '') + '</div>';
       cards += '</div><div class="day-balance"><div class="db-label">Balance</div><div class="db-amt">'+esc(curSym() + fmtPlain(dayEndBal[key]))+'</div></div></div>';
     });
@@ -2492,12 +2633,15 @@
     if(lRangeClear) lRangeClear.addEventListener("click", function(){
       state.ledgerRangeActive = false; state.ledgerRangeFrom = ""; state.ledgerRangeTo = ""; render();
     });
+    bindDayChecks();
     bindEditButtons();
   }
 
   /* ---------- CHARTS ---------- */
+  /* No per-view Ledger dropdown: Charts follow the top-bar active
+     ledger person, like every other view. */
   function chartLedgerSel(){
-    return resolveLedger(state.chartLedger);
+    return activePerson();
   }
   function chartRangeOn(){
     return state.chartMode === "range" && state.chartRangeActive && state.chartRangeFrom && state.chartRangeTo;
@@ -2654,10 +2798,10 @@
         '<span class="rb-label">Date range</span><span class="rb-value">'+esc(rangeLabel)+'</span>' + calSvg + '</button>' +
         (rangeOn ? '<button type="button" class="range-clear-btn" id="chartRangeClear" aria-label="Clear date range" title="Clear date range">✕</button>' : '') + '</div>';
     }
-    /* Ledger + Account dropdowns, side by side — both filter every chart
-       on this screen (donut, breakdown, category list and bar chart). */
+    /* Account dropdown only, full width — it filters every chart on
+       this screen (donut, breakdown, category list and bar chart).
+       The ledger is the top-bar active person. */
     html += '<div class="chart-filter-row">' +
-      '<select class="acct-select" id="chartLedgerSel" aria-label="Ledger filter">'+ledgerOptionsHTML(led)+'</select>' +
       '<select class="acct-select" id="chartAcctTopSel" aria-label="Account filter">'+accountOptionsHTML(state.chartAccount)+'</select></div>';
     html += '<div class="info-note"><span class="info-ic">!</span><span>Fund transfers between the accounts are excluded from calculation</span></div>';
 
@@ -2703,8 +2847,9 @@
     }
     html += '</div>';
 
-    /* Bar chart — filtered by the Ledger + Account dropdowns at the top
-       of this screen (barChartSVG reads state.chartLedger/chartAccount). */
+    /* Bar chart — filtered by the Account dropdown at the top of this
+       screen and the top-bar active ledger (barChartSVG reads
+       chartLedgerSel()/state.chartAccount). */
     html += '<div class="chart-card">' + barChartSVG() +
       '<div class="bar-legend"><span><span class="dot" style="background:#7ed491"></span>Income (Credit)</span>' +
       '<span><span class="dot" style="background:#f2766d"></span>Expense (Debit)</span></div></div>';
@@ -2730,7 +2875,7 @@
     main.querySelectorAll("[data-cynav]").forEach(function(b){
       b.addEventListener("click", function(){ state.chartYear += +b.getAttribute("data-cynav"); render(); });
     });
-    document.getElementById("chartLedgerSel").addEventListener("change", function(ev){ state.chartLedger = ev.target.value; render(); });
+
     document.getElementById("chartAcctTopSel").addEventListener("change", function(ev){ state.chartAccount = ev.target.value; render(); });
     main.querySelectorAll("[data-ctype]").forEach(function(b){
       b.addEventListener("click", function(){ state.chartType = b.getAttribute("data-ctype"); state.chartExpandedCat = ""; render(); });
@@ -3291,12 +3436,14 @@
       html += '<div class="month-range-row ledger-range"><button type="button" class="range-btn active" id="pdfRangeBtn" aria-label="Pick a date range">' +
         '<span class="rb-label">Date range</span><span class="rb-value">' + esc(keyToDisplay(rng.from) + " – " + keyToDisplay(rng.to)) + '</span>' + calSvgP + '</button></div>';
     }
-    /* Account + Ledger dropdowns, side by side — both filter the whole
-       report (preview table, C/F, totals, Balance, Notes and the
-       downloaded PDF, which is built from this same model). */
+    /* Account dropdown only, full width — it filters the whole report
+       (preview table, C/F, totals, Balance, Notes and the downloaded
+       PDF, which is built from this same model). The person is the one
+       this report was opened for (the top-bar active person, or the
+       person whose ledger detail opened it); there is no Ledger
+       dropdown here anymore. */
     html += '<div class="pdf-filter-row">' +
-      '<select class="acct-select" id="pdfAcctSel" aria-label="Account filter">' + accountOptionsHTML(pdfAcct) + '</select>' +
-      '<select class="acct-select" id="pdfLedgerSel" aria-label="Ledger filter">' + ledgerOptionsHTML(pdfLed) + '</select></div>';
+      '<select class="acct-select" id="pdfAcctSel" aria-label="Account filter">' + accountOptionsHTML(pdfAcct) + '</select></div>';
     html += pdfFilterChipsHTML(state.pdfFilter, "data-pdf-filter");
     html += pdfPreviewHTML(model, rng.heading, dispName, state.pdfGenerated);
     html += pdfFabsHTML();
@@ -3322,7 +3469,7 @@
       b.addEventListener("click", function(){ state.pdfFilter = b.getAttribute("data-pdf-filter"); render(); });
     });
     document.getElementById("pdfAcctSel").addEventListener("change", function(ev){ state.pdfAccount = ev.target.value; render(); });
-    document.getElementById("pdfLedgerSel").addEventListener("change", function(ev){ state.pdfPerson = ev.target.value; render(); });
+
     bindPdfFabs(model, rng.heading, dispName, state.pdfGenerated);
   }
   /* ---------- CHARTS REPORT (the Report screen opened from Charts) ----------
@@ -3337,8 +3484,10 @@
      the white page, and the downloaded / shared PDF contains these
      same charts — not the table. The Notes chip still shows the notes
      paper for the period. */
+  /* No per-view Ledger dropdown: the Report follows the top-bar
+     active ledger person, like every other view. */
   function reportLedgerSel(){
-    return resolveLedger(state.reportLedger);
+    return activePerson();
   }
   function reportTypeList(from, to, person, type, account){
     return entries.filter(function(e){
@@ -3515,11 +3664,11 @@
         '<span class="rb-label">Date range</span><span class="rb-value">' + esc(keyToDisplay(r.from) + " – " + keyToDisplay(r.to)) + '</span>' + calSvg + '</button>' +
         (rangeOn ? '<button type="button" class="range-clear-btn" id="reportRangeClear" aria-label="Clear date range" title="Clear date range">✕</button>' : '') + '</div>';
     }
-    /* Account + Ledger dropdowns, side by side — both filter the chart
-       below (donut, category breakdown and bar chart) and its PDF. */
+    /* Account dropdown only, full width — it filters the chart below
+       (donut, category breakdown and bar chart) and its PDF. The
+       ledger is the top-bar active person. */
     html += '<div class="report-filter-row">' +
-      '<select class="acct-select" id="reportAcctSel" aria-label="Account filter">' + accountOptionsHTML(acct) + '</select>' +
-      '<select class="acct-select" id="reportLedgerSel" aria-label="Ledger filter">' + ledgerOptionsHTML(led) + '</select></div>';
+      '<select class="acct-select" id="reportAcctSel" aria-label="Account filter">' + accountOptionsHTML(acct) + '</select></div>';
     html += pdfFilterChipsHTML(state.reportFilter, "data-rep-filter");
     if(notesMode) html += pdfPreviewHTML(notesModel, heading, dispName, state.reportGenerated);
     else html += chartReportHTML(r.from, r.to, heading, dispName, state.reportGenerated, state.reportFilter, person, acct, r.monthly);
@@ -3547,7 +3696,7 @@
       state.reportRangeActive = false; state.reportFrom = ""; state.reportTo = ""; render();
     });
     document.getElementById("reportAcctSel").addEventListener("change", function(ev){ state.reportAccount = ev.target.value; render(); });
-    document.getElementById("reportLedgerSel").addEventListener("change", function(ev){ state.reportLedger = ev.target.value; render(); });
+
     main.querySelectorAll("[data-rep-filter]").forEach(function(b){
       b.addEventListener("click", function(){ state.reportFilter = b.getAttribute("data-rep-filter"); render(); });
     });
@@ -4368,12 +4517,13 @@
     }
   }
   function render(){
+    dayCheckLists = {};
     topbar.classList.toggle("hidden", state.tab === "charts" || state.tab === "report" || state.tab === "pdfpreview" || state.tab === "settings" || state.tab === "help");
     syncTopLedger();
     document.querySelectorAll(".tab").forEach(function(t){
       t.classList.toggle("active", t.getAttribute("data-tab") === state.tab);
     });
-    if(state.searchActive){ renderSearchResults(); updateFab(); return; }
+    if(state.searchActive){ renderSearchResults(); updateFab(); updateSelBar(); return; }
     if(state.tab === "notes"){ if(state.noteMode === "edit") renderNoteEditor(); else renderNotesList(); }
     else if(state.tab === "daily") renderDaily();
     else if(state.tab === "monthly") renderMonthly();
@@ -4385,8 +4535,9 @@
     else if(state.tab === "settings") renderSettings();
     else if(state.tab === "help") renderHelp();
     updateFab();
+    updateSelBar();
   }
-  function setTab(tab){ closeSearch(); state.tab = tab; state.noteMode = "list"; state.noteEditId = null; state.noteDraft = ""; if(tab === "report") state.reportGenerated = makeGenStamp(); render(); window.scrollTo(0,0); }
+  function setTab(tab){ closeSearch(); clearSelection(); state.tab = tab; state.noteMode = "list"; state.noteEditId = null; state.noteDraft = ""; if(tab === "report") state.reportGenerated = makeGenStamp(); render(); window.scrollTo(0,0); }
   document.querySelectorAll(".tab").forEach(function(t){
     t.addEventListener("click", function(){ setTab(t.getAttribute("data-tab")); });
   });
@@ -5328,6 +5479,7 @@
   var searchInput = document.getElementById("searchInput");
   var searchBtn = document.getElementById("searchBtn");
   function openSearch(){
+    clearSelection();
     state.searchActive = true;
     searchBar.classList.add("open");
     updateFab();
@@ -5358,15 +5510,12 @@
 
   /* ---------- View Balance sheet ---------- */
   var balanceOverlay = document.getElementById("balanceOverlay");
-  var balanceLedgerSelEl = document.getElementById("balanceLedgerSel");
-  /* The sheet's Ledger dropdown value: a person's name, or "" to
-     follow the active ledger person — the dropdown lists people
-     only. There is no per-ledger list anymore — picking a ledger
-     re-shows the four rows for that ledger only. */
-  var balanceLedger = "";
+  /* No Ledger dropdown in this sheet anymore: View Balance always
+     shows the top-bar active ledger person's four rows (Balance, C/F,
+     Total Income, Total Expense). */
   function renderBalanceBox(){
     var html;
-    var bl = resolveLedger(balanceLedger);
+    var bl = activePerson();
     if(!bl){
       var totIn = sumType(entries, "income"), totOut = sumType(entries, "expense");
       html =
@@ -5395,16 +5544,9 @@
     document.getElementById("balanceBox").innerHTML = html;
   }
   function openBalanceSheet(){
-    /* Rebuild the dropdown each time the sheet opens (people may have
-       been added since); it lists people only and shows the person
-       this sheet currently follows. */
-    var bl = resolveLedger(balanceLedger);
-    balanceLedgerSelEl.innerHTML = ledgerOptionsHTML(bl);
-    balanceLedgerSelEl.value = bl;
     renderBalanceBox();
     balanceOverlay.classList.add("open");
   }
-  balanceLedgerSelEl.addEventListener("change", function(){ balanceLedger = balanceLedgerSelEl.value; renderBalanceBox(); });
   function closeBalanceSheet(){ balanceOverlay.classList.remove("open"); }
   document.getElementById("closeBalanceBtn").addEventListener("click", closeBalanceSheet);
   document.getElementById("balanceOkBtn").addEventListener("click", closeBalanceSheet);
@@ -5447,13 +5589,14 @@
     ledgerPickList.innerHTML = html;
     ledgerPickList.querySelectorAll("[data-pick-ledger]").forEach(function(b){
       b.addEventListener("click", function(){
+        clearSelection();
         state.activeLedger = b.getAttribute("data-pick-ledger") || "";
         /* Every view follows the newly picked person: clear each
            view's own Ledger-dropdown pick (and the PDF Report's and
            the View Balance sheet's) so they all resolve to the new
            active ledger. */
         state.monthLedger = ""; state.yearLedger = ""; state.chartLedger = "";
-        state.reportLedger = ""; state.pdfPerson = ""; balanceLedger = "";
+        state.reportLedger = ""; state.pdfPerson = "";
         closeLedgerPicker();
         syncTopLedger();
         /* Re-render so the current view shows the newly picked
