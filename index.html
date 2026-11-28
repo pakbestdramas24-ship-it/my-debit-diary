@@ -4393,10 +4393,12 @@
   var formType = "expense", editingId = null, formAccount = "Cash", formCategory = "";
 
   /* The entry form has a Ledger field listing only people (added from the
-     Ledger tab). It is hidden only when a new entry is opened from a
-     selected person's ledger — the person is already chosen there, so the
-     entry is saved under them without showing the field again. Opened from
-     Daily/Monthly/Yearly, or when editing an entry, the field is shown. */
+     Ledger tab). For a NEW entry it is hidden and fixed whenever one
+     person owns the entry being added — opened from that person's ledger
+     detail screen, or while that person is the top-bar active ledger —
+     so the entry is saved under them and the ledger cannot be changed in
+     the form. With "All Ledgers" active, and when editing an entry, the
+     field is shown. */
   var formLedger = "";
   var fLedger = document.getElementById("fLedger");
   var ledgerField = document.getElementById("ledgerField");
@@ -4885,12 +4887,17 @@
       if(state.tab === "ledger" && state.ledgerNameFilter){
         formLedger = state.ledgerNameFilter;
         hideLedgerField = true;
+      } else if(state.activeLedger){
+        /* A person is the top-bar active ledger: a new entry goes into
+           that person's ledger — the Ledger field is hidden and fixed
+           to them (exactly like the ledger detail screen), so the
+           entry cannot be saved under anyone else. */
+        formLedger = state.activeLedger;
+        hideLedgerField = true;
       } else {
-        /* The ledger picked from the top bar is the default for a new
-           entry: the Ledger field is prefilled with that person (still
-           shown, so it can be changed). "All Ledgers" leaves it empty —
-           the field shows "Select a person" as before. */
-        formLedger = state.activeLedger || "";
+        /* "All Ledgers" is active: the Ledger field shows as before,
+           empty — "Select a person". */
+        formLedger = "";
         hideLedgerField = false;
       }
       formCategory = "";
