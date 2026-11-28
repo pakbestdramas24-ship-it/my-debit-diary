@@ -214,7 +214,7 @@
   .day-entry .sub{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
   /* Multi-select: NO selection control is shown on a card by default.
      Pressing and holding a day card (Monthly / Ledger detail) or the
-     Daily date card for 2 seconds selects all of that date's entries,
+     Daily date card for half a second selects all of that date's entries,
      and only then does a filled tick appear at the card's top-right.
      Selected rows highlight; a bottom action bar (n selected /
      Delete / Cancel) appears while any entry is selected, and the
@@ -2042,7 +2042,7 @@
      No selection circle is shown on any card by default. Pressing
      and holding a day card (Monthly view, Ledger detail) or the
      Daily date card — the whole date box, not an entry row — for
-     2 seconds selects ALL entries of that date and a filled tick
+     half a second selects ALL entries of that date and a filled tick
      appears on the card; a short tap never selects. While at least
      one entry is selected (selection mode), tapping a day card
      toggles that whole date, and tapping an entry row toggles just
@@ -2059,7 +2059,7 @@
      same press produces on release (possibly on the freshly
      re-rendered card) must not toggle or navigate right back. */
   var lpFiredAt = 0;
-  /* One-shot guard for that same release click: set when a 2-second
+  /* One-shot guard for that same release click: set when a long-press
      hold fires, consumed by the first click handler that sees it
      (and cleared when a new press starts or the selection is
      cleared), so it works no matter how long after the tick appears
@@ -2089,14 +2089,19 @@
     ids.forEach(function(id){ if(all) delete selectedIds[id]; else selectedIds[id] = true; });
     render();
   }
-  /* Long-press (2s) + selection-mode tap handling for every element
+  /* Long-press (0.5s) + selection-mode tap handling for every element
      carrying data-day-sel="<date key>": the Monthly and Ledger
-     detail day cards and the Daily date card. Presses that start on
+     detail day cards and the Daily date card. The hold time is the
+     standard 500ms long-press, NOT 2 seconds: the user's own screen
+     recording (28 Nov 2026) showed every one of his holds lasting
+     only ~0.5–1.5s — a natural "long" press never actually reaches
+     2 full seconds, so with a 2s timer the tick could never appear
+     for him even though the code was correct. Presses that start on
      an entry row or on a control (nav arrows, selects) are ignored —
      entry rows keep their own tap / long-press behaviour.
      A hold is judged by the finger's REAL travel, never by the
      browser's gesture bookkeeping: on a real phone no finger stays
-     pixel-still for 2 seconds, and once its small drift passes the
+     pixel-still for the whole hold, and once its small drift passes the
      browser's touch slop the browser claims the gesture for
      scrolling and fires pointercancel (stopping pointermove too) —
      cancelling the timer there killed almost every real hold while
@@ -2142,7 +2147,7 @@
                user's phone that broke every long-press after the
                first (the tick appeared once, then never again). The
                pressed element, its handlers and the ongoing gesture
-               all stay alive, so the next 2-second hold works
+               all stay alive, so the next hold works
                exactly like this one, every time. The result matches
                what render() would paint: the tick on the card, its
                entry rows highlighted, the selection bar updated. */
@@ -2160,7 +2165,7 @@
             }
             updateSelBar();
           }
-        }, 2000);
+        }, 500);
       });
       card.addEventListener("pointermove", function(ev){
         if(timer && travelled(ev.clientX, ev.clientY)) cancel();
@@ -2172,7 +2177,7 @@
       card.addEventListener("touchmove", function(ev){
         if(timer && ev.touches && ev.touches.length && travelled(ev.touches[0].clientX, ev.touches[0].clientY)) cancel();
       }, {passive:true});
-      /* Release before the 2 seconds are up cancels the hold.
+      /* Release before the hold time is up cancels the hold.
          pointercancel and pointerleave are deliberately NOT in
          this list — see the note above bindDaySelect. */
       card.addEventListener("pointerup", cancel);
@@ -2180,7 +2185,7 @@
       card.addEventListener("touchcancel", cancel);
       card.addEventListener("contextmenu", function(ev){ ev.preventDefault(); });
       card.addEventListener("click", function(ev){
-        /* The release click of a 2-second hold: swallow it exactly
+        /* The release click of a fired hold: swallow it exactly
            once, however long the finger stayed down after the tick
            appeared, so it can never toggle the selection back off. */
         if(lpSuppressClick){ lpSuppressClick = false; return; }
@@ -2191,7 +2196,7 @@
       });
     });
   }
-  /* The release click of a fired 2-second hold is swallowed HERE,
+  /* The release click of a fired hold is swallowed HERE,
      once, in the capture phase — before it can reach ANY card click
      handler — so it can neither toggle the just-made selection back
      off nor open the day in Daily view, however long the finger
@@ -2383,7 +2388,7 @@
       balance: balance,
       balanceText: activeLed ? (curSym() + fmtPlain(balance)) : null,
       /* No circle is shown on the date card. Pressing and holding
-         the date card for 2 seconds selects all of this date's shown
+         the date card for half a second selects all of this date's shown
          entries at once (bulk delete) and only then does a tick
          appear here; nothing is rendered when the day is empty. */
       dayKey: state.date,
@@ -2529,7 +2534,7 @@
        Tapping an entry row still opens its edit form (bindEditButtons).
        While a selection is active the tap instead toggles that date's
        selection (bindDaySelect) and never navigates, and the click
-       that follows a 2-second long-press is ignored here too. */
+       that follows a long-press is ignored here too. */
     main.querySelectorAll("[data-goto-day]").forEach(function(card){
       card.addEventListener("click", function(ev){
         if(ev.target.closest("[data-edit]")) return;
