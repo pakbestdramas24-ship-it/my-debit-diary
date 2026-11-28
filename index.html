@@ -453,12 +453,25 @@
   .sel-row{display:flex;gap:8px;align-items:stretch;margin-bottom:8px}
   .sel-row>.acct-select{flex:1 1 0;min-width:0;max-width:none;min-height:34px;font-size:13.5px;padding:3px 5px;border-radius:8px}
   .sel-row>.period-row{flex:1.18 1 0;min-width:0;margin-bottom:0}
-  .sel-row>.month-range-row{flex:1.18 1 0;min-width:0;margin-bottom:0}
+  .sel-row>.month-range-row{flex:2.1 1 0;min-width:0;margin-bottom:0}
   .sel-row .period-nav{width:100%;min-width:0}
   .sel-row .period-nav .nav-arrow{width:22px}
   .sel-row .period-label{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .sel-row .range-btn{font-size:12.5px;padding:4px 6px;gap:5px}
   .sel-row .range-btn svg{width:15px;height:15px}
+  /* Date range mode of that same row (user's fix): the Accounts cell
+     (his green circle) shrinks and the date-range cell (his yellow
+     circle) takes the freed width, so the full dates
+     ("01/11/2026 – 30/11/2026") stay visible instead of running off
+     the right edge of the screen. The muted "Date range" prefix is
+     dropped inside this row only — the selected Date Range tab
+     directly above already names it — and the clear (✕) button is a
+     touch slimmer. Month / Year rows keep the balance above. */
+  .sel-row:has(>.month-range-row)>.acct-select{flex:.62 1 0}
+  .sel-row .month-range-row{gap:6px}
+  .sel-row .month-range-row .range-btn{min-width:0}
+  .sel-row .month-range-row .rb-label{display:none}
+  .sel-row .month-range-row .range-clear-btn{width:30px;height:30px;min-height:30px}
   /* Charts Report — chart page (white paper, replaces the entries table) */
   .cr-sec{margin-top:16px}
   .cr-sec-title{font-size:14.5px;font-weight:700;color:#075e52;margin:0 0 6px}
@@ -2046,9 +2059,17 @@
      same press produces on release (possibly on the freshly
      re-rendered card) must not toggle or navigate right back. */
   var lpFiredAt = 0;
+  /* One-shot guard for that same release click: set when a 2-second
+     hold fires, consumed by the first click handler that sees it
+     (and cleared when a new press starts or the selection is
+     cleared), so it works no matter how long after the tick appears
+     the finger is lifted — the old 600ms window alone let a slow
+     release toggle the just-made selection back off, which is why
+     the tick seemed to work only once. */
+  var lpSuppressClick = false;
   function selCount(){ return Object.keys(selectedIds).length; }
   function isSel(id){ return !!selectedIds[id]; }
-  function clearSelection(){ selectedIds = {}; }
+  function clearSelection(){ selectedIds = {}; lpSuppressClick = false; }
   /* Tick indicator for a day card / date card; registers the entry
      ids of that date so bindDaySelect() can select them as one
      group. The tick is rendered ONLY when every listed entry is
@@ -2078,15 +2099,43 @@
         return !!(ev.target.closest && (ev.target.closest("[data-edit]") || ev.target.closest("button, select, input, a, textarea")));
       }
       card.addEventListener("pointerdown", function(ev){
+        /* Every new press starts from a clean slate: no leftover
+           guard or timer from the previous press may eat this one. */
+        lpSuppressClick = false;
         if(onControl(ev)) return;
         startX = ev.clientX; startY = ev.clientY;
         cancel();
         timer = setTimeout(function(){
           timer = null;
           lpFiredAt = Date.now();
+          lpSuppressClick = true;
           var ids = daySelLists[key] || [];
           ids.forEach(function(id){ selectedIds[id] = true; });
-          if(ids.length) render();
+          if(ids.length){
+            /* Paint the selection on THIS card in place instead of
+               render(): a full re-render destroys the very element
+               being held while the finger is still down, and on the
+               user's phone that broke every long-press after the
+               first (the tick appeared once, then never again). The
+               pressed element, its handlers and the ongoing gesture
+               all stay alive, so the next 2-second hold works
+               exactly like this one, every time. The result matches
+               what render() would paint: the tick on the card, its
+               entry rows highlighted, the selection bar updated. */
+            ids.forEach(function(id){
+              var row = main.querySelector('[data-edit="' + id + '"]');
+              if(row) row.classList.add("selected");
+            });
+            if(!card.querySelector(".day-tick")){
+              var tick = document.createElement("span");
+              tick.className = "day-tick" + (card.classList.contains("date-card") ? " in-row" : "");
+              tick.setAttribute("aria-hidden", "true");
+              tick.textContent = "✓";
+              if(card.classList.contains("date-card")) card.appendChild(tick);
+              else card.insertBefore(tick, card.firstChild);
+            }
+            updateSelBar();
+          }
         }, 2000);
       });
       card.addEventListener("pointermove", function(ev){
@@ -2097,6 +2146,10 @@
       });
       card.addEventListener("contextmenu", function(ev){ ev.preventDefault(); });
       card.addEventListener("click", function(ev){
+        /* The release click of a 2-second hold: swallow it exactly
+           once, however long the finger stayed down after the tick
+           appeared, so it can never toggle the selection back off. */
+        if(lpSuppressClick){ lpSuppressClick = false; return; }
         if(Date.now() - lpFiredAt < 600) return;
         if(selCount() === 0) return;
         if(onControl(ev)) return;
@@ -2427,6 +2480,7 @@
     main.querySelectorAll("[data-goto-day]").forEach(function(card){
       card.addEventListener("click", function(ev){
         if(ev.target.closest("[data-edit]")) return;
+        if(lpSuppressClick){ lpSuppressClick = false; return; }
         if(Date.now() - lpFiredAt < 600) return;
         if(selCount() > 0) return;
         state.date = card.getAttribute("data-goto-day");
